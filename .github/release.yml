@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Update git submodules
+        run: git submodule update --init --recursive
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+  
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install requirements
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install build-essential libssl-dev libnss3 libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev libmpv-dev libepoxy-dev flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y \
+            org.gnome.Sdk//48 \
+            org.gnome.Platform//48 \
+            org.freedesktop.Sdk.Extension.rust-stable//25.08 \
+            org.freedesktop.Platform.ffmpeg-full//24.08 \
+            org.freedesktop.Platform.VAAPI.Intel//24.08
+          python3 -m pip install aiohttp tomlkit
+
+      - name: Build flatpak package
+        run: ./flatpak/build.sh
+      - name: Upload flatpak package to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./flatpak/*.flatpak

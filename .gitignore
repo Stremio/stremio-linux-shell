@@ -1,3 +1,2 @@
-/.flatpak-builder
 /target
-/vendor
+.flatpak-builder

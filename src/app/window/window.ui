@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <requires lib="gtk" version="4.18" />
+    <requires lib="libadwaita" version="1.7" />
+
+    <menu id="menu">
+        <section>
+            <item>
+                <attribute name="label" translatable="yes">_About Stremio</attribute>
+                <attribute name="action">app.show-about</attribute>
+            </item>
+        </section>
+    </menu>
+
+    <template class="Window" parent="AdwApplicationWindow">
+        <property name="width-request">400</property>
+        <property name="height-request">700</property>
+        <property name="default-width">1700</property>
+        <property name="default-height">1050</property>
+
+        <property name="content">
+            <object class="AdwToolbarView">
+                <child type="top">
+                    <object class="AdwHeaderBar" id="header">
+                        <property name="css-classes">flat</property>
+
+                        <child type="end">
+                            <object class="GtkMenuButton">
+                                <property name="tooltip-text" translatable="yes">Main menu</property>
+                                <property name="icon-name">open-menu-symbolic</property>
+                                <property name="menu-model">menu</property>
+                                <property name="primary">True</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+
+                <property name="content">
+                    <object class="GtkOverlay" id="overlay">
+                        <property name="vexpand">true</property>
+                        <property name="hexpand">true</property>
+                    </object>
+                </property>
+            </object>
+        </property>
+    </template>
+</interface>

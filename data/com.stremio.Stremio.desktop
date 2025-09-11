@@ -2,10 +2,11 @@
 Name=Stremio
 Comment=Freedom To Stream
 Icon=com.stremio.Stremio
-Terminal=false
-StartupNotify=true
-Exec=sh -c "stremio -o '%u'"
-MimeType=x-scheme-handler/stremio;
-Type=Application
 Categories=Utility;AudioVideo;Video;Player;
 Keywords=Stremio;Media;Play;
+Type=Application
+Exec=stremio %u
+MimeType=x-scheme-handler/stremio;
+Terminal=false
+StartupNotify=true
+DBusActivatable=true

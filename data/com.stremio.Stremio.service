@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=com.stremio.Stremio
+Exec=/app/bin/stremio --gapplication-service
