@@ -33,11 +33,11 @@ jobs:
           sudo apt-get -y install libssl-dev libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev gettext nodejs flatpak-builder python3-aiohttp python3-tomlkit
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y \
-            org.gnome.Sdk//48 \
-            org.gnome.Platform//48 \
-            org.freedesktop.Sdk.Extension.rust-stable//24.08 \
-            org.freedesktop.Platform.ffmpeg-full//24.08 \
-            org.freedesktop.Platform.VAAPI.Intel//24.08
+            org.gnome.Sdk//49 \
+            org.gnome.Platform//49 \
+            org.freedesktop.Sdk.Extension.rust-stable//25.08 \
+            org.freedesktop.Platform.ffmpeg-full//25.08 \
+            org.freedesktop.Platform.VAAPI.Intel//25.08
 
       - name: Build flatpak package
         run: ./flatpak/build.sh

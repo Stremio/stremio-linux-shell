@@ -1,19 +1,19 @@
 {
     "app-id": "com.stremio.Stremio.Devel",
     "runtime": "org.gnome.Platform",
-    "runtime-version": "48",
+    "runtime-version": "49",
     "sdk": "org.gnome.Sdk",
     "sdk-extensions": [
         "org.freedesktop.Sdk.Extension.rust-stable"
     ],
     "add-extensions": {
         "org.freedesktop.Platform.ffmpeg-full": {
-            "version": "24.08",
+            "version": "25.08",
             "directory": "lib/ffmpeg",
             "add-ld-path": "."
         },
         "org.freedesktop.Platform.VAAPI.Intel": {
-            "version": "24.08",
+            "version": "25.08",
             "directory": "lib/intel-vaapi-driver",
             "add-ld-path": ".",
             "download-if": "have-intel-gpu",
@@ -108,7 +108,7 @@
                                 {
                                     "type": "git",
                                     "url": "https://github.com/haasn/libplacebo.git",
-                                    "tag": "v7.349.0"
+                                    "branch": "master"
                                 }
                             ]
                         },

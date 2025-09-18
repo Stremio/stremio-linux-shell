@@ -45,11 +45,11 @@ cargo build --release
 #### Flatpak
 ```bash
 flatpak install -y \
-    org.gnome.Sdk//48 \
-    org.gnome.Platform//48 \
+    org.gnome.Sdk//49 \
+    org.gnome.Platform//49 \
     org.freedesktop.Sdk.Extension.rust-stable//25.08 \
-    org.freedesktop.Platform.ffmpeg-full//24.08 \
-    org.freedesktop.Platform.VAAPI.Intel//24.08
+    org.freedesktop.Platform.ffmpeg-full//25.08 \
+    org.freedesktop.Platform.VAAPI.Intel//25.08
 python3 -m pip install aiohttp tomlkit
 ```
 
