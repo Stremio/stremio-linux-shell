@@ -8,9 +8,9 @@ license = "GPL-3.0-only"
 edition = "2024"
 
 [dependencies]
-gtk = { package = "gtk4", version = "0.10.0", features = ["v4_18"] }
-adw = { package = "libadwaita", version = "0.8.0", features = ["v1_7"] }
-webkit = { package = "webkit6", version = "0.5.0", features = ["v2_46"] }
+gtk = { package = "gtk4", version = "0.10.1", features = ["v4_20"] }
+adw = { package = "libadwaita", version = "0.8.0", features = ["v1_8"] }
+webkit = { package = "webkit6", version = "0.5.0", features = ["v2_48"] }
 tokio = { version = "1.47.1", features = ["full"] }
 ashpd = { version = "0.12.0", features = ["gtk4"] }
 ksni = "0.3.1"
