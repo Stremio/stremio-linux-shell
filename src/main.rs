@@ -6,7 +6,6 @@ mod utils;
 use std::{env, ptr};
 
 use clap::Parser;
-use gettextrs::LocaleCategory;
 use gtk::glib::{ExitCode, object::ObjectExt};
 
 use crate::{
@@ -32,7 +31,6 @@ async fn main() -> ExitCode {
         Err(_) => GETTEXT_DIR_DEV,
     };
 
-    gettextrs::setlocale(LocaleCategory::LcAll, "fr");
     gettextrs::bindtextdomain(GETTEXT_DOMAIN, gettext_dir).expect("Failed to bind text domain");
     gettextrs::bind_textdomain_codeset(GETTEXT_DOMAIN, "UTF-8")
         .expect("Failed to set the text domain encoding");
