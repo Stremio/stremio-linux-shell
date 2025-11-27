@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    env, fs,
     path::{Path, PathBuf},
 };
 
@@ -25,8 +25,13 @@ impl Config {
         fs::create_dir_all(&data_dir).expect("Failed to create data directory");
         fs::create_dir_all(&runtime_dir).expect("Failed to create runtime directory");
 
+        let current_exe_path = env::current_exe().expect("Failed to get current exe path");
+        let current_dir = current_exe_path
+            .parent()
+            .expect("Failed to get current directory");
+
         let instance = InstanceConfig::new(&runtime_dir);
-        let server = ServerConfig::new(&data_dir);
+        let server = ServerConfig::new(current_dir);
         let webview = WebViewConfig::new(&data_dir);
         let tray = TrayConfig::new(&runtime_dir);
 
@@ -64,8 +69,8 @@ pub struct ServerConfig {
 }
 
 impl ServerConfig {
-    pub fn new(data_dir: &Path) -> Self {
-        let file = data_dir.join(SERVER_FILE);
+    pub fn new(current_dir: &Path) -> Self {
+        let file = current_dir.join(SERVER_FILE);
 
         Self { file }
     }
