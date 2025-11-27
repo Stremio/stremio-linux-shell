@@ -170,19 +170,19 @@ impl App {
     }
 
     pub async fn disable_idling(&mut self) {
-        if let Some(identifier) = self.window_identifier().await {
-            if let Ok(proxy) = InhibitProxy::new().await {
-                let mut flags = BitFlags::empty();
-                flags.insert(InhibitFlags::Idle);
+        if let Some(identifier) = self.window_identifier().await
+            && let Ok(proxy) = InhibitProxy::new().await
+        {
+            let mut flags = BitFlags::empty();
+            flags.insert(InhibitFlags::Idle);
 
-                let reason = "Prevent screen from going blank during media playback";
+            let reason = "Prevent screen from going blank during media playback";
 
-                self.inhibit_request = proxy
-                    .inhibit(Some(&identifier), flags, reason)
-                    .await
-                    .map_err(|e| error!("Failed to prevent idling: {e}"))
-                    .ok();
-            }
+            self.inhibit_request = proxy
+                .inhibit(Some(&identifier), flags, reason)
+                .await
+                .map_err(|e| error!("Failed to prevent idling: {e}"))
+                .ok();
         }
     }
 
@@ -197,16 +197,16 @@ impl App {
     }
 
     pub async fn open_url<T: Into<String>>(&self, input: T) {
-        if let Ok(url) = Url::parse(&input.into()) {
-            if let Some(identifier) = self.window_identifier().await {
-                let request = OpenFileRequest::default().identifier(identifier);
+        if let Ok(url) = Url::parse(&input.into())
+            && let Some(identifier) = self.window_identifier().await
+        {
+            let request = OpenFileRequest::default().identifier(identifier);
 
-                request
-                    .send_uri(&url)
-                    .await
-                    .map_err(|e| error!("Failed to open uri: {e}"))
-                    .ok();
-            }
+            request
+                .send_uri(&url)
+                .await
+                .map_err(|e| error!("Failed to open uri: {e}"))
+                .ok();
         }
     }
 
@@ -223,14 +223,13 @@ impl App {
     }
 
     async fn window_identifier(&self) -> Option<WindowIdentifier> {
-        if let Some(window) = self.window.as_ref() {
-            if let (Ok(window), Ok(display)) = (window.window_handle(), window.display_handle()) {
-                let window_handle = window.as_raw();
-                let display_handle = display.as_raw();
+        if let Some(window) = self.window.as_ref()
+            && let (Ok(window), Ok(display)) = (window.window_handle(), window.display_handle())
+        {
+            let window_handle = window.as_raw();
+            let display_handle = display.as_raw();
 
-                return WindowIdentifier::from_raw_handle(&window_handle, Some(&display_handle))
-                    .await;
-            }
+            return WindowIdentifier::from_raw_handle(&window_handle, Some(&display_handle)).await;
         }
 
         None

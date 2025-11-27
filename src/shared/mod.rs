@@ -23,18 +23,18 @@ pub fn create_renderer(default_size: (i32, i32), refresh_rate: u32) {
 }
 
 pub fn with_renderer_read<T: FnOnce(&Renderer)>(handler: T) {
-    if let Ok(renderer) = RENDERER.read() {
-        if let Some(renderer) = renderer.as_ref() {
-            handler(renderer)
-        }
+    if let Ok(renderer) = RENDERER.read()
+        && let Some(renderer) = renderer.as_ref()
+    {
+        handler(renderer)
     }
 }
 
 pub fn with_renderer_write<T: FnOnce(&mut Renderer)>(handler: T) {
-    if let Ok(mut renderer) = RENDERER.write() {
-        if let Some(renderer) = renderer.as_mut() {
-            handler(renderer)
-        }
+    if let Ok(mut renderer) = RENDERER.write()
+        && let Some(renderer) = renderer.as_mut()
+    {
+        handler(renderer)
     }
 }
 
@@ -72,24 +72,22 @@ pub fn create_gl(surface: Surface<WindowSurface>, context: NotCurrentContext) {
 }
 
 pub fn with_gl<T: FnMut(&Surface<WindowSurface>, &PossiblyCurrentContext)>(mut handler: T) {
-    if let Ok(surface) = GL_SURFACE.lock() {
-        if let Some(surface) = surface.as_ref() {
-            if let Ok(mut guard) = GL_CONTEXT.lock() {
-                if let Some(context) = guard.take() {
-                    let current_context = context
-                        .make_current(surface)
-                        .expect("Failed to make context current");
+    if let Ok(surface) = GL_SURFACE.lock()
+        && let Some(surface) = surface.as_ref()
+        && let Ok(mut guard) = GL_CONTEXT.lock()
+        && let Some(context) = guard.take()
+    {
+        let current_context = context
+            .make_current(surface)
+            .expect("Failed to make context current");
 
-                    handler(surface, &current_context);
+        handler(surface, &current_context);
 
-                    let not_current_context = current_context
-                        .make_not_current()
-                        .expect("Failed to make context not current");
+        let not_current_context = current_context
+            .make_not_current()
+            .expect("Failed to make context not current");
 
-                    *guard = Some(not_current_context);
-                }
-            }
-        }
+        *guard = Some(not_current_context);
     };
 }
 

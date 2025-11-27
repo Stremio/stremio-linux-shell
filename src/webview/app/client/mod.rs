@@ -56,10 +56,10 @@ cef_impl!(
                 let name = CefString::from(&message.name());
 
                 let ready_message_name = CefString::from(READY_MESSAGE);
-                if name.as_slice() == ready_message_name.as_slice() {
-                    if let Some(sender) = SENDER.get() {
-                        sender.send(WebViewEvent::Ready).ok();
-                    }
+                if name.as_slice() == ready_message_name.as_slice()
+                    && let Some(sender) = SENDER.get()
+                {
+                    sender.send(WebViewEvent::Ready).ok();
                 }
 
                 let ipc_message_name = CefString::from(IPC_MESSAGE);

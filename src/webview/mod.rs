@@ -222,17 +222,12 @@ impl WebView {
                 _ => None,
             };
 
-            if let Some(button_type) = button_type {
-                if let Some(host) = browser.host() {
-                    let event = state.into();
+            if let Some(button_type) = button_type
+                && let Some(host) = browser.host()
+            {
+                let event = state.into();
 
-                    host.send_mouse_click_event(
-                        Some(&event),
-                        button_type.into(),
-                        mouse_up.into(),
-                        1,
-                    );
-                }
+                host.send_mouse_click_event(Some(&event), button_type.into(), mouse_up.into(), 1);
             }
         }
     }
@@ -260,43 +255,42 @@ impl WebView {
 
     pub fn keyboard_input(&self, key_event: KeyEvent, modifiers: ModifiersState) {
         if let Some(host) = self.browser_host() {
-            if let PhysicalKey::Code(code) = key_event.physical_key {
-                if let (Ok(WindowsKeyCode(windows_key_code)), Ok(NativeKeyCode(native_key_code))) =
+            if let PhysicalKey::Code(code) = key_event.physical_key
+                && let (Ok(WindowsKeyCode(windows_key_code)), Ok(NativeKeyCode(native_key_code))) =
                     (code.try_into(), code.try_into())
-                {
-                    let event_type = match key_event.state.is_pressed() {
-                        true => cef_key_event_type_t::KEYEVENT_KEYDOWN.into(),
-                        false => cef_key_event_type_t::KEYEVENT_KEYUP.into(),
-                    };
+            {
+                let event_type = match key_event.state.is_pressed() {
+                    true => cef_key_event_type_t::KEYEVENT_KEYDOWN.into(),
+                    false => cef_key_event_type_t::KEYEVENT_KEYUP.into(),
+                };
 
-                    let modifiers = if modifiers.control_key() {
-                        cef_event_flags_t::EVENTFLAG_CONTROL_DOWN as u32
-                    } else {
-                        cef_event_flags_t::EVENTFLAG_NONE as u32
-                    };
+                let modifiers = if modifiers.control_key() {
+                    cef_event_flags_t::EVENTFLAG_CONTROL_DOWN as u32
+                } else {
+                    cef_event_flags_t::EVENTFLAG_NONE as u32
+                };
 
-                    let event = cef::KeyEvent {
-                        type_: event_type,
-                        windows_key_code,
-                        native_key_code,
-                        modifiers,
-                        ..Default::default()
-                    };
+                let event = cef::KeyEvent {
+                    type_: event_type,
+                    windows_key_code,
+                    native_key_code,
+                    modifiers,
+                    ..Default::default()
+                };
 
-                    host.send_key_event(Some(&event));
-                }
+                host.send_key_event(Some(&event));
             }
 
-            if key_event.state.is_pressed() {
-                if let Some(text) = key_event.text {
-                    let event = cef::KeyEvent {
-                        type_: cef_key_event_type_t::KEYEVENT_CHAR.into(),
-                        character: text.as_str().chars().next().map(|c| c as u16).unwrap(),
-                        ..Default::default()
-                    };
+            if key_event.state.is_pressed()
+                && let Some(text) = key_event.text
+            {
+                let event = cef::KeyEvent {
+                    type_: cef_key_event_type_t::KEYEVENT_CHAR.into(),
+                    character: text.as_str().chars().next().map(|c| c as u16).unwrap(),
+                    ..Default::default()
+                };
 
-                    host.send_key_event(Some(&event));
-                }
+                host.send_key_event(Some(&event));
             }
         }
     }

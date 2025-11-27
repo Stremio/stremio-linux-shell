@@ -212,12 +212,11 @@ fn main() -> ExitCode {
                 webview.dev_tools(args.dev);
             }
             WebViewEvent::Loaded => {
-                if let Some(deeplink) = &args.open {
-                    if deeplink.starts_with(URI_SCHEME) {
-                        let message =
-                            ipc::create_response(IpcEvent::OpenMedia(deeplink.to_string()));
-                        webview.post_message(message);
-                    }
+                if let Some(deeplink) = &args.open
+                    && deeplink.starts_with(URI_SCHEME)
+                {
+                    let message = ipc::create_response(IpcEvent::OpenMedia(deeplink.to_string()));
+                    webview.post_message(message);
                 }
             }
             WebViewEvent::Paint => {

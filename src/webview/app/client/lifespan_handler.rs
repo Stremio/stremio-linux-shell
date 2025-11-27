@@ -35,10 +35,10 @@ cef_impl!(
             if let Some(target_url) = target_url {
                 let target_url = target_url.to_string();
 
-                if let Ok(url) = Url::parse(&target_url) {
-                    if let Some(sender) = SENDER.get() {
-                        sender.send(WebViewEvent::Open(url)).ok();
-                    }
+                if let Ok(url) = Url::parse(&target_url)
+                    && let Some(sender) = SENDER.get()
+                {
+                    sender.send(WebViewEvent::Open(url)).ok();
                 }
             }
 

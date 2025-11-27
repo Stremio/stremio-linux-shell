@@ -19,14 +19,14 @@ cef_impl!(
             frame: Option<&mut Frame>,
             _transition_type: TransitionType,
         ) {
-            if let Some(frame) = frame {
-                if frame.is_main() == 1 {
-                    let script = PRELOAD_SCRIPT
-                        .replace("IPC_SENDER", IPC_SENDER)
-                        .replace("IPC_RECEIVER", IPC_RECEIVER);
-                    let code = CefString::from(script.as_str());
-                    frame.execute_java_script(Some(&code), None, 0);
-                }
+            if let Some(frame) = frame
+                && frame.is_main() == 1
+            {
+                let script = PRELOAD_SCRIPT
+                    .replace("IPC_SENDER", IPC_SENDER)
+                    .replace("IPC_RECEIVER", IPC_RECEIVER);
+                let code = CefString::from(script.as_str());
+                frame.execute_java_script(Some(&code), None, 0);
             }
         }
 
@@ -36,12 +36,12 @@ cef_impl!(
             frame: Option<&mut Frame>,
             http_status_code: c_int,
         ) {
-            if let Some(frame) = frame {
-                if frame.is_main() == 1 && http_status_code == 200 {
-                    if let Some(sender) = SENDER.get() {
-                        sender.send(WebViewEvent::Loaded).ok();
-                    }
-                }
+            if let Some(frame) = frame
+                && frame.is_main() == 1
+                && http_status_code == 200
+                && let Some(sender) = SENDER.get()
+            {
+                sender.send(WebViewEvent::Loaded).ok();
             }
         }
     }

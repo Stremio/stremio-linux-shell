@@ -264,34 +264,34 @@ impl Player {
             _ => None,
         };
 
-        if let Some(format) = format {
-            if let Err(e) = self.event_context.observe_property(&name, format, 0) {
-                error!("Failed to observe property {name}: {e}");
-            }
+        if let Some(format) = format
+            && let Err(e) = self.event_context.observe_property(&name, format, 0)
+        {
+            error!("Failed to observe property {name}: {e}");
         }
     }
 
     pub fn set_property(&self, property: MpvProperty) {
         match property.name() {
             name if FLOAT_PROPERTIES.contains(&name) => {
-                if let Ok(MpvPropertyValue::Float(value)) = property.value() {
-                    if let Err(e) = self.mpv.set_property(name, value) {
-                        error!("Failed to set property {name}: {e}");
-                    }
+                if let Ok(MpvPropertyValue::Float(value)) = property.value()
+                    && let Err(e) = self.mpv.set_property(name, value)
+                {
+                    error!("Failed to set property {name}: {e}");
                 }
             }
             name if BOOL_PROPERTIES.contains(&name) => {
-                if let Ok(MpvPropertyValue::Bool(value)) = property.value() {
-                    if let Err(e) = self.mpv.set_property(name, value) {
-                        error!("Failed to set property {name}: {e}");
-                    }
+                if let Ok(MpvPropertyValue::Bool(value)) = property.value()
+                    && let Err(e) = self.mpv.set_property(name, value)
+                {
+                    error!("Failed to set property {name}: {e}");
                 }
             }
             name if STRING_PROPERTIES.contains(&name) => {
-                if let Ok(MpvPropertyValue::String(value)) = property.value() {
-                    if let Err(e) = self.mpv.set_property(name, value) {
-                        error!("Failed to set property {name}: {e}");
-                    }
+                if let Ok(MpvPropertyValue::String(value)) = property.value()
+                    && let Err(e) = self.mpv.set_property(name, value)
+                {
+                    error!("Failed to set property {name}: {e}");
                 }
             }
             name => error!("Failed to set property {name}: Unsupported"),

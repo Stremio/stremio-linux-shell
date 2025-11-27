@@ -20,12 +20,12 @@ cef_impl!(
             _retval: Option<&mut Option<V8Value>>,
             _exception: Option<&mut CefString>,
         ) -> c_int {
-            if is_handler(name, IPC_RECEIVER) {
-                if let Some(data) = handler_data(arguments) {
-                    send_ipc_message(data);
+            if is_handler(name, IPC_RECEIVER)
+                && let Some(data) = handler_data(arguments)
+            {
+                send_ipc_message(data);
 
-                    return 1;
-                }
+                return 1;
             }
 
             0
@@ -52,9 +52,9 @@ fn handler_data(arguments: Option<&[Option<impl ImplV8Value>]>) -> Option<CefStr
 }
 
 fn send_ipc_message(data: CefStringUtf16) {
-    if let Some(context) = v8_context_get_current_context() {
-        if let Some(mut browser) = context.browser() {
-            utils::send_process_message(Some(&mut browser), IPC_MESSAGE, Some(&data));
-        }
+    if let Some(context) = v8_context_get_current_context()
+        && let Some(mut browser) = context.browser()
+    {
+        utils::send_process_message(Some(&mut browser), IPC_MESSAGE, Some(&data));
     }
 }

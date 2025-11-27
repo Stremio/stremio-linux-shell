@@ -33,14 +33,14 @@ cef_impl!(
             let mut value = v8_value_create_function(Some(&name), Some(&mut handler))
                 .expect("Failed to create a value for function");
 
-            if let Some(context) = context {
-                if let Some(global) = context.global() {
-                    global.set_value_bykey(
-                        Some(&name),
-                        Some(&mut value),
-                        V8Propertyattribute::default(),
-                    );
-                }
+            if let Some(context) = context
+                && let Some(global) = context.global()
+            {
+                global.set_value_bykey(
+                    Some(&name),
+                    Some(&mut value),
+                    V8Propertyattribute::default(),
+                );
             }
         }
     }

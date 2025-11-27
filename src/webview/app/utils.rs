@@ -18,10 +18,9 @@ pub fn send_process_message(
         arguments.set_string(0, Some(arg));
     }
 
-    if let Some(browser) = browser {
-        if let Some(main_frame) = browser.main_frame() {
-            main_frame
-                .send_process_message(cef_process_id_t::PID_BROWSER.into(), Some(&mut message));
-        }
+    if let Some(browser) = browser
+        && let Some(main_frame) = browser.main_frame()
+    {
+        main_frame.send_process_message(cef_process_id_t::PID_BROWSER.into(), Some(&mut message));
     }
 }
