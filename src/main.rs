@@ -71,7 +71,6 @@ fn main() -> ExitCode {
 
     let mut server = Server::new(config.server);
     if !args.no_server {
-        server.setup().expect("Failed to setup server");
         server.start(args.dev).expect("Failed to start server");
     }
 

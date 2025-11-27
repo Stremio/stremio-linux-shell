@@ -5,20 +5,9 @@ use std::{
 };
 
 use anyhow::{Context, Ok};
-use serde::Deserialize;
 use tracing::debug;
-use url::Url;
 
-use crate::{
-    config::ServerConfig,
-    constants::{SERVER_DOWNLOAD_ENDPOINT, SERVER_UPDATER_ENDPOINT},
-};
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct ServerUpdaterResponse {
-    latest_version: String,
-}
+use crate::config::ServerConfig;
 
 pub struct Server {
     config: ServerConfig,
@@ -31,36 +20,6 @@ impl Server {
             config,
             process: None,
         }
-    }
-
-    pub fn setup(&self) -> anyhow::Result<()> {
-        let latest_version = reqwest::blocking::get(SERVER_UPDATER_ENDPOINT)?
-            .json::<ServerUpdaterResponse>()?
-            .latest_version;
-
-        let should_download = self.config.version() != Some(latest_version.clone());
-
-        if should_download {
-            let download_url = Url::parse(
-                SERVER_DOWNLOAD_ENDPOINT
-                    .replace("VERSION", &latest_version)
-                    .as_str(),
-            )?;
-
-            let latest_file = reqwest::blocking::get(download_url)?
-                .bytes()
-                .context("Failed to fetch server file")?;
-
-            self.config
-                .update_file(latest_file)
-                .context("Failed to write server file")?;
-
-            self.config
-                .update_version(latest_version)
-                .context("Failed to write version file")?;
-        }
-
-        Ok(())
     }
 
     pub fn start(&mut self, dev: bool) -> anyhow::Result<()> {

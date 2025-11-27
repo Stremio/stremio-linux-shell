@@ -1,9 +1,7 @@
 use std::{
-    fs, io,
+    fs,
     path::{Path, PathBuf},
 };
-
-use bytes::Bytes;
 
 use crate::constants::DATA_DIR;
 
@@ -60,31 +58,16 @@ impl InstanceConfig {
 }
 
 const SERVER_FILE: &str = "server.js";
-const SERVER_VERSION_FILE: &str = "server_version";
 
 pub struct ServerConfig {
     pub file: PathBuf,
-    pub version_file: PathBuf,
 }
 
 impl ServerConfig {
     pub fn new(data_dir: &Path) -> Self {
         let file = data_dir.join(SERVER_FILE);
-        let version_file = data_dir.join(SERVER_VERSION_FILE);
 
-        Self { file, version_file }
-    }
-
-    pub fn update_file(&self, data: Bytes) -> io::Result<()> {
-        fs::write(&self.file, data)
-    }
-
-    pub fn version(&self) -> Option<String> {
-        fs::read_to_string(&self.version_file).ok()
-    }
-
-    pub fn update_version(&self, version: String) -> io::Result<()> {
-        fs::write(&self.version_file, &version)
+        Self { file }
     }
 }
 
