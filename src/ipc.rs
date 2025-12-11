@@ -19,6 +19,8 @@ pub enum IpcEventMpv {
 pub enum IpcEvent {
     Init(u64),
     Quit,
+    AppReady,
+    ReadClipboard,
     Fullscreen(bool),
     Minimized(bool),
     Visibility(bool),
@@ -96,11 +98,19 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
 
                                 Ok(IpcEvent::Mpv(IpcEventMpv::Set(MpvProperty(name, value))))
                             }
-                            _ => Err("Unknown method"),
+                            _ => {
+                                eprintln!("Unknown IPC method with data: {}", name);
+                                Err("Unknown method")
+                            }
                         },
                         None => match name {
                             "quit" => Ok(IpcEvent::Quit),
-                            _ => Err("Unknown method"),
+                            "app-ready" => Ok(IpcEvent::AppReady),
+                            "read-clipboard" => Ok(IpcEvent::ReadClipboard),
+                            _ => {
+                                eprintln!("Unknown IPC method without data: {}", name);
+                                Err("Unknown method")
+                            }
                         },
                     }
                 }

@@ -172,6 +172,15 @@ impl WebView {
         }
     }
 
+    pub fn send_clipboard_response(&self, text: String) {
+        if let Some(main_frame) = self.main_frame() {
+            let escaped = serde_json::to_string(&text).expect("Failed to serialize clipboard text");
+            let script = format!("CLIPBOARD_RESPONSE({escaped})");
+            let code = CefString::from(script.as_str());
+            main_frame.execute_java_script(Some(&code), None, 0);
+        }
+    }
+
     /// Tells the webview to update its bounds and repaint.
     pub fn update(&self) {
         if let Some(host) = self.browser_host() {

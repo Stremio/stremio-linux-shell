@@ -243,6 +243,15 @@ fn main() -> ExitCode {
                 IpcEvent::OpenExternal(url) => {
                     futures::executor::block_on(app.open_url(url));
                 }
+                IpcEvent::AppReady => {
+                    // App is ready, no action needed
+                }
+                IpcEvent::ReadClipboard => {
+                    let text = arboard::Clipboard::new()
+                        .and_then(|mut clipboard| clipboard.get_text())
+                        .unwrap_or_default();
+                    webview.send_clipboard_response(text);
+                }
                 IpcEvent::Quit => {
                     event_loop_proxy.send_event(UserEvent::Quit).ok();
                 }
