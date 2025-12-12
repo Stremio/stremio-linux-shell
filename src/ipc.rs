@@ -28,6 +28,7 @@ pub enum IpcEvent {
     OpenMedia(String),
     OpenExternal(String),
     Mpv(IpcEventMpv),
+    GpuWarning(String),
 }
 
 #[derive(Deserialize, Debug)]
@@ -242,6 +243,13 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                         "error": error,
                     }
                 ])),
+            }),
+            IpcEvent::GpuWarning(message) => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!(["gpu-warning", message])), // "gpu-warning" will be handled by UI
             }),
             _ => Err("Failed to convert IpcEvent to IpcMessageResponse"),
         }

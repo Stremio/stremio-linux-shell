@@ -234,6 +234,36 @@ fn main() -> ExitCode {
                     let message = ipc::create_response(IpcEvent::OpenMedia(deeplink.to_string()));
                     webview.post_message(message);
                 }
+
+                // Check for GPU configuration issues (Moved here to ensure UI is ready to receive IPC)
+                let mut gpu_warning = None;
+                with_renderer_read(|renderer| {
+                    let name = renderer.renderer_name.to_lowercase();
+                    tracing::info!("Detected Renderer: {}", renderer.renderer_name);
+
+                    let is_igpu = name.contains("intel") || name.contains("llvmpipe") || name.contains("softpipe");
+
+                    if is_igpu {
+                         if let Ok(output) = std::process::Command::new("lspci").output() {
+                            let stdout = String::from_utf8_lossy(&output.stdout).to_lowercase();
+                            let has_dgpu = stdout.lines().any(|line| {
+                                (line.contains("vga") || line.contains("3d")) &&
+                                (line.contains("nvidia") || line.contains("amd") || line.contains("radeon"))
+                            });
+
+                            if has_dgpu {
+                                gpu_warning = Some(format!(
+                                    "Integrated GPU detected ({}) while dedicated GPU is available. Performance may be degraded.",
+                                    renderer.renderer_name
+                                ));
+                            }
+                         }
+                    }
+                });
+
+                if let Some(msg) = gpu_warning {
+                     tray.show_warning(msg);
+                }
             }
             WebViewEvent::Paint => {
                 needs_redraw = true;

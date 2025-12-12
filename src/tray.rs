@@ -17,6 +17,7 @@ const ICON: &[u8] = include_bytes!(concat!(
 
 enum TrayEvent {
     Visibility(bool),
+    ShowWarning(String),
 }
 
 pub struct Tray {
@@ -55,6 +56,21 @@ impl Tray {
                         }
 
                         tray.set_menu(Some(menu));
+                    }
+                    TrayEvent::ShowWarning(message) => {
+                        use gtk::prelude::*;
+                        let dialog = gtk::MessageDialog::new(
+                            None::<&gtk::Window>,
+                            gtk::DialogFlags::MODAL,
+                            gtk::MessageType::Warning,
+                            gtk::ButtonsType::Ok,
+                            message.as_str(),
+                        );
+                        dialog.set_title("Stremio - Performance Warning");
+                        dialog.run();
+                        unsafe {
+                            dialog.destroy();
+                        }
                     }
                 });
 
@@ -117,6 +133,10 @@ impl Tray {
         self.tray_sender
             .send(TrayEvent::Visibility(visibility))
             .ok();
+    }
+
+    pub fn show_warning(&self, message: String) {
+        self.tray_sender.send(TrayEvent::ShowWarning(message)).ok();
     }
 
     pub fn events<F: FnMut(UserEvent)>(&self, handler: F) {

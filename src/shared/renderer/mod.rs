@@ -21,6 +21,7 @@ pub struct Renderer {
     pub width: i32,
     pub height: i32,
     pub refresh_rate: u32,
+    pub renderer_name: String,
 }
 
 // Helper structs for parallel PBO upload
@@ -58,6 +59,10 @@ impl Renderer {
                 panic!("Framebuffer not complete: {status}");
             }
 
+            let renderer_name = std::ffi::CStr::from_ptr(gl::GetString(gl::RENDERER) as *const i8)
+                .to_string_lossy()
+                .into_owned();
+
             Self {
                 program,
                 front_texture,
@@ -72,6 +77,7 @@ impl Renderer {
                 width,
                 height,
                 refresh_rate,
+                renderer_name,
             }
         }
     }
