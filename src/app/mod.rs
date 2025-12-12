@@ -59,6 +59,7 @@ pub enum AppEvent {
     FileHover((PathBuf, MouseState)),
     FileDrop(MouseState),
     FileCancel,
+    ScaleFactorChanged(f64),
 }
 
 pub struct App {
@@ -110,6 +111,10 @@ impl App {
         });
 
         self.window = window;
+        if let Some(window) = self.window.as_ref() {
+            let scale = window.scale_factor();
+            self.sender.send(AppEvent::ScaleFactorChanged(scale)).ok();
+        }
         self.sender.send(AppEvent::Visibility(true)).ok();
 
         shared::create_gl(surface, context);
@@ -331,6 +336,11 @@ impl ApplicationHandler<UserEvent> for App {
             }
             WindowEvent::CloseRequested => {
                 self.destroy_window();
+            }
+            WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
+                self.sender
+                    .send(AppEvent::ScaleFactorChanged(scale_factor))
+                    .ok();
             }
             _ => (),
         }

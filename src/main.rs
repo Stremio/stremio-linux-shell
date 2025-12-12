@@ -163,6 +163,10 @@ fn main() -> ExitCode {
                     needs_redraw = true;
                 });
             }
+            AppEvent::ScaleFactorChanged(scale_factor) => {
+                webview.scale_factor_changed(scale_factor);
+                needs_redraw = true;
+            }
             AppEvent::Focused(state) => {
                 webview.focused(state);
             }
@@ -212,6 +216,7 @@ fn main() -> ExitCode {
                 webview.dev_tools(args.dev);
             }
             WebViewEvent::Loaded => {
+                webview.apply_zoom();
                 if let Some(deeplink) = &args.open
                     && deeplink.starts_with(URI_SCHEME)
                 {

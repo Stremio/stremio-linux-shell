@@ -23,6 +23,16 @@ cef_impl!(
                 CMD_SWITCHES.iter().for_each(|switch| {
                     line.append_switch(Some(&CefString::from(switch.to_owned())));
                 });
+
+                use crate::shared::types::SCALE_FACTOR;
+                let scale_factor = SCALE_FACTOR.load(std::sync::atomic::Ordering::Relaxed);
+                let scale = f64::from_bits(scale_factor);
+
+                if scale > 0.1 {
+                    let switch = CefString::from("force-device-scale-factor");
+                    let value = CefString::from(scale.to_string().as_str());
+                    line.append_switch_with_value(Some(&switch), Some(&value));
+                }
             }
         }
 

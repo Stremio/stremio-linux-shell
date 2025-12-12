@@ -39,7 +39,13 @@ cef_impl!(
         ) {
             with_gl(|_, _| {
                 with_renderer_read(|renderer| {
-                    if renderer.width == width && renderer.height == height {
+                    // Relaxed check: Allow small rounding differences due to scaling
+                    // Also explicitly allow if Paint equals Physical OR Logical (fallback)
+                    let width_diff = (renderer.width - width).abs();
+                    let height_diff = (renderer.height - height).abs();
+                    let is_match = width_diff <= 2 && height_diff <= 2;
+
+                    if is_match {
                         if let Some(dirty) = dirty_rects {
                             renderer.paint(
                                 dirty.x,

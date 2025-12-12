@@ -201,6 +201,40 @@ impl WebView {
         }
     }
 
+    pub fn scale_factor_changed(&self, scale_factor: f64) {
+        use crate::shared::types::SCALE_FACTOR;
+        SCALE_FACTOR.store(scale_factor.to_bits(), std::sync::atomic::Ordering::Relaxed);
+
+        if let Some(host) = self.browser_host() {
+            // host.notify_screen_info_changed();
+            host.was_resized();
+
+            // Calculate and apply zoom level: Zoom = ln(scale) / ln(1.2)
+            // 1.2 is the default zoom step in Chromium
+            if scale_factor > 0.1 {
+                let zoom_level = scale_factor.ln() / 1.2f64.ln();
+                println!(
+                    "DEBUG: Applying Zoom Level: {} (Scale: {})",
+                    zoom_level, scale_factor
+                );
+                host.set_zoom_level(zoom_level);
+            }
+        }
+    }
+
+    pub fn apply_zoom(&self) {
+        use crate::shared::types::SCALE_FACTOR;
+        let scale_factor = SCALE_FACTOR.load(std::sync::atomic::Ordering::Relaxed);
+        let scale = f64::from_bits(scale_factor);
+
+        if scale > 0.1 {
+            if let Some(host) = self.browser_host() {
+                let zoom_level = scale.ln() / 1.2f64.ln();
+                host.set_zoom_level(zoom_level);
+            }
+        }
+    }
+
     pub fn mouse_moved(&mut self, state: MouseState) {
         if let Some(host) = self.browser_host() {
             let event = state.into();

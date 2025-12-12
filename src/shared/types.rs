@@ -1,4 +1,7 @@
+use std::sync::atomic::AtomicU64;
 use winit::event::MouseButton;
+
+pub static SCALE_FACTOR: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Clone, Copy)]
 pub enum Cursor {
