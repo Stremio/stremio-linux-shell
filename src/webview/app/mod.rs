@@ -24,6 +24,18 @@ cef_impl!(
                     line.append_switch(Some(&CefString::from(switch.to_owned())));
                 });
 
+                line.append_switch_with_value(
+                    Some(&CefString::from("renderer-process-limit")),
+                    Some(&CefString::from("1")),
+                );
+                line.append_switch_with_value(
+                    Some(&CefString::from("max-active-webgl-contexts")),
+                    Some(&CefString::from("1")),
+                );
+                line.append_switch(Some(&CefString::from("disable-site-isolation-trials")));
+                line.append_switch(Some(&CefString::from("disable-extensions")));
+                line.append_switch(Some(&CefString::from("no-zygote")));
+
                 use crate::shared::types::SCALE_FACTOR;
                 let scale_factor = SCALE_FACTOR.load(std::sync::atomic::Ordering::Relaxed);
                 let scale = f64::from_bits(scale_factor);

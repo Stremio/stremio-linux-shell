@@ -36,7 +36,7 @@ use crate::{
     constants::{APP_ID, APP_NAME, WINDOW_SIZE},
     shared::{
         self,
-        types::{Cursor, MouseState, UserEvent, WindowSize},
+        types::{Cursor, MouseState, MprisCommand, UserEvent, WindowSize},
     },
 };
 
@@ -60,6 +60,7 @@ pub enum AppEvent {
     FileDrop(MouseState),
     FileCancel,
     ScaleFactorChanged(f64),
+    MprisCommand(MprisCommand),
 }
 
 pub struct App {
@@ -369,6 +370,9 @@ impl ApplicationHandler<UserEvent> for App {
             }
             UserEvent::MpvEventAvailable => {}
             UserEvent::WebViewEventAvailable => {}
+            UserEvent::MprisCommand(command) => {
+                self.sender.send(AppEvent::MprisCommand(command)).ok();
+            }
         }
     }
 }

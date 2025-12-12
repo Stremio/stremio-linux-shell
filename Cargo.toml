@@ -47,6 +47,13 @@ arboard = { version = "3.6.1", features = ["wayland-data-control"] }
 rayon = "1.11.0"
 mimalloc = "0.1.48"
 bumpalo = "3.19.0"
+zbus = { version = "4.4.0", features = ["tokio"] }
+tokio = { version = "1.40", features = [
+    "rt",
+    "macros",
+    "rt-multi-thread",
+    "time",
+] }
 
 [build-dependencies]
 anyhow = "1.0.98"

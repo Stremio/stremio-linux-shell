@@ -23,6 +23,11 @@ impl Server {
     }
 
     pub fn start(&mut self, dev: bool) -> anyhow::Result<()> {
+        if std::net::TcpStream::connect("127.0.0.1:11470").is_ok() {
+            debug!(target: "server", "Server already running on port 11470, skipping spawn");
+            return Ok(());
+        }
+
         let mut child = Command::new("node")
             .env("NO_CORS", (dev as i32).to_string())
             .arg(self.config.file.as_os_str())

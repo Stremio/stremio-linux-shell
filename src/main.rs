@@ -3,6 +3,7 @@ mod config;
 mod constants;
 mod instance;
 mod ipc;
+mod mpris;
 mod player;
 mod server;
 mod shared;
@@ -16,10 +17,14 @@ use constants::{STARTUP_URL, URI_SCHEME};
 use glutin::{display::GetGlDisplay, surface::GlSurface};
 use instance::{Instance, InstanceEvent};
 use ipc::{IpcEvent, IpcEventMpv};
+use mpris::start_mpris_service;
 use player::{Player, PlayerEvent};
 use rust_i18n::i18n;
 use server::Server;
-use shared::{types::UserEvent, with_gl, with_renderer_read, with_renderer_write};
+use shared::{
+    types::{MprisCommand, UserEvent},
+    with_gl, with_renderer_read, with_renderer_write,
+};
 use std::{num::NonZeroU32, process::ExitCode, rc::Rc, time::Duration};
 use tray::Tray;
 use webview::{WebView, WebViewEvent};
@@ -32,6 +37,8 @@ i18n!("locales", fallback = "en");
 
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+static GPU_WARNING: once_cell::sync::OnceCell<Option<String>> = once_cell::sync::OnceCell::new();
 
 #[derive(Parser, Debug)]
 #[command(version, ignore_errors(true))]
@@ -88,6 +95,7 @@ fn main() -> ExitCode {
     let tray = Tray::new(config.tray);
     let mut app = App::new();
     let mut player = Player::new(event_loop_proxy.clone());
+    let mpris_controller = start_mpris_service(event_loop_proxy.clone());
 
     let mut needs_redraw = false;
 
@@ -149,6 +157,12 @@ fn main() -> ExitCode {
                 shared::with_gl(|surface, _| {
                     player.setup(Rc::new(surface.display()));
                 });
+                // Observe properties needed for MPRIS
+                player.observe_property("pause".to_string());
+                player.observe_property("media-title".to_string());
+                player.observe_property("duration".to_string());
+                player.observe_property("time-pos".to_string());
+                player.observe_property("speed".to_string());
             }
             AppEvent::Resized(size) => {
                 with_gl(|surface, context| {
@@ -219,6 +233,58 @@ fn main() -> ExitCode {
             AppEvent::FileCancel => {
                 webview.file_cancel();
             }
+            AppEvent::MprisCommand(cmd) => match cmd {
+                MprisCommand::Play => {
+                    player.set_property(player::MpvProperty(
+                        "pause".to_string(),
+                        Some(serde_json::Value::Bool(false)),
+                    ));
+                }
+                MprisCommand::Pause => {
+                    player.set_property(player::MpvProperty(
+                        "pause".to_string(),
+                        Some(serde_json::Value::Bool(true)),
+                    ));
+                }
+                MprisCommand::PlayPause => {
+                    player.command("cycle".to_string(), vec!["pause".to_string()])
+                }
+                MprisCommand::Stop => player.command("stop".to_string(), vec![]),
+                MprisCommand::Next => {
+                    let message = ipc::create_response(IpcEvent::NextVideo);
+                    webview.post_message(message);
+                }
+                MprisCommand::Previous => {
+                    let message = ipc::create_response(IpcEvent::PreviousVideo);
+                    webview.post_message(message);
+                }
+                MprisCommand::Seek(offset) => {
+                    player.command(
+                        "seek".to_string(),
+                        vec![
+                            (offset as f64 / 1_000_000.0).to_string(),
+                            "relative".to_string(),
+                        ],
+                    );
+                }
+                MprisCommand::SetPosition(position) => {
+                    player.command(
+                        "seek".to_string(),
+                        vec![
+                            (position as f64 / 1_000_000.0).to_string(),
+                            "absolute".to_string(),
+                        ],
+                    );
+                }
+                MprisCommand::SetRate(rate) => {
+                    player.set_property(player::MpvProperty(
+                        "speed".to_string(),
+                        Some(serde_json::Value::Number(
+                            serde_json::Number::from_f64(rate).unwrap(),
+                        )),
+                    ));
+                }
+            },
         });
 
         webview.events(|event| match event {
@@ -236,33 +302,40 @@ fn main() -> ExitCode {
                 }
 
                 // Check for GPU configuration issues (Moved here to ensure UI is ready to receive IPC)
-                let mut gpu_warning = None;
-                with_renderer_read(|renderer| {
-                    let name = renderer.renderer_name.to_lowercase();
-                    tracing::info!("Detected Renderer: {}", renderer.renderer_name);
+                let gpu_warning = GPU_WARNING.get_or_init(|| {
+                    let mut warning = None;
+                    with_renderer_read(|renderer| {
+                        let name = renderer.renderer_name.to_lowercase();
+                        tracing::info!("Detected Renderer: {}", renderer.renderer_name);
 
-                    let is_igpu = name.contains("intel") || name.contains("llvmpipe") || name.contains("softpipe");
+                        let is_igpu = name.contains("intel")
+                            || name.contains("llvmpipe")
+                            || name.contains("softpipe");
 
-                    if is_igpu {
-                         if let Ok(output) = std::process::Command::new("lspci").output() {
-                            let stdout = String::from_utf8_lossy(&output.stdout).to_lowercase();
-                            let has_dgpu = stdout.lines().any(|line| {
-                                (line.contains("vga") || line.contains("3d")) &&
-                                (line.contains("nvidia") || line.contains("amd") || line.contains("radeon"))
-                            });
+                        if is_igpu {
+                            if let Ok(output) = std::process::Command::new("lspci").output() {
+                                let stdout = String::from_utf8_lossy(&output.stdout).to_lowercase();
+                                let has_dgpu = stdout.lines().any(|line| {
+                                    (line.contains("vga") || line.contains("3d"))
+                                        && (line.contains("nvidia")
+                                            || line.contains("amd")
+                                            || line.contains("radeon"))
+                                });
 
-                            if has_dgpu {
-                                gpu_warning = Some(format!(
+                                if has_dgpu {
+                                    warning = Some(format!(
                                     "Integrated GPU detected ({}) while dedicated GPU is available. Performance may be degraded.",
                                     renderer.renderer_name
                                 ));
+                                }
                             }
-                         }
-                    }
+                        }
+                    });
+                    warning
                 });
 
                 if let Some(msg) = gpu_warning {
-                     tray.show_warning(msg);
+                     tray.show_warning(msg.clone());
                 }
             }
             WebViewEvent::Paint => {
@@ -320,19 +393,67 @@ fn main() -> ExitCode {
         player.events(|event| match event {
             PlayerEvent::Start => {
                 futures::executor::block_on(app.disable_idling());
+                mpris_controller.update_playback_status("Playing");
             }
             PlayerEvent::Stop(error) => {
                 futures::executor::block_on(app.enable_idling());
 
                 let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended(error)));
                 webview.post_message(message);
+
+                mpris_controller.update_playback_status("Stopped");
             }
             PlayerEvent::Update => {
                 needs_redraw = true;
             }
             PlayerEvent::PropertyChange(property) => {
-                let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Change(property)));
+                let message =
+                    ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Change(property.clone())));
                 webview.post_message(message);
+
+                match property.name() {
+                    "pause" => {
+                        if let Ok(value) = property.value() {
+                            match value {
+                                player::MpvPropertyValue::Bool(true) => {
+                                    mpris_controller.update_playback_status("Paused")
+                                }
+                                player::MpvPropertyValue::Bool(false) => {
+                                    mpris_controller.update_playback_status("Playing")
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    "media-title" => {
+                        if let Ok(player::MpvPropertyValue::String(title)) = property.value() {
+                            let clean_title = if title.starts_with("magnet:")
+                                || title.starts_with("http://")
+                                || title.starts_with("https://")
+                                || title.starts_with("file://")
+                            {
+                                "Stremio".to_string()
+                            } else {
+                                title
+                            };
+                            mpris_controller.update_metadata(Some(clean_title), None);
+                        }
+                    }
+                    "duration" => {
+                        if let Ok(player::MpvPropertyValue::Float(duration)) = property.value() {
+                            mpris_controller.update_metadata(None, Some(duration));
+                        }
+                    }
+                    "time-pos" => {
+                        if let Ok(player::MpvPropertyValue::Float(position)) = property.value() {
+                            mpris_controller.update_position(position);
+                        }
+                    }
+                    "speed" => {
+                        // TODO: we don't track rate changes from MPV yet in controller
+                    }
+                    _ => {}
+                }
             }
             PlayerEvent::MpvError(error) => {
                 let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Error(error)));

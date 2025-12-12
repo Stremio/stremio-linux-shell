@@ -29,6 +29,8 @@ pub enum IpcEvent {
     OpenExternal(String),
     Mpv(IpcEventMpv),
     GpuWarning(String),
+    NextVideo,
+    PreviousVideo,
 }
 
 #[derive(Deserialize, Debug)]
@@ -47,17 +49,28 @@ pub struct IpcMessageRequest {
 impl TryFrom<IpcMessageRequest> for IpcEvent {
     type Error = &'static str;
 
-    fn try_from(value: IpcMessageRequest) -> Result<Self, Self::Error> {
+    fn try_from(mut value: IpcMessageRequest) -> Result<Self, Self::Error> {
         match value.r#type {
             3 => Ok(IpcEvent::Init(value.id)),
-            6 => match value.args {
+            6 => match value.args.take() {
                 Some(args) => {
-                    let args: Vec<Value> = serde_json::from_value(args).expect("Invalid arguments");
-                    let name = args.first().and_then(Value::as_str).ok_or("Invalid name")?;
-                    let data = args.get(1).cloned();
+                    let mut args: Vec<Value> =
+                        serde_json::from_value(args).expect("Invalid arguments");
+                    if args.is_empty() {
+                        return Err("Invalid name");
+                    }
+                    let name = match args.remove(0) {
+                        Value::String(s) => s,
+                        _ => return Err("Invalid name type"),
+                    };
+                    let data = if !args.is_empty() {
+                        Some(args.remove(0))
+                    } else {
+                        None
+                    };
 
                     match data {
-                        Some(data) => match name {
+                        Some(data) => match name.as_str() {
                             "win-set-visibility" => {
                                 let data: IpcMessageRequestWinSetVisilibty =
                                     serde_json::from_value(data)
@@ -74,38 +87,41 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                             "mpv-command" => {
                                 let data: Vec<String> = serde_json::from_value(data)
                                     .expect("Invalid mpv-command arguments");
-                                let name = data[0].clone();
-
-                                let mut args = vec![];
-                                for arg in data.iter().skip(1) {
-                                    args.push(arg.clone());
-                                }
+                                let mut iter = data.into_iter();
+                                let name = iter.next().ok_or("Invalid mpv-command name")?;
+                                let args = iter.collect();
 
                                 Ok(IpcEvent::Mpv(IpcEventMpv::Command((name, args))))
                             }
                             "mpv-observe-prop" => {
-                                let name = data.as_str().expect("Invalid mpv-observe-prop name");
-                                Ok(IpcEvent::Mpv(IpcEventMpv::Observe(name.to_owned())))
+                                let name = match data {
+                                    Value::String(s) => s,
+                                    _ => return Err("Invalid mpv-observe-prop name"),
+                                };
+                                Ok(IpcEvent::Mpv(IpcEventMpv::Observe(name)))
                             }
                             "mpv-set-prop" => {
                                 let key_value: Vec<Value> = serde_json::from_value(data)
                                     .expect("Invalid mpv-set-prop arguments");
+                                let mut iter = key_value.into_iter();
 
-                                let name = key_value[0]
-                                    .as_str()
-                                    .expect("Invalid mpv-set-prop name")
-                                    .to_owned();
+                                let name = match iter.next() {
+                                    Some(Value::String(s)) => s,
+                                    _ => return Err("Invalid mpv-set-prop name"),
+                                };
 
-                                let value = key_value.get(1).cloned();
+                                let value = iter.next();
 
                                 Ok(IpcEvent::Mpv(IpcEventMpv::Set(MpvProperty(name, value))))
                             }
+                            // Handle app-ready case-insensitively and trim
+                            s if s.trim() == "app-ready" => Ok(IpcEvent::AppReady),
                             _ => {
                                 eprintln!("Unknown IPC method with data: {}", name);
                                 Err("Unknown method")
                             }
                         },
-                        None => match name {
+                        None => match name.as_str() {
                             "quit" => Ok(IpcEvent::Quit),
                             "app-ready" => Ok(IpcEvent::AppReady),
                             "read-clipboard" => Ok(IpcEvent::ReadClipboard),
@@ -250,6 +266,20 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                 object: TRANSPORT_NAME.to_owned(),
                 data: None,
                 args: Some(json!(["gpu-warning", message])), // "gpu-warning" will be handled by UI
+            }),
+            IpcEvent::NextVideo => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!(["next-video"])),
+            }),
+            IpcEvent::PreviousVideo => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!(["previous-video"])),
             }),
             _ => Err("Failed to convert IpcEvent to IpcMessageResponse"),
         }

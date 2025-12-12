@@ -89,7 +89,7 @@ pub fn create_geometry(program: u32) -> (GLuint, GLuint) {
     }
 }
 
-pub fn create_texture(width: i32, height: i32) -> GLuint {
+pub fn create_texture(width: i32, height: i32, internal_format: GLuint, format: GLuint) -> GLuint {
     unsafe {
         let mut texture = 0;
         gl::GenTextures(1, &mut texture);
@@ -98,11 +98,11 @@ pub fn create_texture(width: i32, height: i32) -> GLuint {
         gl::TexImage2D(
             gl::TEXTURE_2D,
             0,
-            gl::RGBA8 as GLint,
+            internal_format as GLint,
             width,
             height,
             0,
-            gl::BGRA,
+            format,
             gl::UNSIGNED_BYTE,
             ptr::null(),
         );
@@ -172,17 +172,23 @@ pub fn resize_pbo(pbo: GLuint, width: i32, height: i32) {
     }
 }
 
-pub fn resize_texture(texture: GLuint, width: i32, height: i32) {
+pub fn resize_texture(
+    texture: GLuint,
+    width: i32,
+    height: i32,
+    internal_format: GLuint,
+    format: GLuint,
+) {
     unsafe {
         gl::BindTexture(gl::TEXTURE_2D, texture);
         gl::TexImage2D(
             gl::TEXTURE_2D,
             0,
-            gl::RGBA8 as GLint,
+            internal_format as GLint,
             width,
             height,
             0,
-            gl::BGRA,
+            format,
             gl::UNSIGNED_BYTE,
             ptr::null(),
         );

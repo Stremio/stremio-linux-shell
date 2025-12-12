@@ -45,6 +45,19 @@ impl Default for MouseState {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum MprisCommand {
+    Play,
+    Pause,
+    PlayPause,
+    Stop,
+    Next,
+    Previous,
+    Seek(i64),
+    SetPosition(i64),
+    SetRate(f64),
+}
+
 pub enum UserEvent {
     Raise,
     Show,
@@ -52,4 +65,5 @@ pub enum UserEvent {
     Quit,
     MpvEventAvailable,
     WebViewEventAvailable,
+    MprisCommand(MprisCommand),
 }

@@ -42,10 +42,12 @@ impl Renderer {
             gl::DeleteShader(vertex_shader);
             gl::DeleteShader(fragment_shader);
 
-            let front_texture = utils::create_texture(width, height);
+            let front_texture =
+                utils::create_texture(width, height, gl::RGBA8 as u32, gl::BGRA as u32);
             let front_uniform = gl::GetUniformLocation(program, c"front_texture".as_ptr() as _);
 
-            let back_texture = utils::create_texture(width, height);
+            let back_texture =
+                utils::create_texture(width, height, gl::RGB8 as u32, gl::BGR as u32);
             let back_uniform = gl::GetUniformLocation(program, c"back_texture".as_ptr() as _);
 
             let (vao, vbo) = utils::create_geometry(program);
@@ -93,8 +95,20 @@ impl Renderer {
 
             utils::resize_pbo(self.pbos[0], width, height);
             utils::resize_pbo(self.pbos[1], width, height);
-            utils::resize_texture(self.back_texture, width, height);
-            utils::resize_texture(self.front_texture, width, height);
+            utils::resize_texture(
+                self.back_texture,
+                width,
+                height,
+                gl::RGB8 as u32,
+                gl::BGR as u32,
+            );
+            utils::resize_texture(
+                self.front_texture,
+                width,
+                height,
+                gl::RGBA8 as u32,
+                gl::BGRA as u32,
+            );
         }
     }
 
@@ -222,10 +236,6 @@ impl Renderer {
 
     pub fn draw(&self) {
         unsafe {
-            gl::Enable(gl::BLEND);
-            gl::BlendFunc(gl::ONE, gl::ONE_MINUS_SRC_ALPHA);
-            gl::BlendEquation(gl::FUNC_ADD);
-
             gl::UseProgram(self.program);
 
             gl::ActiveTexture(gl::TEXTURE0);
@@ -237,8 +247,6 @@ impl Renderer {
             gl::Uniform1i(self.front_uniform, 1);
 
             gl::BindVertexArray(self.vao);
-            gl::ClearColor(0.0, 0.0, 0.0, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT);
             gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 4);
         }
     }

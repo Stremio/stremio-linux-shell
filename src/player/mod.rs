@@ -1,6 +1,6 @@
 mod constants;
 
-use std::{env, ffi::CString, os::raw::c_void, rc::Rc};
+use std::{collections::HashSet, env, ffi::CString, os::raw::c_void, rc::Rc, sync::RwLock};
 
 use crate::shared::types::UserEvent;
 use constants::{BOOL_PROPERTIES, FLOAT_PROPERTIES, STRING_PROPERTIES};
@@ -21,7 +21,7 @@ use winit::event_loop::EventLoopProxy;
 
 pub type GLContext = Rc<Display>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MpvPropertyValue {
     Float(f64),
     Bool(bool),
@@ -47,7 +47,7 @@ impl Serialize for MpvPropertyValue {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct MpvProperty(pub String, pub Option<Value>);
 
 impl MpvProperty {
@@ -148,6 +148,7 @@ pub struct Player {
     render_context: Option<RenderContext>,
     sender: Sender<PlayerEvent>,
     receiver: Receiver<PlayerEvent>,
+    observed: RwLock<HashSet<String>>,
 }
 
 impl Player {
@@ -168,7 +169,7 @@ impl Player {
             init.set_property("video-timing-offset", "0")?;
             init.set_property("terminal", "yes")?;
             init.set_property("msg-level", msg_level)?;
-            init.set_property("hwdec", "auto-safe")?;
+
             Ok(())
         })
         .expect("Failed to creating mpv");
@@ -190,6 +191,7 @@ impl Player {
             render_context: None,
             sender,
             receiver,
+            observed: RwLock::new(HashSet::new()),
         }
     }
 
@@ -283,13 +285,19 @@ impl Player {
             name if FLOAT_PROPERTIES.contains(&name) => Some(Format::Double),
             name if BOOL_PROPERTIES.contains(&name) => Some(Format::Flag),
             name if STRING_PROPERTIES.contains(&name) => Some(Format::String),
+            name if STRING_PROPERTIES.contains(&name) => Some(Format::String),
             _ => None,
         };
 
         if let Some(format) = format
-            && let Err(e) = self.event_context.observe_property(&name, format, 0)
+            && !self.observed.read().unwrap().contains(&name)
+            && let Ok(mut observed) = self.observed.write()
         {
-            error!("Failed to observe property {name}: {e}");
+            if let Err(e) = self.event_context.observe_property(&name, format, 0) {
+                error!("Failed to observe property {name}: {e}");
+            } else {
+                observed.insert(name);
+            }
         }
     }
 
