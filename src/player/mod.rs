@@ -166,9 +166,16 @@ impl Player {
 
         let mpv = Mpv::with_initializer(|init| {
             init.set_property("vo", "libmpv")?;
+            init.set_property("hwdec", "auto")?;
+            init.set_property("vd-lavc-dr", "yes")?;
             init.set_property("video-timing-offset", "0")?;
             init.set_property("terminal", "yes")?;
             init.set_property("msg-level", msg_level)?;
+
+            // Performance tuning
+            init.set_property("cache", "yes")?;
+            init.set_property("demuxer-max-bytes", "100000000")?; // 100MB
+            init.set_property("demuxer-readahead-secs", "20")?;
 
             Ok(())
         })

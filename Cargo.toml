@@ -46,7 +46,7 @@ winit = { git = "https://github.com/Stremio/winit", branch = "feat/wayland-file-
 arboard = { version = "3.6.1", features = ["wayland-data-control"] }
 rayon = "1.11.0"
 mimalloc = "0.1.48"
-bumpalo = "3.19.0"
+
 zbus = { version = "4.4.0", features = ["tokio"] }
 tokio = { version = "1.40", features = [
     "rt",
@@ -69,6 +69,6 @@ ureq = { version = "3.0.12", features = ["json"] }
 [profile.release]
 lto = true
 codegen-units = 1
-# panic = "abort" # Removed to ensure Server::drop cleans up child process
+panic = "abort"   # Removed to ensure Server::drop cleans up child process
 opt-level = 3
 strip = true

@@ -140,7 +140,13 @@ impl Renderer {
             let row_bytes = width * BYTES_PER_PIXEL;
             let stride = full_width * BYTES_PER_PIXEL;
 
-            let ptr = gl::MapBuffer(gl::PIXEL_UNPACK_BUFFER, gl::WRITE_ONLY) as *mut u8;
+            let access = gl::MAP_WRITE_BIT | gl::MAP_INVALIDATE_BUFFER_BIT;
+            let ptr = gl::MapBufferRange(
+                gl::PIXEL_UNPACK_BUFFER,
+                0,
+                (width * height * BYTES_PER_PIXEL) as isize,
+                access,
+            ) as *mut u8;
 
             if !ptr.is_null() {
                 use rayon::prelude::*;
@@ -248,6 +254,16 @@ impl Renderer {
 
             gl::BindVertexArray(self.vao);
             gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 4);
+        }
+    }
+
+    pub fn clear_fbo(&self) {
+        unsafe {
+            gl::BindFramebuffer(gl::FRAMEBUFFER, self.fbo);
+            gl::Viewport(0, 0, self.width, self.height);
+            gl::ClearColor(0.0, 0.0, 0.0, 1.0);
+            gl::Clear(gl::COLOR_BUFFER_BIT);
+            gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
         }
     }
 }

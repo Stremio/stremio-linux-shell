@@ -21,7 +21,7 @@ cef_impl!(
                 };
 
                 let settings = BrowserSettings {
-                    windowless_frame_rate: std::cmp::min(60, renderer.refresh_rate as i32),
+                    windowless_frame_rate: renderer.refresh_rate as i32,
                     ..Default::default()
                 };
 

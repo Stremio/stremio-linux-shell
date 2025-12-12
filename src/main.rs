@@ -120,6 +120,7 @@ fn main() -> ExitCode {
         if needs_redraw {
             with_gl(|surface, context| {
                 with_renderer_read(|renderer| {
+                    renderer.clear_fbo();
                     player.render(renderer.fbo, renderer.width, renderer.height);
                     renderer.draw();
                 });

@@ -1,2 +1,5 @@
+[build]
+rustflags = ["-C", "target-cpu=native"]
+
 [env]
-CEF_PATH = "vendor/cef"
+CEF_PATH = "target/cef"

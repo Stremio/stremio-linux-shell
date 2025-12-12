@@ -10,5 +10,6 @@ void main() {
     vec4 back_color = texture(back_texture, vec2(v_texcoord.x, 1.0 - v_texcoord.y));
     vec4 front_color = texture(front_texture, vec2(v_texcoord.x, 1.0 - v_texcoord.y));
     
-    frag_color = mix(back_color, front_color, front_color.a);
+    vec3 mixed_color = mix(back_color.rgb, front_color.rgb, front_color.a);
+    frag_color = vec4(mixed_color, 1.0);
 }

@@ -36,6 +36,12 @@ cef_impl!(
                 line.append_switch(Some(&CefString::from("disable-extensions")));
                 line.append_switch(Some(&CefString::from("no-zygote")));
 
+                // High-Performance GPU Flags
+                line.append_switch(Some(&CefString::from("enable-gpu-rasterization")));
+                line.append_switch(Some(&CefString::from("enable-zero-copy")));
+                line.append_switch(Some(&CefString::from("ignore-gpu-blocklist")));
+                line.append_switch(Some(&CefString::from("disable-gpu-driver-bug-workarounds")));
+
                 use crate::shared::types::SCALE_FACTOR;
                 let scale_factor = SCALE_FACTOR.load(std::sync::atomic::Ordering::Relaxed);
                 let scale = f64::from_bits(scale_factor);

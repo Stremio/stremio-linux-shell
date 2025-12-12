@@ -4147,7 +4147,6 @@ dependencies = [
  "anyhow",
  "arboard",
  "ashpd",
- "bumpalo",
  "bytes",
  "bzip2",
  "cef",

@@ -28,12 +28,19 @@ impl Server {
             return Ok(());
         }
 
-        let mut child = Command::new("node")
-            .env("NO_CORS", (dev as i32).to_string())
-            .arg(self.config.file.as_os_str())
-            .stdout(process::Stdio::piped())
-            .spawn()
-            .context("Failed to start server")?;
+        use std::os::unix::process::CommandExt;
+        let mut child = unsafe {
+            Command::new("node")
+                .env("NO_CORS", (dev as i32).to_string())
+                .arg(self.config.file.as_os_str())
+                .stdout(process::Stdio::piped())
+                .pre_exec(|| {
+                    libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGTERM);
+                    Result::Ok(())
+                })
+                .spawn()
+                .context("Failed to start server")?
+        };
 
         if let Some(stdout) = child.stdout.take() {
             let reader = BufReader::new(stdout);
