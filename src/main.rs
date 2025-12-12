@@ -30,6 +30,9 @@ use winit::{
 
 i18n!("locales", fallback = "en");
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[derive(Parser, Debug)]
 #[command(version, ignore_errors(true))]
 struct Args {
@@ -53,7 +56,15 @@ fn main() -> ExitCode {
     let args = Args::parse();
     let config = Config::new();
 
-    let mut webview = WebView::new(config.webview);
+    let mut event_loop = EventLoop::<UserEvent>::with_user_event()
+        .build()
+        .expect("Failed to create event loop");
+
+    event_loop.set_control_flow(ControlFlow::Wait);
+
+    let event_loop_proxy = event_loop.create_proxy();
+
+    let mut webview = WebView::new(config.webview, event_loop_proxy.clone());
     if webview.should_exit() {
         return ExitCode::SUCCESS;
     }
@@ -76,15 +87,7 @@ fn main() -> ExitCode {
 
     let tray = Tray::new(config.tray);
     let mut app = App::new();
-    let mut player = Player::new();
-
-    let mut event_loop = EventLoop::<UserEvent>::with_user_event()
-        .build()
-        .expect("Failed to create event loop");
-
-    event_loop.set_control_flow(ControlFlow::Poll);
-
-    let event_loop_proxy = event_loop.create_proxy();
+    let mut player = Player::new(event_loop_proxy.clone());
 
     let mut needs_redraw = false;
 
@@ -175,6 +178,14 @@ fn main() -> ExitCode {
                 webview.post_message(message);
 
                 tray.update(visible);
+
+                if visible {
+                    shared::with_gl(|surface, _| {
+                        player.setup(Rc::new(surface.display()));
+                    });
+                } else {
+                    player.release();
+                }
             }
             AppEvent::Minimized(minimized) => {
                 let message = ipc::create_response(IpcEvent::Minimized(minimized));
@@ -291,6 +302,10 @@ fn main() -> ExitCode {
             }
             PlayerEvent::PropertyChange(property) => {
                 let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Change(property)));
+                webview.post_message(message);
+            }
+            PlayerEvent::MpvError(error) => {
+                let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Error(error)));
                 webview.post_message(message);
             }
         });

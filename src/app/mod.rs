@@ -166,11 +166,17 @@ impl App {
         if let Some(window) = self.window.as_ref() {
             for monitor in window.available_monitors() {
                 if let Some(m_hz) = monitor.refresh_rate_millihertz() {
-                    return m_hz / 1000;
+                    let refresh_rate = m_hz / 1000;
+                    println!(
+                        "Monitor found: {}Hz ({} mHz) - Using native refresh rate",
+                        refresh_rate, m_hz
+                    );
+                    return refresh_rate;
                 }
             }
         }
 
+        println!("No monitor detected, defaulting to 30Hz");
         30
     }
 
@@ -361,6 +367,8 @@ impl ApplicationHandler<UserEvent> for App {
             UserEvent::Quit => {
                 event_loop.exit();
             }
+            UserEvent::MpvEventAvailable => {}
+            UserEvent::WebViewEventAvailable => {}
         }
     }
 }

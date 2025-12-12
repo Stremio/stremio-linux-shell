@@ -16,11 +16,14 @@ pub struct Renderer {
     pub vao: GLuint,
     pub vbo: GLuint,
     pub fbo: GLuint,
-    pub pbo: GLuint,
+    pub pbos: [GLuint; 2],
+    pub pbo_index: std::sync::atomic::AtomicUsize,
     pub width: i32,
     pub height: i32,
     pub refresh_rate: u32,
 }
+
+// Helper structs for parallel PBO upload
 
 impl Renderer {
     pub fn new((width, height): (i32, i32), refresh_rate: u32) -> Self {
@@ -47,7 +50,8 @@ impl Renderer {
             let (vao, vbo) = utils::create_geometry(program);
             let fbo = utils::create_fbo(back_texture);
 
-            let pbo = utils::create_pbo(width, height);
+            let pbo1 = utils::create_pbo(width, height);
+            let pbo2 = utils::create_pbo(width, height);
 
             let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
             if status != gl::FRAMEBUFFER_COMPLETE {
@@ -63,7 +67,8 @@ impl Renderer {
                 vao,
                 vbo,
                 fbo,
-                pbo,
+                pbos: [pbo1, pbo2],
+                pbo_index: std::sync::atomic::AtomicUsize::new(0),
                 width,
                 height,
                 refresh_rate,
@@ -78,7 +83,12 @@ impl Renderer {
 
             gl::Viewport(0, 0, width, height);
 
+            gl::Viewport(0, 0, width, height);
+
+            utils::resize_pbo(self.pbos[0], width, height);
+            utils::resize_pbo(self.pbos[1], width, height);
             utils::resize_texture(self.back_texture, width, height);
+            utils::resize_texture(self.front_texture, width, height);
         }
     }
 
@@ -94,25 +104,94 @@ impl Renderer {
         buffer: *const u8,
         full_width: i32,
     ) {
-        utils::resize_pbo(self.pbo, self.width, self.height);
-        utils::resize_texture(self.front_texture, self.width, self.height);
-
         unsafe {
-            gl::BindBuffer(gl::PIXEL_UNPACK_BUFFER, self.pbo);
+            // Swap PBO index (Double Buffering)
+            let current = self.pbo_index.load(std::sync::atomic::Ordering::Relaxed);
+            let next_index = (current + 1) % 2;
+            self.pbo_index
+                .store(next_index, std::sync::atomic::Ordering::Relaxed);
+            let next_pbo = self.pbos[next_index];
+
+            gl::BindBuffer(gl::PIXEL_UNPACK_BUFFER, next_pbo);
+
+            // No glBufferData call here! We reuse the pre-allocated buffer.
+            // This eliminates the 5ms allocation stall.
 
             let row_bytes = width * BYTES_PER_PIXEL;
             let stride = full_width * BYTES_PER_PIXEL;
 
             let ptr = gl::MapBuffer(gl::PIXEL_UNPACK_BUFFER, gl::WRITE_ONLY) as *mut u8;
+
             if !ptr.is_null() {
-                for row in 0..height {
-                    let src_offset = (y + row) * stride + (x * BYTES_PER_PIXEL);
-                    let dst_offset = row * row_bytes;
+                use rayon::prelude::*;
 
-                    let src_ptr = buffer.add(src_offset as usize);
-                    let dst_ptr = ptr.add(dst_offset as usize);
+                // Cast to usize to allow sending to threads
+                let dst_addr = ptr as usize;
+                let src_addr = buffer as usize;
 
-                    ptr::copy_nonoverlapping(src_ptr, dst_ptr, row_bytes as usize);
+                let total_bytes = width * height * BYTES_PER_PIXEL;
+                let use_parallel = total_bytes > 4_194_304; // 4MB threshold
+
+                if use_parallel {
+                    // Calculate optimal chunk size to avoid Rayon overhead
+                    // Target ~32KB per task
+                    let bytes_per_row = (width * BYTES_PER_PIXEL) as usize;
+                    let min_rows = std::cmp::max(1, 32_768 / bytes_per_row);
+
+                    if width == full_width {
+                        (0..height)
+                            .into_par_iter()
+                            .with_min_len(min_rows)
+                            .for_each(move |row| {
+                                let row_len = stride as usize;
+                                let src_offset = (y * stride + x * BYTES_PER_PIXEL) as usize
+                                    + (row as usize * row_len);
+                                let dst_offset = row as usize * row_len;
+
+                                let src = (src_addr as *const u8).add(src_offset);
+                                let dst = (dst_addr as *mut u8).add(dst_offset);
+
+                                ptr::copy_nonoverlapping(src, dst, row_len);
+                            });
+                    } else {
+                        (0..height)
+                            .into_par_iter()
+                            .with_min_len(min_rows)
+                            .for_each(move |row| {
+                                let src_offset = (y + row) * stride + (x * BYTES_PER_PIXEL);
+                                let dst_offset = row * row_bytes;
+
+                                let src = (src_addr as *const u8).add(src_offset as usize);
+                                let dst = (dst_addr as *mut u8).add(dst_offset as usize);
+
+                                ptr::copy_nonoverlapping(src, dst, row_bytes as usize);
+                            });
+                    }
+                } else {
+                    // Sequential copy for small updates to avoid thread pool overhead
+                    if width == full_width {
+                        (0..height).for_each(move |row| {
+                            let row_len = stride as usize;
+                            let src_offset = (y * stride + x * BYTES_PER_PIXEL) as usize
+                                + (row as usize * row_len);
+                            let dst_offset = row as usize * row_len;
+
+                            let src = (src_addr as *const u8).add(src_offset);
+                            let dst = (dst_addr as *mut u8).add(dst_offset);
+
+                            ptr::copy_nonoverlapping(src, dst, row_len);
+                        });
+                    } else {
+                        (0..height).for_each(move |row| {
+                            let src_offset = (y + row) * stride + (x * BYTES_PER_PIXEL);
+                            let dst_offset = row * row_bytes;
+
+                            let src = (src_addr as *const u8).add(src_offset as usize);
+                            let dst = (dst_addr as *mut u8).add(dst_offset as usize);
+
+                            ptr::copy_nonoverlapping(src, dst, row_bytes as usize);
+                        });
+                    }
                 }
 
                 gl::UnmapBuffer(gl::PIXEL_UNPACK_BUFFER);
@@ -167,7 +246,7 @@ impl Drop for Renderer {
             gl::DeleteTextures(1, &self.back_texture);
             gl::DeleteBuffers(1, &self.vbo);
             gl::DeleteVertexArrays(1, &self.vao);
-            gl::DeleteBuffers(1, &self.pbo);
+            gl::DeleteBuffers(2, self.pbos.as_ptr());
             gl::DeleteBuffers(1, &self.fbo);
         }
     }

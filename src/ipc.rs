@@ -13,6 +13,7 @@ pub enum IpcEventMpv {
     Set(MpvProperty),
     Change(MpvProperty),
     Ended(Option<String>),
+    Error(String),
 }
 
 #[derive(Deserialize, Debug)]
@@ -225,6 +226,18 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                 data: None,
                 args: Some(json!([
                     "mpv-event-ended",
+                    {
+                        "error": error,
+                    }
+                ])),
+            }),
+            IpcEvent::Mpv(IpcEventMpv::Error(error)) => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!([
+                    "mpv-event-error",
                     {
                         "error": error,
                     }

@@ -22,15 +22,17 @@ use once_cell::sync::OnceCell;
 use url::Url;
 use winit::{
     event::{KeyEvent, MouseButton, Touch, TouchPhase},
+    event_loop::EventLoopProxy,
     keyboard::{ModifiersState, PhysicalKey},
 };
 
 use crate::{
     config::WebViewConfig,
-    shared::types::{Cursor, MouseState},
+    shared::types::{Cursor, MouseState, UserEvent},
 };
 
 static SENDER: OnceCell<Sender<WebViewEvent>> = OnceCell::new();
+pub static PROXY: OnceCell<EventLoopProxy<UserEvent>> = OnceCell::new();
 static BROWSER: OnceCell<Browser> = OnceCell::new();
 
 pub enum WebViewEvent {
@@ -53,13 +55,14 @@ pub struct WebView {
 }
 
 impl WebView {
-    pub fn new(config: WebViewConfig) -> Self {
+    pub fn new(config: WebViewConfig, proxy: EventLoopProxy<UserEvent>) -> Self {
         let _ = api_hash(cef_dll_sys::CEF_API_VERSION_LAST, 0);
 
         let args = Args::new();
 
         let (sender, receiver) = unbounded::<WebViewEvent>();
         SENDER.get_or_init(|| sender);
+        PROXY.get_or_init(|| proxy);
 
         let app = WebViewApp::new();
 
@@ -170,7 +173,9 @@ impl WebView {
         if let Some(main_frame) = self.main_frame() {
             let serialized_message =
                 serde_json::to_string(&message).expect("Failed to serialize as JSON string");
+
             let script = format!("{IPC_SENDER}({serialized_message})");
+
             let code = CefString::from(script.as_str());
             main_frame.execute_java_script(Some(&code), None, 0);
         }
@@ -213,10 +218,6 @@ impl WebView {
             // 1.2 is the default zoom step in Chromium
             if scale_factor > 0.1 {
                 let zoom_level = scale_factor.ln() / 1.2f64.ln();
-                println!(
-                    "DEBUG: Applying Zoom Level: {} (Scale: {})",
-                    zoom_level, scale_factor
-                );
                 host.set_zoom_level(zoom_level);
             }
         }

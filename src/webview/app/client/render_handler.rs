@@ -2,8 +2,8 @@ use std::os::raw::c_int;
 
 use crate::{
     WebViewEvent, cef_impl,
-    shared::{with_gl, with_renderer_read},
-    webview::SENDER,
+    shared::{types::UserEvent, with_gl, with_renderer_read},
+    webview::{PROXY, SENDER},
 };
 
 cef_impl!(
@@ -61,6 +61,9 @@ cef_impl!(
 
                         if let Some(sender) = SENDER.get() {
                             sender.send(WebViewEvent::Paint).ok();
+                            if let Some(proxy) = PROXY.get() {
+                                proxy.send_event(UserEvent::WebViewEventAvailable).ok();
+                            }
                         }
                     } else if let Some(sender) = SENDER.get() {
                         sender.send(WebViewEvent::Resized).ok();

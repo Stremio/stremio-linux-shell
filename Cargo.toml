@@ -11,7 +11,12 @@ offline-build = []
 
 [dependencies]
 anyhow = "1.0.98"
-ashpd = { version = "0.11.0", features = ["async-std", "raw-window-handle", "raw_handle", "wayland"], default-features = false }
+ashpd = { version = "0.11.0", features = [
+    "async-std",
+    "raw-window-handle",
+    "raw_handle",
+    "wayland",
+], default-features = false }
 bytes = "1.10.1"
 cef = { version = "138.0.21", git = "https://github.com/Stremio/cef-rs" }
 cef-dll-sys = { version = "138.0.21", git = "https://github.com/Stremio/cef-rs" }
@@ -39,6 +44,9 @@ tray-icon = { version = "0.20.1", default-features = false }
 url = "2.5.4"
 winit = { git = "https://github.com/Stremio/winit", branch = "feat/wayland-file-window-events" }
 arboard = { version = "3.6.1", features = ["wayland-data-control"] }
+rayon = "1.11.0"
+mimalloc = "0.1.48"
+bumpalo = "3.19.0"
 
 [build-dependencies]
 anyhow = "1.0.98"
@@ -50,3 +58,10 @@ tar = "0.4.44"
 toml = "0.8.23"
 ureq = { version = "3.0.12", features = ["json"] }
 
+
+[profile.release]
+lto = true
+codegen-units = 1
+# panic = "abort" # Removed to ensure Server::drop cleans up child process
+opt-level = 3
+strip = true

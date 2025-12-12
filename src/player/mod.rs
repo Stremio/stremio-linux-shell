@@ -2,6 +2,7 @@ mod constants;
 
 use std::{env, ffi::CString, os::raw::c_void, rc::Rc};
 
+use crate::shared::types::UserEvent;
 use constants::{BOOL_PROPERTIES, FLOAT_PROPERTIES, STRING_PROPERTIES};
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use glutin::{display::Display, prelude::GlDisplay};
@@ -16,6 +17,7 @@ use rust_i18n::t;
 use serde::{Deserialize, Serialize, Serializer, ser::SerializeStruct};
 use serde_json::{Number, Value};
 use tracing::error;
+use winit::event_loop::EventLoopProxy;
 
 pub type GLContext = Rc<Display>;
 
@@ -100,6 +102,7 @@ pub enum PlayerEvent {
     Stop(Option<String>),
     Update,
     PropertyChange(MpvProperty),
+    MpvError(String),
 }
 
 impl<'a> TryFrom<Event<'a>> for PlayerEvent {
@@ -148,7 +151,7 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new() -> Self {
+    pub fn new(proxy: EventLoopProxy<UserEvent>) -> Self {
         // Required for libmpv to work alongside gtk
         unsafe {
             setlocale(LC_NUMERIC, c"C".as_ptr());
@@ -165,14 +168,19 @@ impl Player {
             init.set_property("video-timing-offset", "0")?;
             init.set_property("terminal", "yes")?;
             init.set_property("msg-level", msg_level)?;
+            init.set_property("hwdec", "auto-safe")?;
             Ok(())
         })
-        .expect("Failed to create mpv");
+        .expect("Failed to creating mpv");
 
-        let event_context = EventContext::new(mpv.ctx);
-        event_context
-            .disable_deprecated_events()
-            .expect("Failed to disable deprecated events");
+        let mut event_context = EventContext::new(mpv.ctx);
+        if let Err(e) = event_context.disable_deprecated_events() {
+            error!("Failed to disable deprecated events: {}", e);
+        }
+
+        event_context.set_wakeup_callback(move || {
+            proxy.send_event(UserEvent::MpvEventAvailable).ok();
+        });
 
         let (sender, receiver) = unbounded::<PlayerEvent>();
 
@@ -195,7 +203,7 @@ impl Player {
 
         let mpv_handle = unsafe { self.mpv.ctx.as_mut() };
 
-        let mut render_context = RenderContext::new(
+        let render_context = RenderContext::new(
             mpv_handle,
             vec![
                 RenderParam::ApiType(RenderParamApiType::OpenGl),
@@ -206,22 +214,27 @@ impl Player {
                 RenderParam::BlockForTargetTime(false),
                 // RenderParam::AdvancedControl(true),
             ],
-        )
-        .expect("Failed to create render context");
+        );
 
-        let sender = self.sender.clone();
-        render_context.set_update_callback(move || {
-            sender.send(PlayerEvent::Update).ok();
-        });
-
-        self.render_context = Some(render_context);
+        if let Ok(mut render_context) =
+            render_context.map_err(|e| error!("Failed to create render context: {e}"))
+        {
+            let sender = self.sender.clone();
+            render_context.set_update_callback(move || {
+                sender.send(PlayerEvent::Update).ok();
+            });
+            self.render_context = Some(render_context);
+        }
     }
 
     pub fn render(&self, fbo: u32, width: i32, height: i32) {
-        if let Some(render_context) = self.render_context.as_ref() {
-            render_context
-                .render::<GLContext>(fbo as i32, width, height, false)
-                .expect("Failed to draw on glutin window");
+        if let Some(render_context) = self.render_context.as_ref()
+            && width > 0
+            && height > 0
+        {
+            if let Err(e) = render_context.render::<GLContext>(fbo as i32, width, height, false) {
+                error!("Failed to render: {e}");
+            }
         }
     }
 
@@ -231,22 +244,31 @@ impl Player {
         }
     }
 
-    pub fn events<T: FnMut(PlayerEvent)>(&mut self, handler: T) {
-        self.receiver.try_iter().for_each(handler);
+    pub fn events<T: FnMut(PlayerEvent)>(&mut self, mut handler: T) {
+        self.receiver.try_iter().for_each(&mut handler);
 
         let sender = self.sender.clone();
-        if let Some(result) = self.event_context.wait_event(0.0) {
-            match result {
-                Ok(event) => {
-                    if let Ok(player_event) = PlayerEvent::try_from(event) {
-                        sender.send(player_event).ok();
+
+        // Drain events to avoid backlog
+        loop {
+            if let Some(result) = self.event_context.wait_event(0.0) {
+                match result {
+                    Ok(event) => {
+                        if let Ok(player_event) = PlayerEvent::try_from(event) {
+                            sender.send(player_event).ok();
+                        }
+                    }
+                    Err(e) => {
+                        error!("Mpv error: {e}");
+                        sender.send(PlayerEvent::MpvError(e.to_string())).ok();
                     }
                 }
-                Err(e) => {
-                    eprintln!("Mpv error: {e}")
-                }
+            } else {
+                break;
             }
-        };
+        }
+
+        self.receiver.try_iter().for_each(handler);
     }
 
     pub fn command(&self, name: String, args: Vec<String>) {
@@ -296,6 +318,10 @@ impl Player {
             }
             name => error!("Failed to set property {name}: Unsupported"),
         };
+    }
+
+    pub fn release(&mut self) {
+        self.render_context.take();
     }
 }
 

@@ -50,4 +50,6 @@ pub enum UserEvent {
     Show,
     Hide,
     Quit,
+    MpvEventAvailable,
+    WebViewEventAvailable,
 }
