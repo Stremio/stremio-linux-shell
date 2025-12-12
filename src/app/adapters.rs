@@ -9,8 +9,8 @@ use crate::shared::types::{Cursor, MouseDelta, MousePosition, WindowSize};
 impl From<MouseScrollDelta> for MouseDelta {
     fn from(value: MouseScrollDelta) -> Self {
         match value {
-            MouseScrollDelta::LineDelta(x, y) => Self((x * 100.0) as i32, (y * 100.0) as i32),
-            MouseScrollDelta::PixelDelta(position) => Self(position.x as i32, position.y as i32),
+            MouseScrollDelta::LineDelta(x, y) => Self((x * 300.0) as f64, (y * 300.0) as f64),
+            MouseScrollDelta::PixelDelta(position) => Self(position.x * 3.0, position.y * 3.0),
         }
     }
 }

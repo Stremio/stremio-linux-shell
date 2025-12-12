@@ -48,6 +48,8 @@ pub struct WebView {
     settings: Settings,
     app: App,
     receiver: Receiver<WebViewEvent>,
+    scroll_accumulator_x: f64,
+    scroll_accumulator_y: f64,
 }
 
 impl WebView {
@@ -78,6 +80,8 @@ impl WebView {
             settings,
             app,
             receiver,
+            scroll_accumulator_x: 0.0,
+            scroll_accumulator_y: 0.0,
         }
     }
 
@@ -205,10 +209,22 @@ impl WebView {
         }
     }
 
-    pub fn mouse_wheel(&self, state: MouseState) {
+    pub fn mouse_wheel(&mut self, state: MouseState) {
         if let Some(host) = self.browser_host() {
             let event = state.into();
-            host.send_mouse_wheel_event(Some(&event), state.delta.0, state.delta.1);
+
+            self.scroll_accumulator_x += state.delta.0;
+            self.scroll_accumulator_y += state.delta.1;
+
+            let delta_x = self.scroll_accumulator_x as i32;
+            let delta_y = self.scroll_accumulator_y as i32;
+
+            if delta_x != 0 || delta_y != 0 {
+                host.send_mouse_wheel_event(Some(&event), delta_x, delta_y);
+
+                self.scroll_accumulator_x -= delta_x as f64;
+                self.scroll_accumulator_y -= delta_y as f64;
+            }
         }
     }
 

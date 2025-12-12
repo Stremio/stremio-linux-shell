@@ -16,7 +16,7 @@ pub enum Cursor {
 pub struct MousePosition(pub i32, pub i32);
 
 #[derive(Debug, Default, Clone, Copy)]
-pub struct MouseDelta(pub i32, pub i32);
+pub struct MouseDelta(pub f64, pub f64);
 
 #[derive(Debug, Clone, Copy)]
 pub struct WindowSize(pub i32, pub i32);
