@@ -286,7 +286,7 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
     }
 }
 
-pub fn parse_request<T: Fn(IpcEvent)>(data: String, handler: T) {
+pub fn parse_request<T: FnMut(IpcEvent)>(data: String, handler: T) {
     IpcEvent::try_from(data)
         .map(handler)
         .map_err(|e| eprintln!("{e}"))

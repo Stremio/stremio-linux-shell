@@ -377,7 +377,14 @@ fn main() -> ExitCode {
                 }
                 IpcEvent::Mpv(event) => match event {
                     IpcEventMpv::Observe(name) => {
-                        player.observe_property(name);
+                        player.observe_property(name.clone());
+                        // Immediately send the current value of the observed property
+                        if let Ok(value) = player.get_property(&name) {
+                             let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Change(
+                                player::MpvProperty(name, Some(value)),
+                            )));
+                            webview.post_message(message);
+                        }
                     }
                     IpcEventMpv::Command((name, args)) => {
                         player.command(name, args);
@@ -391,75 +398,93 @@ fn main() -> ExitCode {
             }),
         });
 
-        player.events(|event| match event {
-            PlayerEvent::Start => {
-                futures::executor::block_on(app.disable_idling());
-                mpris_controller.update_playback_status("Playing");
-            }
-            PlayerEvent::Stop(error) => {
-                futures::executor::block_on(app.enable_idling());
+        let mut player_events = Vec::new();
+        player.events(|event| player_events.push(event));
 
-                let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended(error)));
-                webview.post_message(message);
+        for event in player_events {
+            match event {
+                PlayerEvent::Start => {
+                    futures::executor::block_on(app.disable_idling());
+                    // Explicitly unpause on start
+                    player.set_property(player::MpvProperty(
+                        "pause".to_string(),
+                        Some(serde_json::Value::Bool(false)),
+                    ));
+                    mpris_controller.update_playback_status("Playing");
+                }
+                PlayerEvent::Stop(error) => {
+                    futures::executor::block_on(app.enable_idling());
 
-                mpris_controller.update_playback_status("Stopped");
-            }
-            PlayerEvent::Update => {
-                needs_redraw = true;
-            }
-            PlayerEvent::PropertyChange(property) => {
-                let message =
-                    ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Change(property.clone())));
-                webview.post_message(message);
+                    // Explicitly PAUSE the player so MPV reports pause=true (needed for UI state)
+                    player.set_property(player::MpvProperty(
+                        "pause".to_string(),
+                        Some(serde_json::Value::Bool(true)),
+                    ));
 
-                match property.name() {
-                    "pause" => {
-                        if let Ok(value) = property.value() {
-                            match value {
-                                player::MpvPropertyValue::Bool(true) => {
-                                    mpris_controller.update_playback_status("Paused")
+                    let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended(error)));
+                    webview.post_message(message);
+
+                    mpris_controller.update_playback_status("Stopped");
+                }
+                PlayerEvent::Update => {
+                    needs_redraw = true;
+                }
+                PlayerEvent::PropertyChange(property) => {
+                    let message =
+                        ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Change(property.clone())));
+                    webview.post_message(message);
+
+                    match property.name() {
+                        "pause" => {
+                            if let Ok(value) = property.value() {
+                                match value {
+                                    player::MpvPropertyValue::Bool(true) => {
+                                        mpris_controller.update_playback_status("Paused")
+                                    }
+                                    player::MpvPropertyValue::Bool(false) => {
+                                        mpris_controller.update_playback_status("Playing")
+                                    }
+                                    _ => {}
                                 }
-                                player::MpvPropertyValue::Bool(false) => {
-                                    mpris_controller.update_playback_status("Playing")
-                                }
-                                _ => {}
                             }
                         }
-                    }
-                    "media-title" => {
-                        if let Ok(player::MpvPropertyValue::String(title)) = property.value() {
-                            let clean_title = if title.starts_with("magnet:")
-                                || title.starts_with("http://")
-                                || title.starts_with("https://")
-                                || title.starts_with("file://")
+                        "media-title" => {
+                            if let Ok(player::MpvPropertyValue::String(title)) = property.value() {
+                                let clean_title = if title.starts_with("magnet:")
+                                    || title.starts_with("http://")
+                                    || title.starts_with("https://")
+                                    || title.starts_with("file://")
+                                {
+                                    "Stremio".to_string()
+                                } else {
+                                    title
+                                };
+                                mpris_controller.update_metadata(Some(clean_title), None);
+                            }
+                        }
+                        "duration" => {
+                            if let Ok(player::MpvPropertyValue::Float(duration)) = property.value()
                             {
-                                "Stremio".to_string()
-                            } else {
-                                title
-                            };
-                            mpris_controller.update_metadata(Some(clean_title), None);
+                                mpris_controller.update_metadata(None, Some(duration));
+                            }
                         }
-                    }
-                    "duration" => {
-                        if let Ok(player::MpvPropertyValue::Float(duration)) = property.value() {
-                            mpris_controller.update_metadata(None, Some(duration));
+                        "time-pos" => {
+                            if let Ok(player::MpvPropertyValue::Float(position)) = property.value()
+                            {
+                                mpris_controller.update_position(position);
+                            }
                         }
-                    }
-                    "time-pos" => {
-                        if let Ok(player::MpvPropertyValue::Float(position)) = property.value() {
-                            mpris_controller.update_position(position);
+                        "speed" => {
+                            // TODO: we don't track rate changes from MPV yet in controller
                         }
+                        _ => {}
                     }
-                    "speed" => {
-                        // TODO: we don't track rate changes from MPV yet in controller
-                    }
-                    _ => {}
+                }
+                PlayerEvent::MpvError(error) => {
+                    let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Error(error)));
+                    webview.post_message(message);
                 }
             }
-            PlayerEvent::MpvError(error) => {
-                let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Error(error)));
-                webview.post_message(message);
-            }
-        });
+        }
     }
 }

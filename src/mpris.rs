@@ -63,10 +63,6 @@ impl MprisController {
             state.media_duration = Some(d);
         }
 
-        if let Some(d) = duration {
-            state.media_duration = Some(d);
-        }
-
         self.update_tx.send(MprisStateUpdate::Metadata).ok();
     }
 
@@ -317,7 +313,14 @@ pub fn start_mpris_service(proxy: EventLoopProxy<UserEvent>) -> MprisController 
     let (update_tx, mut update_rx) = unbounded_channel::<MprisStateUpdate>();
 
     std::thread::spawn(move || {
-        let runtime = Runtime::new().unwrap();
+        let runtime = match Runtime::new() {
+            Ok(rt) => rt,
+            Err(e) => {
+                eprintln!("Failed to create tokio runtime for MPRIS: {}", e);
+                return;
+            }
+        };
+
         runtime.block_on(async move {
             let root = MprisRoot {
                 proxy: proxy.clone(),
@@ -329,24 +332,29 @@ pub fn start_mpris_service(proxy: EventLoopProxy<UserEvent>) -> MprisController 
                 state: state_clone.clone(),
             };
 
-            let conn = Connection::session()
-                .await
-                .expect("Failed to connect to session bus");
+            let conn = match Connection::session().await {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("Failed to connect to session bus: {}", e);
+                    return;
+                }
+            };
 
-            conn.request_name("org.mpris.MediaPlayer2.stremio")
-                .await
-                .expect("Failed to request name");
+            if let Err(e) = conn.request_name("org.mpris.MediaPlayer2.stremio").await {
+                eprintln!("Failed to request MPRIS name: {}", e);
+                return;
+            }
 
             let object_server = conn.object_server();
-            object_server
-                .at("/org/mpris/MediaPlayer2", root)
-                .await
-                .expect("Failed to serve root interface");
+            if let Err(e) = object_server.at("/org/mpris/MediaPlayer2", root).await {
+                eprintln!("Failed to serve MPRIS root: {}", e);
+                return;
+            }
 
-            object_server
-                .at("/org/mpris/MediaPlayer2", player)
-                .await
-                .expect("Failed to serve player interface");
+            if let Err(e) = object_server.at("/org/mpris/MediaPlayer2", player).await {
+                eprintln!("Failed to serve MPRIS player: {}", e);
+                return;
+            }
 
             // Process state updates and emit property change signals
             while let Some(update) = update_rx.recv().await {

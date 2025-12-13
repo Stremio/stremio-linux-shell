@@ -170,12 +170,16 @@ impl Player {
             init.set_property("vd-lavc-dr", "yes")?;
             init.set_property("video-timing-offset", "0")?;
             init.set_property("terminal", "yes")?;
+            init.set_property("idle", "yes")?;
             init.set_property("msg-level", msg_level)?;
 
             // Performance tuning
             init.set_property("cache", "yes")?;
             init.set_property("demuxer-max-bytes", "100000000")?; // 100MB
             init.set_property("demuxer-readahead-secs", "20")?;
+
+            // Rendering optimizations
+            init.set_property("gpu-context", "auto")?;
 
             Ok(())
         })
@@ -305,6 +309,27 @@ impl Player {
             } else {
                 observed.insert(name);
             }
+        }
+    }
+
+    pub fn get_property(&self, name: &str) -> Result<Value, String> {
+        match name {
+            name if FLOAT_PROPERTIES.contains(&name) => self
+                .mpv
+                .get_property::<f64>(name)
+                .map(|v| Value::Number(Number::from_f64(v).unwrap()))
+                .map_err(|e| e.to_string()),
+            name if BOOL_PROPERTIES.contains(&name) => self
+                .mpv
+                .get_property::<bool>(name)
+                .map(Value::Bool)
+                .map_err(|e| e.to_string()),
+            name if STRING_PROPERTIES.contains(&name) => self
+                .mpv
+                .get_property::<String>(name)
+                .map(Value::String)
+                .map_err(|e| e.to_string()),
+            _ => Err("Property not supported".to_string()),
         }
     }
 
