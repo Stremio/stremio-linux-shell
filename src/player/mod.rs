@@ -143,6 +143,7 @@ impl<'a> TryFrom<Event<'a>> for PlayerEvent {
 }
 
 pub struct Player {
+    proxy: EventLoopProxy<UserEvent>,
     mpv: Mpv,
     event_context: EventContext,
     render_context: Option<RenderContext>,
@@ -181,6 +182,9 @@ impl Player {
 
             // Rendering optimizations
             init.set_property("gpu-context", "auto")?;
+            init.set_property("video-sync", "display-resample")?;
+            init.set_property("interpolation", "yes")?;
+            init.set_property("tscale", "oversample")?;
 
             Ok(())
         })
@@ -191,13 +195,15 @@ impl Player {
             error!("Failed to disable deprecated events: {}", e);
         }
 
+        let proxy_clone = proxy.clone();
         event_context.set_wakeup_callback(move || {
-            proxy.send_event(UserEvent::MpvEventAvailable).ok();
+            proxy_clone.send_event(UserEvent::MpvEventAvailable).ok();
         });
 
         let (sender, receiver) = unbounded::<PlayerEvent>();
 
         Self {
+            proxy,
             mpv,
             event_context,
             render_context: None,
@@ -234,8 +240,10 @@ impl Player {
             render_context.map_err(|e| error!("Failed to create render context: {e}"))
         {
             let sender = self.sender.clone();
+            let proxy = self.proxy.clone();
             render_context.set_update_callback(move || {
                 sender.send(PlayerEvent::Update).ok();
+                proxy.send_event(UserEvent::MpvEventAvailable).ok();
             });
             self.render_context = Some(render_context);
         }
