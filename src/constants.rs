@@ -10,9 +10,13 @@ pub const URI_SCHEME: &str = "stremio://";
 pub const DATA_DIR: &str = "stremio";
 
 pub const CMD_SWITCHES: &[&str] = &[
+    "enable-gpu",
+    "enable-gpu-rasterization",
+    "ignore-gpu-blocklist",
+    "enable-zero-copy",
+    "enable-native-gpu-memory-buffers",
+    "enable-accelerated-video-decode",
     // "enable-begin-frame-scheduling",
-    // "enable-gpu",
-    // "enable-gpu-rasterization",
     // "disable-frame-rate-limit",
     // "disable-gpu-vsync",
     // "disable-gpu-compositing",

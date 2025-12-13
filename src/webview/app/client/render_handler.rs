@@ -2,8 +2,8 @@ use std::os::raw::c_int;
 
 use crate::{
     WebViewEvent, cef_impl,
-    shared::{with_gl, with_renderer_read},
-    webview::SENDER,
+    shared::{types::UserEvent, with_gl, with_renderer_read},
+    webview::{PROXY, SENDER},
 };
 
 cef_impl!(
@@ -39,7 +39,13 @@ cef_impl!(
         ) {
             with_gl(|_, _| {
                 with_renderer_read(|renderer| {
-                    if renderer.width == width && renderer.height == height {
+                    // Relaxed check: Allow small rounding differences due to scaling
+                    // Also explicitly allow if Paint equals Physical OR Logical (fallback)
+                    let width_diff = (renderer.width - width).abs();
+                    let height_diff = (renderer.height - height).abs();
+                    let is_match = width_diff <= 2 && height_diff <= 2;
+
+                    if is_match {
                         if let Some(dirty) = dirty_rects {
                             renderer.paint(
                                 dirty.x,
@@ -55,6 +61,9 @@ cef_impl!(
 
                         if let Some(sender) = SENDER.get() {
                             sender.send(WebViewEvent::Paint).ok();
+                            if let Some(proxy) = PROXY.get() {
+                                proxy.send_event(UserEvent::WebViewEventAvailable).ok();
+                            }
                         }
                     } else if let Some(sender) = SENDER.get() {
                         sender.send(WebViewEvent::Resized).ok();

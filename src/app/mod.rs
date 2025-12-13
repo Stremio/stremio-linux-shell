@@ -36,7 +36,7 @@ use crate::{
     constants::{APP_ID, APP_NAME, WINDOW_SIZE},
     shared::{
         self,
-        types::{Cursor, MouseState, UserEvent, WindowSize},
+        types::{Cursor, MouseState, MprisCommand, UserEvent, WindowSize},
     },
 };
 
@@ -59,6 +59,8 @@ pub enum AppEvent {
     FileHover((PathBuf, MouseState)),
     FileDrop(MouseState),
     FileCancel,
+    ScaleFactorChanged(f64),
+    MprisCommand(MprisCommand),
 }
 
 pub struct App {
@@ -110,6 +112,10 @@ impl App {
         });
 
         self.window = window;
+        if let Some(window) = self.window.as_ref() {
+            let scale = window.scale_factor();
+            self.sender.send(AppEvent::ScaleFactorChanged(scale)).ok();
+        }
         self.sender.send(AppEvent::Visibility(true)).ok();
 
         shared::create_gl(surface, context);
@@ -161,11 +167,17 @@ impl App {
         if let Some(window) = self.window.as_ref() {
             for monitor in window.available_monitors() {
                 if let Some(m_hz) = monitor.refresh_rate_millihertz() {
-                    return m_hz / 1000;
+                    let refresh_rate = m_hz / 1000;
+                    println!(
+                        "Monitor found: {}Hz ({} mHz) - Using native refresh rate",
+                        refresh_rate, m_hz
+                    );
+                    return refresh_rate;
                 }
             }
         }
 
+        println!("No monitor detected, defaulting to 30Hz");
         30
     }
 
@@ -332,6 +344,11 @@ impl ApplicationHandler<UserEvent> for App {
             WindowEvent::CloseRequested => {
                 self.destroy_window();
             }
+            WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
+                self.sender
+                    .send(AppEvent::ScaleFactorChanged(scale_factor))
+                    .ok();
+            }
             _ => (),
         }
     }
@@ -350,6 +367,11 @@ impl ApplicationHandler<UserEvent> for App {
             }
             UserEvent::Quit => {
                 event_loop.exit();
+            }
+            UserEvent::MpvEventAvailable => {}
+            UserEvent::WebViewEventAvailable => {}
+            UserEvent::MprisCommand(command) => {
+                self.sender.send(AppEvent::MprisCommand(command)).ok();
             }
         }
     }

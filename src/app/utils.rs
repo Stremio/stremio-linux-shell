@@ -27,7 +27,7 @@ pub fn create_window(
     event_loop: &ActiveEventLoop,
     window_attributes: WindowAttributes,
 ) -> (Option<Window>, Config) {
-    let template_builder = ConfigTemplateBuilder::new();
+    let template_builder = ConfigTemplateBuilder::new().prefer_hardware_accelerated(Some(true));
 
     DisplayBuilder::new()
         .with_window_attributes(Some(window_attributes))

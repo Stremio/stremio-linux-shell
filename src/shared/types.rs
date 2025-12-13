@@ -1,4 +1,7 @@
+use std::sync::atomic::AtomicU64;
 use winit::event::MouseButton;
+
+pub static SCALE_FACTOR: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Clone, Copy)]
 pub enum Cursor {
@@ -16,7 +19,7 @@ pub enum Cursor {
 pub struct MousePosition(pub i32, pub i32);
 
 #[derive(Debug, Default, Clone, Copy)]
-pub struct MouseDelta(pub i32, pub i32);
+pub struct MouseDelta(pub f64, pub f64);
 
 #[derive(Debug, Clone, Copy)]
 pub struct WindowSize(pub i32, pub i32);
@@ -42,9 +45,25 @@ impl Default for MouseState {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum MprisCommand {
+    Play,
+    Pause,
+    PlayPause,
+    Stop,
+    Next,
+    Previous,
+    Seek(i64),
+    SetPosition(i64),
+    SetRate(f64),
+}
+
 pub enum UserEvent {
     Raise,
     Show,
     Hide,
     Quit,
+    MpvEventAvailable,
+    WebViewEventAvailable,
+    MprisCommand(MprisCommand),
 }

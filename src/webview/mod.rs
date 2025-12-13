@@ -22,15 +22,17 @@ use once_cell::sync::OnceCell;
 use url::Url;
 use winit::{
     event::{KeyEvent, MouseButton, Touch, TouchPhase},
+    event_loop::EventLoopProxy,
     keyboard::{ModifiersState, PhysicalKey},
 };
 
 use crate::{
     config::WebViewConfig,
-    shared::types::{Cursor, MouseState},
+    shared::types::{Cursor, MouseState, UserEvent},
 };
 
 static SENDER: OnceCell<Sender<WebViewEvent>> = OnceCell::new();
+pub static PROXY: OnceCell<EventLoopProxy<UserEvent>> = OnceCell::new();
 static BROWSER: OnceCell<Browser> = OnceCell::new();
 
 pub enum WebViewEvent {
@@ -48,16 +50,19 @@ pub struct WebView {
     settings: Settings,
     app: App,
     receiver: Receiver<WebViewEvent>,
+    scroll_accumulator_x: f64,
+    scroll_accumulator_y: f64,
 }
 
 impl WebView {
-    pub fn new(config: WebViewConfig) -> Self {
+    pub fn new(config: WebViewConfig, proxy: EventLoopProxy<UserEvent>) -> Self {
         let _ = api_hash(cef_dll_sys::CEF_API_VERSION_LAST, 0);
 
         let args = Args::new();
 
         let (sender, receiver) = unbounded::<WebViewEvent>();
         SENDER.get_or_init(|| sender);
+        PROXY.get_or_init(|| proxy);
 
         let app = WebViewApp::new();
 
@@ -78,6 +83,8 @@ impl WebView {
             settings,
             app,
             receiver,
+            scroll_accumulator_x: 0.0,
+            scroll_accumulator_y: 0.0,
         }
     }
 
@@ -166,7 +173,18 @@ impl WebView {
         if let Some(main_frame) = self.main_frame() {
             let serialized_message =
                 serde_json::to_string(&message).expect("Failed to serialize as JSON string");
+
             let script = format!("{IPC_SENDER}({serialized_message})");
+
+            let code = CefString::from(script.as_str());
+            main_frame.execute_java_script(Some(&code), None, 0);
+        }
+    }
+
+    pub fn send_clipboard_response(&self, text: String) {
+        if let Some(main_frame) = self.main_frame() {
+            let escaped = serde_json::to_string(&text).expect("Failed to serialize clipboard text");
+            let script = format!("CLIPBOARD_RESPONSE({escaped})");
             let code = CefString::from(script.as_str());
             main_frame.execute_java_script(Some(&code), None, 0);
         }
@@ -188,6 +206,36 @@ impl WebView {
         }
     }
 
+    pub fn scale_factor_changed(&self, scale_factor: f64) {
+        use crate::shared::types::SCALE_FACTOR;
+        SCALE_FACTOR.store(scale_factor.to_bits(), std::sync::atomic::Ordering::Relaxed);
+
+        if let Some(host) = self.browser_host() {
+            // host.notify_screen_info_changed();
+            host.was_resized();
+
+            // Calculate and apply zoom level: Zoom = ln(scale) / ln(1.2)
+            // 1.2 is the default zoom step in Chromium
+            if scale_factor > 0.1 {
+                let zoom_level = scale_factor.ln() / 1.2f64.ln();
+                host.set_zoom_level(zoom_level);
+            }
+        }
+    }
+
+    pub fn apply_zoom(&self) {
+        use crate::shared::types::SCALE_FACTOR;
+        let scale_factor = SCALE_FACTOR.load(std::sync::atomic::Ordering::Relaxed);
+        let scale = f64::from_bits(scale_factor);
+
+        if scale > 0.1 {
+            if let Some(host) = self.browser_host() {
+                let zoom_level = scale.ln() / 1.2f64.ln();
+                host.set_zoom_level(zoom_level);
+            }
+        }
+    }
+
     pub fn mouse_moved(&mut self, state: MouseState) {
         if let Some(host) = self.browser_host() {
             let event = state.into();
@@ -196,10 +244,22 @@ impl WebView {
         }
     }
 
-    pub fn mouse_wheel(&self, state: MouseState) {
+    pub fn mouse_wheel(&mut self, state: MouseState) {
         if let Some(host) = self.browser_host() {
             let event = state.into();
-            host.send_mouse_wheel_event(Some(&event), state.delta.0, state.delta.1);
+
+            self.scroll_accumulator_x += state.delta.0;
+            self.scroll_accumulator_y += state.delta.1;
+
+            let delta_x = self.scroll_accumulator_x as i32;
+            let delta_y = self.scroll_accumulator_y as i32;
+
+            if delta_x != 0 || delta_y != 0 {
+                host.send_mouse_wheel_event(Some(&event), delta_x, delta_y);
+
+                self.scroll_accumulator_x -= delta_x as f64;
+                self.scroll_accumulator_y -= delta_y as f64;
+            }
         }
     }
 

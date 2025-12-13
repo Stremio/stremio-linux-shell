@@ -30,4 +30,6 @@ pub const STRING_PROPERTIES: &[&str] = &[
     "sid",
     "aid",
     "mute",
+    "sub-ass-override",
+    "media-title",
 ];

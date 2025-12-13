@@ -23,6 +23,34 @@ cef_impl!(
                 CMD_SWITCHES.iter().for_each(|switch| {
                     line.append_switch(Some(&CefString::from(switch.to_owned())));
                 });
+
+                line.append_switch_with_value(
+                    Some(&CefString::from("renderer-process-limit")),
+                    Some(&CefString::from("1")),
+                );
+                line.append_switch_with_value(
+                    Some(&CefString::from("max-active-webgl-contexts")),
+                    Some(&CefString::from("1")),
+                );
+                line.append_switch(Some(&CefString::from("disable-site-isolation-trials")));
+                line.append_switch(Some(&CefString::from("disable-extensions")));
+                line.append_switch(Some(&CefString::from("no-zygote")));
+
+                // High-Performance GPU Flags
+                line.append_switch(Some(&CefString::from("enable-gpu-rasterization")));
+                line.append_switch(Some(&CefString::from("enable-zero-copy")));
+                line.append_switch(Some(&CefString::from("ignore-gpu-blocklist")));
+                line.append_switch(Some(&CefString::from("disable-gpu-driver-bug-workarounds")));
+
+                use crate::shared::types::SCALE_FACTOR;
+                let scale_factor = SCALE_FACTOR.load(std::sync::atomic::Ordering::Relaxed);
+                let scale = f64::from_bits(scale_factor);
+
+                if scale > 0.1 {
+                    let switch = CefString::from("force-device-scale-factor");
+                    let value = CefString::from(scale.to_string().as_str());
+                    line.append_switch_with_value(Some(&switch), Some(&value));
+                }
             }
         }
 
