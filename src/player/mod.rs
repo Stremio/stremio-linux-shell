@@ -168,24 +168,26 @@ impl Player {
         let mpv = Mpv::with_initializer(|init| {
             init.set_property("vo", "libmpv")?;
             init.set_property("hwdec", "auto-safe")?;
-            init.set_property("vd-lavc-dr", "yes")?;
-            init.set_property("video-timing-offset", "0")?;
+            init.set_property("gpu-context", "auto")?;
+
+            // HDR and Color Accuracy
+            init.set_property("target-colorspace-hint", "yes")?;
+            init.set_property("target-prim", "auto")?;
+            init.set_property("target-trc", "auto")?;
+            init.set_property("tone-mapping", "auto")?;
+
+            init.set_property("vd-lavc-dr", "auto")?;
             init.set_property("terminal", "yes")?;
             init.set_property("idle", "yes")?;
             init.set_property("msg-level", msg_level)?;
 
             // Performance tuning
-            init.set_property("cache", "yes")?;
             init.set_property("demuxer-max-bytes", "536870912")?; // 512MB
             init.set_property("demuxer-max-back-bytes", "52428800")?; // 50MB
             init.set_property("demuxer-readahead-secs", "20")?;
 
             // Rendering optimizations
-            init.set_property("gpu-context", "auto")?;
             init.set_property("video-sync", "display-resample")?;
-            init.set_property("interpolation", "yes")?;
-            init.set_property("tscale", "oversample")?;
-
             Ok(())
         })
         .expect("Failed to creating mpv");
