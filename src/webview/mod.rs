@@ -325,9 +325,9 @@ impl WebView {
                 };
 
                 let modifiers = if modifiers.control_key() {
-                    cef_event_flags_t::EVENTFLAG_CONTROL_DOWN as u32
+                    cef_event_flags_t::EVENTFLAG_CONTROL_DOWN.0
                 } else {
-                    cef_event_flags_t::EVENTFLAG_NONE as u32
+                    cef_event_flags_t::EVENTFLAG_NONE.0
                 };
 
                 let event = cef::KeyEvent {

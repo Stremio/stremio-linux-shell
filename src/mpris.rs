@@ -278,12 +278,12 @@ impl MprisPlayerImpl {
 
     #[zbus(property)]
     fn can_go_next(&self) -> bool {
-        true
+        false
     }
 
     #[zbus(property)]
     fn can_go_previous(&self) -> bool {
-        true
+        false
     }
 
     #[zbus(property)]

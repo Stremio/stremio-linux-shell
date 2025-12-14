@@ -16,7 +16,7 @@ use libmpv2::{
 use rust_i18n::t;
 use serde::{Deserialize, Serialize, Serializer, ser::SerializeStruct};
 use serde_json::{Number, Value};
-use tracing::error;
+use tracing::{error, warn};
 use winit::event_loop::EventLoopProxy;
 
 pub type GLContext = Rc<Display>;
@@ -283,8 +283,13 @@ impl Player {
                         }
                     }
                     Err(e) => {
-                        error!("Mpv error: {e}");
-                        sender.send(PlayerEvent::MpvError(e.to_string())).ok();
+                        let err_str = e.to_string();
+                        if err_str.contains("Raw(-13)") {
+                            warn!("Ignored benign Mpv error: {e}");
+                        } else {
+                            error!("Mpv error: {e}");
+                            sender.send(PlayerEvent::MpvError(err_str)).ok();
+                        }
                     }
                 }
             } else {

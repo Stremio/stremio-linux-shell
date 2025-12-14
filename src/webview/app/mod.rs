@@ -35,6 +35,10 @@ cef_impl!(
                 line.append_switch(Some(&CefString::from("disable-site-isolation-trials")));
                 line.append_switch(Some(&CefString::from("disable-extensions")));
                 line.append_switch(Some(&CefString::from("no-zygote")));
+                line.append_switch(Some(&CefString::from("no-proxy-server")));
+                line.append_switch(Some(&CefString::from("ignore-certificate-errors")));
+                line.append_switch(Some(&CefString::from("disable-web-security")));
+                line.append_switch(Some(&CefString::from("allow-running-insecure-content")));
 
                 // High-Performance GPU Flags
                 line.append_switch(Some(&CefString::from("enable-gpu-rasterization")));

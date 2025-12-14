@@ -20,7 +20,7 @@ cef_impl!(
         ) -> c_int {
             if let Some(event) = event
                 && event.type_ == cef_key_event_type_t::KEYEVENT_RAWKEYDOWN.into()
-                && event.modifiers == cef_event_flags_t::EVENTFLAG_CONTROL_DOWN as u32
+                && event.modifiers == cef_event_flags_t::EVENTFLAG_CONTROL_DOWN.0
             {
                 if event.windows_key_code == MINUS_KEY_CODE {
                     set_zoom_level(browser, ZOOM_AMOUNT);

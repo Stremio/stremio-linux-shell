@@ -18,8 +18,8 @@ ashpd = { version = "0.11.0", features = [
     "wayland",
 ], default-features = false }
 bytes = "1.10.1"
-cef = { version = "138.0.21", git = "https://github.com/Stremio/cef-rs" }
-cef-dll-sys = { version = "138.0.21", git = "https://github.com/Stremio/cef-rs" }
+cef = { version = "143.0.10", git = "https://github.com/Stremio/cef-rs" }
+cef-dll-sys = { version = "143.0.10", git = "https://github.com/Stremio/cef-rs" }
 clap = { version = "4.5.40", features = ["derive"] }
 crossbeam-channel = "0.5.15"
 dirs = "6.0.0"

@@ -31,8 +31,7 @@ cef_impl!(
             &self,
             _browser: Option<&mut Browser>,
             _type_: PaintElementType,
-            _dirty_rects_count: usize,
-            dirty_rects: Option<&Rect>,
+            dirty_rects: Option<&[Rect]>,
             buffer: *const u8,
             width: c_int,
             height: c_int,
@@ -46,15 +45,17 @@ cef_impl!(
                     let is_match = width_diff <= 2 && height_diff <= 2;
 
                     if is_match {
-                        if let Some(dirty) = dirty_rects {
-                            renderer.paint(
-                                dirty.x,
-                                dirty.y,
-                                dirty.width,
-                                dirty.height,
-                                buffer,
-                                width,
-                            );
+                        if let Some(dirty_rects) = dirty_rects {
+                            for dirty in dirty_rects {
+                                renderer.paint(
+                                    dirty.x,
+                                    dirty.y,
+                                    dirty.width,
+                                    dirty.height,
+                                    buffer,
+                                    width,
+                                );
+                            }
                         } else {
                             renderer.paint(0, 0, width, height, buffer, width);
                         }

@@ -22,7 +22,7 @@ impl Server {
         }
     }
 
-    pub fn start(&mut self, dev: bool) -> anyhow::Result<()> {
+    pub fn start(&mut self, _dev: bool) -> anyhow::Result<()> {
         if std::net::TcpStream::connect("127.0.0.1:11470").is_ok() {
             debug!(target: "server", "Server already running on port 11470, skipping spawn");
             return Ok(());
@@ -31,7 +31,7 @@ impl Server {
         use std::os::unix::process::CommandExt;
         let mut child = unsafe {
             Command::new("node")
-                .env("NO_CORS", (dev as i32).to_string())
+                .env("NO_CORS", "1")
                 .arg(self.config.file.as_os_str())
                 .stdout(process::Stdio::piped())
                 .pre_exec(|| {
