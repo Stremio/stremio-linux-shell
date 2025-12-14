@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::app::ipc::request::IpcMessageRequest;
+use super::request::IpcMessageRequest;
 
 #[derive(Deserialize, Debug)]
 pub enum IpcEventMpv {
@@ -17,7 +17,6 @@ pub enum IpcEvent {
     Init,
     Ready,
     Quit,
-    Fullscreen(bool),
     Minimized(bool),
     Visibility(bool),
     OpenMedia(String),

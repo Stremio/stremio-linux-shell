@@ -2,10 +2,13 @@ mod imp;
 
 use adw::subclass::prelude::*;
 use gtk::{
-    Widget, gio,
+    Widget,
+    gdk::prelude::{DisplayExt, MonitorExt},
+    gio,
     glib::{self, object::IsA},
-    prelude::*,
+    prelude::{GtkWindowExt, NativeExt, WidgetExt},
 };
+use url::Url;
 
 use crate::app::Application;
 
@@ -25,12 +28,14 @@ impl Window {
     pub fn set_underlay(&self, widget: &impl IsA<Widget>) {
         let window = self.imp();
 
-        window.overlay.set_child(Some(widget));
+        // window.overlay.set_child(Some(widget));
+        window.overlay.set_child(Some(&graphics_offload(widget)));
     }
 
     pub fn set_overlay(&self, widget: &impl IsA<Widget>) {
         let window = self.imp();
 
+        // window.overlay.add_overlay(widget);
         window.overlay.add_overlay(&graphics_offload(widget));
     }
 
@@ -39,6 +44,22 @@ impl Window {
 
         window.header.set_visible(!fullscreen);
         self.set_fullscreened(fullscreen);
+    }
+
+    pub fn connect_monitor_info<F: Fn(f64, i32) + 'static>(&self, callback: F) {
+        self.connect_realize(move |window| {
+            let display = window.display();
+            let surface = window.surface();
+
+            if let Some(surface) = surface
+                && let Some(monitor) = display.monitor_at_surface(&surface)
+            {
+                let refresh_rate = monitor.refresh_rate() as f64 / 1000.0;
+                let scale_factor = monitor.scale_factor();
+
+                callback(refresh_rate, scale_factor);
+            }
+        });
     }
 
     pub fn connect_visibility<T: Fn(bool) + 'static>(&self, callback: T) {
@@ -59,7 +80,7 @@ impl Window {
         self.imp().enable_idling();
     }
 
-    pub fn open_uri(&self, uri: String) {
+    pub fn open_uri(&self, uri: Url) {
         self.imp().open_uri(uri);
     }
 }

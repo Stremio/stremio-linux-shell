@@ -1,0 +1,2 @@
+[env]
+CEF_PATH = "vendor/cef"

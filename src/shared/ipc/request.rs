@@ -1,12 +1,7 @@
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::app::ipc::event::{IpcEvent, IpcEventMpv};
-
-#[derive(Deserialize, Debug)]
-pub struct IpcMessageRequestWinSetVisilibty {
-    fullscreen: bool,
-}
+use super::event::{IpcEvent, IpcEventMpv};
 
 #[derive(Deserialize, Debug)]
 pub struct IpcMessageRequest {
@@ -30,13 +25,6 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                     match data {
                         Some(data) => match name {
                             "app-ready" => Ok(IpcEvent::Ready),
-                            "win-set-visibility" => {
-                                let data: IpcMessageRequestWinSetVisilibty =
-                                    serde_json::from_value(data)
-                                        .expect("Invalid win-set-visibility object");
-
-                                Ok(IpcEvent::Fullscreen(data.fullscreen))
-                            }
                             "mpv-command" => {
                                 let data: Vec<String> = serde_json::from_value(data)
                                     .expect("Invalid mpv-command arguments");

@@ -1,14 +1,14 @@
 const createIpc = () => {
     let listeners = [];
 
-    globalThis.__postMessage = (data) => {
+    globalThis.IPC_SENDER = (data) =>  {
         listeners.forEach((listener) => {
             listener({ data });
         });
     };
 
     const postMessage = (data) => {
-        window.webkit.messageHandlers.ipc.postMessage(data);
+        globalThis.IPC_RECEIVER(data);
     };
 
     const addEventListener = (name, listener) => {
@@ -57,4 +57,4 @@ window.ipc.addEventListener('message', (message) => {
     window.qt.webChannelTransport.onmessage(message);
 });
 
-console.log('preload script injected');
+console.log('IPC script injected');

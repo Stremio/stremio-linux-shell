@@ -11,12 +11,9 @@ use gtk::{
 use ksni::{Handle, MenuItem, TrayMethods, menu::StandardItem};
 use tokio::sync::Mutex;
 
-use crate::{
-    app::{
-        config::{APP_ID, APP_NAME},
-        tray::config::ICON_FILE,
-    },
-    spawn_local,
+use crate::app::{
+    config::{APP_ID, APP_NAME},
+    tray::config::ICON_FILE,
 };
 
 #[derive(Default)]
@@ -27,7 +24,7 @@ pub struct Tray {
 impl Tray {
     pub fn update(&self, state: bool) {
         let local_handle = self.handle.clone();
-        spawn_local!(async move {
+        tokio::spawn(async move {
             let handle_guard = local_handle.lock().await;
             if let Some(handle) = handle_guard.as_ref() {
                 handle.update(|tray| tray.window_visible = state).await;
@@ -66,7 +63,7 @@ impl ObjectImpl for Tray {
         };
 
         let local_handle = self.handle.clone();
-        spawn_local!(async move {
+        tokio::spawn(async move {
             let mut handle_guard = local_handle.lock().await;
             let handle = tray_icon
                 .spawn_without_dbus_name()

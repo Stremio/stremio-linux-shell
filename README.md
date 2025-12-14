@@ -3,7 +3,7 @@
 ![Stremio icon](data/icons/com.stremio.Stremio.svg "Stremio icon")
 
 # Stremio on Linux 
-Client for Stremio on Linux using [`gtk4`](https://docs.gtk.org/gtk4/) + [`libadwaita`](https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1.7/) + [`webkit2`](https://webkitgtk.org/reference/webkit2gtk/stable/index.html) + [`libmpv`](https://github.com/mpv-player/mpv/blob/master/DOCS/man/libmpv.rst)
+Client for Stremio on Linux using [`gtk4`](https://docs.gtk.org/gtk4/) + [`libadwaita`](https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1.8/) + [`CEF`](https://github.com/chromiumembedded/cef) + [`libmpv`](https://github.com/mpv-player/mpv/blob/master/DOCS/man/libmpv.rst)
 
 <img src="data/screenshots/screenshot1.png" alrt="Screenshot" width="800" />
 

@@ -1,6 +1,6 @@
 use gtk::{
     gdk::GLContext,
-    glib::{self, Propagation, Variant, subclass::Signal},
+    glib::{self, Propagation, Properties, Variant, clone, subclass::Signal},
     prelude::*,
     subclass::prelude::*,
 };
@@ -22,7 +22,11 @@ fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
     epoxy::get_proc_addr(name) as _
 }
 
+#[derive(Properties)]
+#[properties(wrapper_type = super::Video)]
 pub struct Video {
+    #[property(get, set)]
+    scale_factor: Cell<i32>,
     mpv: RefCell<Mpv>,
     render_context: RefCell<Option<RenderContext>>,
     fbo: Cell<u32>,
@@ -53,6 +57,7 @@ impl Default for Video {
         mpv.disable_deprecated_events().ok();
 
         Self {
+            scale_factor: Cell::new(1),
             mpv: RefCell::new(mpv),
             render_context: Default::default(),
             fbo: Default::default(),
@@ -113,6 +118,7 @@ impl ObjectSubclass for Video {
     type ParentType = gtk::GLArea;
 }
 
+#[glib::derived_properties]
 impl ObjectImpl for Video {
     fn signals() -> &'static [Signal] {
         static SIGNALS: OnceLock<Vec<Signal>> = OnceLock::new();
@@ -130,13 +136,14 @@ impl ObjectImpl for Video {
     fn constructed(&self) {
         self.parent_constructed();
 
-        let video_weak = self.downgrade();
-        let object_weak = self.obj().downgrade();
-
-        glib::idle_add_local(move || {
-            if let Some(video) = video_weak.upgrade()
-                && let Some(object) = object_weak.upgrade()
-            {
+        glib::idle_add_local(clone!(
+            #[weak(rename_to = video)]
+            self,
+            #[weak(rename_to = object)]
+            self.obj(),
+            #[upgrade_or]
+            glib::ControlFlow::Continue,
+            move || {
                 video.on_event(|event| match event {
                     Event::PropertyChange { name, change, .. } => {
                         let value = match change {
@@ -158,10 +165,10 @@ impl ObjectImpl for Video {
                     }
                     _ => {}
                 });
-            }
 
-            glib::ControlFlow::Continue
-        });
+                glib::ControlFlow::Continue
+            }
+        ));
     }
 }
 
@@ -195,16 +202,19 @@ impl WidgetImpl for Video {
 
             let (sender, receiver) = channel::<()>();
 
-            let object_weak = object.downgrade();
-            glib::idle_add_local(move || {
-                if let Ok(()) = receiver.try_recv()
-                    && let Some(object) = object_weak.upgrade()
-                {
-                    object.queue_render();
-                }
+            glib::idle_add_local(clone!(
+                #[weak]
+                object,
+                #[upgrade_or]
+                glib::ControlFlow::Continue,
+                move || {
+                    if let Ok(()) = receiver.try_recv() {
+                        object.queue_render();
+                    }
 
-                glib::ControlFlow::Continue
-            });
+                    glib::ControlFlow::Continue
+                }
+            ));
 
             render_context.set_update_callback(move || {
                 sender.send(()).ok();
@@ -228,12 +238,13 @@ impl GLAreaImpl for Video {
         let object = self.obj();
 
         let fbo = self.fbo();
+        let scale_factor = self.scale_factor.get();
         let width = object.width();
         let height = object.height();
 
         if let Some(ref render_context) = *self.render_context.borrow() {
             render_context
-                .render::<GLContext>(fbo, width, height, true)
+                .render::<GLContext>(fbo, width * scale_factor, height * scale_factor, true)
                 .expect("Failed to render");
         }
 

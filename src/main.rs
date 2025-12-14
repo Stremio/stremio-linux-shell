@@ -1,16 +1,20 @@
 mod app;
+mod chromium;
 mod config;
 mod server;
+mod shared;
 mod utils;
 
 use std::{env, ptr};
 
 use clap::Parser;
 use gtk::glib::{ExitCode, object::ObjectExt};
+use tokio::runtime::Runtime;
 
 use crate::{
     app::Application,
-    config::{GETTEXT_DIR_DEV, GETTEXT_DIR_FLATPAK, GETTEXT_DOMAIN},
+    chromium::Chromium,
+    config::{GETTEXT_DIR_DEV, GETTEXT_DIR_FLATPAK, GETTEXT_DOMAIN, STARTUP_URL},
     server::Server,
 };
 
@@ -20,11 +24,25 @@ struct Args {
     /// Open dev tools
     #[arg(short, long)]
     dev: bool,
+    /// Startup url
+    #[arg(short, long, default_value = STARTUP_URL)]
+    url: String,
+    /// Open a deeplink
+    #[arg(short, long)]
+    open: Option<String>,
 }
 
-#[tokio::main]
-async fn main() -> ExitCode {
+fn main() -> ExitCode {
     tracing_subscriber::fmt::init();
+
+    let data_dir = dirs::data_dir()
+        .expect("Failed to get data dir")
+        .join("stremio");
+
+    let mut chromium = Chromium::new(data_dir);
+    if let Some(exit_code) = chromium.execute() {
+        return ExitCode::from(exit_code as u8);
+    }
 
     let gettext_dir = match env::var("FLATPAK_ID") {
         Ok(_) => GETTEXT_DIR_FLATPAK,
@@ -47,11 +65,19 @@ async fn main() -> ExitCode {
 
     let args = Args::parse();
 
+    let runtime = Runtime::new().expect("Failed to create Tokio runtime");
+
     let mut server = Server::new();
-    server.setup().await.expect("Failed to setup server");
+    runtime
+        .block_on(server.setup())
+        .expect("Failed to setup server");
     server.start(args.dev).expect("Failed to start server");
 
     let app = Application::new();
-    app.set_property("dev_mode", args.dev);
-    app.run()
+    app.set_property("dev-mode", args.dev);
+    app.set_property("startup-url", args.url);
+    app.set_property("open-uri", args.open);
+    app.set_browser(chromium);
+
+    runtime.block_on(app.run())
 }

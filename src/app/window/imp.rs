@@ -93,16 +93,14 @@ impl Window {
         });
     }
 
-    pub fn open_uri(&self, uri: String) {
+    pub fn open_uri(&self, uri: Url) {
         let object = self.obj();
 
         spawn_local!(clone!(
             #[weak]
             object,
             async move {
-                if let Ok(uri) = Url::parse(&uri)
-                    && let Some(identifier) = WindowIdentifier::from_native(&object).await
-                {
+                if let Some(identifier) = WindowIdentifier::from_native(&object).await {
                     let request = OpenFileRequest::default().identifier(identifier);
 
                     request

@@ -26,7 +26,7 @@ impl Default for Video {
 }
 
 impl Video {
-    pub fn connect_property_change<T: Fn(&str, Value) + 'static>(&self, callback: T) {
+    pub fn connect_mpv_property_change<T: Fn(&str, Value) + 'static>(&self, callback: T) {
         self.connect_closure(
             "property-changed",
             false,
@@ -84,7 +84,7 @@ impl Video {
         widget.send_command(&name, &args);
     }
 
-    pub fn observe_property(&self, name: String) {
+    pub fn observe_mpv_property(&self, name: String) {
         let widget = self.imp();
 
         match name.as_str() {
@@ -101,7 +101,7 @@ impl Video {
         };
     }
 
-    pub fn set_property(&self, name: String, value: Value) {
+    pub fn set_mpv_property(&self, name: String, value: Value) {
         let widget = self.imp();
 
         match name.as_str() {

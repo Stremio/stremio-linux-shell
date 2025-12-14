@@ -1,7 +1,7 @@
 use serde::Serialize;
 use serde_json::json;
 
-use crate::app::ipc::{
+use super::{
     TRANSPORT_NAME, VERSION,
     event::{IpcEvent, IpcEventMpv},
 };
@@ -34,20 +34,6 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                         "methods": [["onEvent"]]
                     }
                 })),
-            }),
-            IpcEvent::Fullscreen(state) => Ok(IpcMessageResponse {
-                id: 1,
-                r#type: 1,
-                object: TRANSPORT_NAME.to_owned(),
-                data: None,
-                args: Some(json!([
-                    "win-visibility-changed",
-                    {
-                        "visible": true,
-                        "visibility": 1,
-                        "isFullscreen": state,
-                    }
-                ])),
             }),
             IpcEvent::Visibility(state) => Ok(IpcMessageResponse {
                 id: 1,
