@@ -17,7 +17,7 @@ use constants::{STARTUP_URL, URI_SCHEME};
 use glutin::{display::GetGlDisplay, surface::GlSurface};
 use instance::{Instance, InstanceEvent};
 use ipc::{IpcEvent, IpcEventMpv};
-use mpris::start_mpris_service;
+use mpris::adapter::MprisAdapter;
 use player::{Player, PlayerEvent};
 use rust_i18n::i18n;
 use server::Server;
@@ -95,14 +95,14 @@ fn main() -> ExitCode {
     let tray = Tray::new(config.tray);
     let mut app = App::new();
     let mut player = Player::new(event_loop_proxy.clone());
-    let mpris_controller = start_mpris_service(event_loop_proxy.clone());
+    let mut mpris_adapter = MprisAdapter::new(event_loop_proxy.clone());
 
     let mut needs_redraw = false;
 
     loop {
         let timeout = match needs_redraw {
             true => Some(Duration::ZERO),
-            false => None,
+            false => Some(Duration::from_secs(1)), // Check idle every second
         };
 
         let status = event_loop.pump_app_events(timeout, &mut app);
@@ -164,6 +164,7 @@ fn main() -> ExitCode {
                 player.observe_property("duration".to_string());
                 player.observe_property("time-pos".to_string());
                 player.observe_property("speed".to_string());
+                player.observe_property("sid".to_string());
             }
             AppEvent::Resized(size) => {
                 with_gl(|surface, context| {
@@ -286,6 +287,15 @@ fn main() -> ExitCode {
                     ));
                 }
             },
+            AppEvent::MetadataUpdate {
+                title,
+                artist,
+                poster,
+                thumbnail,
+                logo,
+            } => {
+                mpris_adapter.update_metadata(title, artist, poster, thumbnail, logo);
+            }
         });
 
         webview.events(|event| match event {
@@ -394,6 +404,15 @@ fn main() -> ExitCode {
                     }
                     _ => {}
                 },
+                IpcEvent::MetadataUpdate { title, artist, art_url, logo } => {
+                    event_loop_proxy.send_event(UserEvent::MetadataUpdate {
+                        title,
+                        artist,
+                        poster: None,
+                        thumbnail: art_url.clone(), // Treat web art as thumbnail (primary)
+                        logo,
+                    }).ok();
+                }
                 _ => {}
             }),
         });
@@ -405,15 +424,33 @@ fn main() -> ExitCode {
             match event {
                 PlayerEvent::Start => {
                     futures::executor::block_on(app.disable_idling());
+                    mpris_adapter.rich_metadata_active = false;
+
+                    // Notify webview that video changed (Clear Caches)
+                    let message = ipc::create_response(IpcEvent::VideoChanged);
+                    webview.post_message(message);
+
+                    // Clear previous metadata to prevent stale "Ghost" info
+                    mpris_adapter.update_metadata_simple(
+                        Some("Stremio".to_string()),
+                        Some("".to_string()),
+                        None,
+                        Some(0.0),
+                    );
+                    mpris_adapter.update_position(0.0);
+
                     // Explicitly unpause on start
                     player.set_property(player::MpvProperty(
                         "pause".to_string(),
                         Some(serde_json::Value::Bool(false)),
                     ));
-                    mpris_controller.update_playback_status("Playing");
+                    mpris_adapter.update_playback_status("Playing");
                 }
                 PlayerEvent::Stop(error) => {
                     futures::executor::block_on(app.enable_idling());
+
+                    // Reset rich metadata flag
+                    mpris_adapter.rich_metadata_active = false;
 
                     // Explicitly PAUSE the player so MPV reports pause=true (needed for UI state)
                     player.set_property(player::MpvProperty(
@@ -421,10 +458,17 @@ fn main() -> ExitCode {
                         Some(serde_json::Value::Bool(true)),
                     ));
 
-                    let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended(error)));
-                    webview.post_message(message);
+                    // Reset MPRIS state
+                    // Clear previous metadata to prevent stale "Ghost" info
+                    mpris_adapter.update_metadata_simple(
+                        Some("Stremio".to_string()),
+                        Some("".to_string()),
+                        None,
+                        Some(0.0),
+                    );
+                    mpris_adapter.update_position(0.0);
 
-                    mpris_controller.update_playback_status("Stopped");
+                    let _message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended(error)));
                 }
                 PlayerEvent::Update => {
                     needs_redraw = true;
@@ -439,10 +483,10 @@ fn main() -> ExitCode {
                             if let Ok(value) = property.value() {
                                 match value {
                                     player::MpvPropertyValue::Bool(true) => {
-                                        mpris_controller.update_playback_status("Paused")
+                                        mpris_adapter.update_playback_status("Paused")
                                     }
                                     player::MpvPropertyValue::Bool(false) => {
-                                        mpris_controller.update_playback_status("Playing")
+                                        mpris_adapter.update_playback_status("Playing")
                                     }
                                     _ => {}
                                 }
@@ -454,28 +498,59 @@ fn main() -> ExitCode {
                                     || title.starts_with("http://")
                                     || title.starts_with("https://")
                                     || title.starts_with("file://")
+                                    || title.contains("&tr=")
+                                    || title.contains("announce")
+                                    || title.contains("dht:")
                                 {
                                     "Stremio".to_string()
                                 } else {
-                                    title
+                                    title.clone()
                                 };
-                                mpris_controller.update_metadata(Some(clean_title), None);
+
+                                if !mpris_adapter.rich_metadata_active {
+                                    mpris_adapter.update_metadata_simple(
+                                        Some(clean_title),
+                                        None,
+                                        None,
+                                        None,
+                                    );
+                                }
+
+                                // Fallback: If title looks like SxxExx, try to fetch metadata
+                                // This handles cases where 'sid' is missing (raw file playback)
+                                mpris::metadata::fetch_metadata(
+                                    title.clone(),
+                                    event_loop_proxy.clone(),
+                                );
                             }
                         }
                         "duration" => {
                             if let Ok(player::MpvPropertyValue::Float(duration)) = property.value()
                             {
-                                mpris_controller.update_metadata(None, Some(duration));
+                                mpris_adapter.update_metadata_simple(
+                                    None,
+                                    None,
+                                    None,
+                                    Some(duration),
+                                );
                             }
                         }
                         "time-pos" => {
                             if let Ok(player::MpvPropertyValue::Float(position)) = property.value()
                             {
-                                mpris_controller.update_position(position);
+                                mpris_adapter.update_position(position);
                             }
                         }
                         "speed" => {
                             // TODO: we don't track rate changes from MPV yet in controller
+                        }
+                        "sid" => {
+                            if let Ok(player::MpvPropertyValue::String(sid)) = property.value() {
+                                mpris::metadata::fetch_metadata_by_sid(
+                                    sid,
+                                    event_loop_proxy.clone(),
+                                );
+                            }
                         }
                         _ => {}
                     }

@@ -14,6 +14,8 @@ struct MprisState {
     shuffle: bool,
     volume: f64,
     media_title: Option<String>,
+    media_artist: Option<String>,
+    art_url: Option<String>,
     media_duration: Option<f64>,
     media_position: Option<f64>,
 }
@@ -27,6 +29,8 @@ impl Default for MprisState {
             shuffle: false,
             volume: 1.0,
             media_title: None,
+            media_artist: None,
+            art_url: None,
             media_duration: None,
             media_position: None,
         }
@@ -52,11 +56,25 @@ impl MprisController {
         self.update_tx.send(MprisStateUpdate::PlaybackStatus).ok();
     }
 
-    pub fn update_metadata(&self, title: Option<String>, duration: Option<f64>) {
+    pub fn update_metadata(
+        &self,
+        title: Option<String>,
+        artist: Option<String>,
+        art_url: Option<String>,
+        duration: Option<f64>,
+    ) {
         let mut state = self.state.write().unwrap();
 
         if let Some(ref t) = title {
             state.media_title = Some(t.clone());
+        }
+
+        if let Some(ref a) = artist {
+            state.media_artist = Some(a.clone());
+        }
+
+        if let Some(ref url) = art_url {
+            state.art_url = Some(url.clone());
         }
 
         if let Some(d) = duration {
@@ -73,7 +91,7 @@ impl MprisController {
 }
 
 fn build_metadata(state: &MprisState) -> HashMap<String, zbus::zvariant::OwnedValue> {
-    let mut metadata = HashMap::new();
+    let mut metadata: HashMap<String, zbus::zvariant::OwnedValue> = HashMap::new();
 
     metadata.insert(
         "mpris:trackid".to_string(),
@@ -85,13 +103,32 @@ fn build_metadata(state: &MprisState) -> HashMap<String, zbus::zvariant::OwnedVa
     if let Some(ref t) = state.media_title {
         metadata.insert(
             "xesam:title".to_string(),
-            zbus::zvariant::Str::from(t.clone()).into(),
+            zbus::zvariant::Value::from(t.clone()).try_into().unwrap(),
+        );
+    }
+
+    if let Some(ref a) = state.media_artist {
+        metadata.insert(
+            "xesam:artist".to_string(),
+            zbus::zvariant::Value::from(zbus::zvariant::Array::from(vec![a.clone()]))
+                .try_into()
+                .unwrap(),
+        );
+    }
+
+    if let Some(ref url) = state.art_url {
+        metadata.insert(
+            "mpris:artUrl".to_string(),
+            zbus::zvariant::Value::from(url.clone()).try_into().unwrap(),
         );
     }
 
     if let Some(d) = state.media_duration {
         let d_micros = (d * 1_000_000.0) as i64;
-        metadata.insert("mpris:length".to_string(), d_micros.into());
+        metadata.insert(
+            "mpris:length".to_string(),
+            zbus::zvariant::Value::from(d_micros).try_into().unwrap(),
+        );
     }
 
     metadata
@@ -124,6 +161,12 @@ impl MprisRoot {
     }
 
     #[zbus(property)]
+    fn fullscreen(&self) -> bool {
+        // TODO: Hook up to actual window fullscreen state if available
+        false
+    }
+
+    #[zbus(property)]
     fn has_track_list(&self) -> bool {
         false
     }
@@ -131,6 +174,10 @@ impl MprisRoot {
     #[zbus(property)]
     fn identity(&self) -> String {
         "Stremio".to_string()
+    }
+
+    fn desktop_entry(&self) -> String {
+        "stremio".to_string()
     }
 
     #[zbus(property)]

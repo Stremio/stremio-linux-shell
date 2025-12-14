@@ -31,6 +31,21 @@ pub enum IpcEvent {
     GpuWarning(String),
     NextVideo,
     PreviousVideo,
+    VideoChanged,
+    MetadataUpdate {
+        title: Option<String>,
+        artist: Option<String>,
+        art_url: Option<String>,
+        logo: Option<String>,
+    },
+}
+
+#[derive(Deserialize, Debug)]
+pub struct IpcMessageRequestMetadataUpdate {
+    title: Option<String>,
+    artist: Option<String>,
+    art_url: Option<String>,
+    logo: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -113,6 +128,18 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                                 let value = iter.next();
 
                                 Ok(IpcEvent::Mpv(IpcEventMpv::Set(MpvProperty(name, value))))
+                            }
+                            "metadata-update" => {
+                                let data: IpcMessageRequestMetadataUpdate =
+                                    serde_json::from_value(data)
+                                        .expect("Invalid metadata-update object");
+
+                                Ok(IpcEvent::MetadataUpdate {
+                                    title: data.title,
+                                    artist: data.artist,
+                                    art_url: data.art_url,
+                                    logo: data.logo,
+                                })
                             }
                             // Handle app-ready case-insensitively and trim
                             s if s.trim() == "app-ready" => Ok(IpcEvent::AppReady),
@@ -280,6 +307,33 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                 object: TRANSPORT_NAME.to_owned(),
                 data: None,
                 args: Some(json!(["previous-video"])),
+            }),
+            IpcEvent::VideoChanged => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!(["video-changed"])),
+            }),
+            IpcEvent::MetadataUpdate {
+                title,
+                artist,
+                art_url,
+                logo,
+            } => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!([
+                    "metadata-update",
+                    {
+                        "title": title,
+                        "artist": artist,
+                        "art_url": art_url,
+                        "logo": logo,
+                    }
+                ])),
             }),
             _ => Err("Failed to convert IpcEvent to IpcMessageResponse"),
         }

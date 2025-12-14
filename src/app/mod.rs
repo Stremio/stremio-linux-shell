@@ -61,6 +61,13 @@ pub enum AppEvent {
     FileCancel,
     ScaleFactorChanged(f64),
     MprisCommand(MprisCommand),
+    MetadataUpdate {
+        title: Option<String>,
+        artist: Option<String>,
+        poster: Option<String>,
+        thumbnail: Option<String>,
+        logo: Option<String>,
+    },
 }
 
 pub struct App {
@@ -135,7 +142,7 @@ impl App {
         self.sender.send(AppEvent::Visibility(false)).ok();
     }
 
-    pub fn notify(&self) {
+    pub fn _notify(&self) {
         if let Some(window) = self.window.as_ref() {
             window.request_user_attention(Some(UserAttentionType::Informational));
         }
@@ -356,7 +363,13 @@ impl ApplicationHandler<UserEvent> for App {
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: UserEvent) {
         match event {
             UserEvent::Raise => match self.window.is_some() {
-                true => self.notify(),
+                true => {
+                    if let Some(window) = self.window.as_ref() {
+                        window.set_minimized(false);
+                        window.set_visible(true);
+                        window.focus_window();
+                    }
+                }
                 false => self.create_window(event_loop),
             },
             UserEvent::Show => {
@@ -372,6 +385,23 @@ impl ApplicationHandler<UserEvent> for App {
             UserEvent::WebViewEventAvailable => {}
             UserEvent::MprisCommand(command) => {
                 self.sender.send(AppEvent::MprisCommand(command)).ok();
+            }
+            UserEvent::MetadataUpdate {
+                title,
+                artist,
+                poster,
+                thumbnail,
+                logo,
+            } => {
+                self.sender
+                    .send(AppEvent::MetadataUpdate {
+                        title,
+                        artist,
+                        poster,
+                        thumbnail,
+                        logo,
+                    })
+                    .ok();
             }
         }
     }

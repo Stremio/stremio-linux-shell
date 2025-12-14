@@ -66,4 +66,11 @@ pub enum UserEvent {
     MpvEventAvailable,
     WebViewEventAvailable,
     MprisCommand(MprisCommand),
+    MetadataUpdate {
+        title: Option<String>,
+        artist: Option<String>,
+        poster: Option<String>,
+        thumbnail: Option<String>,
+        logo: Option<String>,
+    },
 }
