@@ -26,7 +26,7 @@ git clone --recurse-submodules https://github.com/Stremio/stremio-linux-shell
 
 #### Fedora
 ```bash
-dnf install gtk4-devel libadwaita-devel webkitgtk6.0-devel mpv-devel libepoxy-devel flatpak-builder
+dnf install gtk4-devel libadwaita-devel mpv-devel libepoxy-devel flatpak-builder
 ```
 
 ```bash
@@ -35,7 +35,7 @@ cargo build --release
 
 #### Ubuntu
 ```bash
-apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev libmpv-dev gettext nodejs flatpak-builder
+apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev libmpv-dev gettext nodejs flatpak-builder
 ```
 
 ```bash

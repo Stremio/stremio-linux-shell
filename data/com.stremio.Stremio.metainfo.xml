@@ -50,6 +50,13 @@
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
     <releases>
+        <release version="1.0.0-beta.12" date="2025-11-27">
+            <description>
+                <ul>
+                    <li>Update server</li>
+                </ul>
+            </description>
+        </release>
         <release version="1.0.0-beta.11" date="2025-06-26">
             <description>
                 <ul>

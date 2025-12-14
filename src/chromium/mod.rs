@@ -2,7 +2,7 @@ mod app;
 mod config;
 mod types;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::ptr;
 use std::sync::{Arc, Mutex, RwLock};
 
@@ -45,7 +45,7 @@ pub struct Chromium {
 }
 
 impl Chromium {
-    pub fn new(data_dir: PathBuf) -> Self {
+    pub fn new(data_dir: &Path) -> Self {
         let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
 
         let args = Args::new();

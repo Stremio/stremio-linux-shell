@@ -5,7 +5,7 @@ mod server;
 mod shared;
 mod utils;
 
-use std::{env, ptr};
+use std::{env, fs, ptr};
 
 use clap::Parser;
 use gtk::glib::{ExitCode, object::ObjectExt};
@@ -14,7 +14,7 @@ use tokio::runtime::Runtime;
 use crate::{
     app::Application,
     chromium::Chromium,
-    config::{GETTEXT_DIR_DEV, GETTEXT_DIR_FLATPAK, GETTEXT_DOMAIN, STARTUP_URL},
+    config::{DATA_DIR, GETTEXT_DIR_DEV, GETTEXT_DIR_FLATPAK, GETTEXT_DOMAIN, STARTUP_URL},
     server::Server,
 };
 
@@ -37,9 +37,11 @@ fn main() -> ExitCode {
 
     let data_dir = dirs::data_dir()
         .expect("Failed to get data dir")
-        .join("stremio");
+        .join(DATA_DIR);
 
-    let mut chromium = Chromium::new(data_dir);
+    fs::create_dir_all(&data_dir).expect("Failed to create data directory");
+
+    let mut chromium = Chromium::new(&data_dir);
     if let Some(exit_code) = chromium.execute() {
         return ExitCode::from(exit_code as u8);
     }
@@ -68,9 +70,6 @@ fn main() -> ExitCode {
     let runtime = Runtime::new().expect("Failed to create Tokio runtime");
 
     let mut server = Server::new();
-    runtime
-        .block_on(server.setup())
-        .expect("Failed to setup server");
     server.start(args.dev).expect("Failed to start server");
 
     let app = Application::new();

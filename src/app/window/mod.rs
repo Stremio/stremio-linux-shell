@@ -28,14 +28,12 @@ impl Window {
     pub fn set_underlay(&self, widget: &impl IsA<Widget>) {
         let window = self.imp();
 
-        // window.overlay.set_child(Some(widget));
         window.overlay.set_child(Some(&graphics_offload(widget)));
     }
 
     pub fn set_overlay(&self, widget: &impl IsA<Widget>) {
         let window = self.imp();
 
-        // window.overlay.add_overlay(widget);
         window.overlay.add_overlay(&graphics_offload(widget));
     }
 
