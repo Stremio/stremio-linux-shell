@@ -24,6 +24,8 @@ pub struct Application {
     startup_url: RefCell<String>,
     #[property(get, set)]
     open_uri: RefCell<Option<String>>,
+    #[property(get, set)]
+    decorations: Cell<bool>,
     tray: RefCell<Option<Tray>>,
     browser: Rc<RefCell<Option<Chromium>>>,
     deeplink: Rc<RefCell<Option<String>>>,
@@ -73,6 +75,7 @@ impl ApplicationImpl for Application {
         let webview = WebView::default();
 
         let window = Window::new(&app);
+        window.set_property("decorations", self.decorations.get());
         window.set_underlay(&video);
         window.set_overlay(&webview);
 

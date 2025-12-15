@@ -30,6 +30,9 @@ struct Args {
     /// Open a deeplink
     #[arg(short, long)]
     open: Option<String>,
+    /// Disable window decorations
+    #[arg(short, long)]
+    no_window_decorations: bool,
 }
 
 fn main() -> ExitCode {
@@ -76,6 +79,7 @@ fn main() -> ExitCode {
     app.set_property("dev-mode", args.dev);
     app.set_property("startup-url", args.url);
     app.set_property("open-uri", args.open);
+    app.set_property("decorations", !args.no_window_decorations);
     app.set_browser(chromium);
 
     runtime.block_on(app.run())

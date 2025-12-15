@@ -1,5 +1,6 @@
-use std::sync::Arc;
+use std::{cell::Cell, sync::Arc};
 
+use adw::prelude::*;
 use adw::subclass::prelude::*;
 use ashpd::{
     WindowIdentifier,
@@ -21,9 +22,12 @@ use url::Url;
 
 use crate::spawn_local;
 
-#[derive(Default, gtk::CompositeTemplate)]
+#[derive(Default, glib::Properties, gtk::CompositeTemplate)]
+#[properties(wrapper_type = super::Window)]
 #[template(file = "window.ui")]
 pub struct Window {
+    #[property(get, set)]
+    decorations: Cell<bool>,
     #[template_child]
     pub header: TemplateChild<adw::HeaderBar>,
     #[template_child]
@@ -129,6 +133,7 @@ impl ObjectSubclass for Window {
     }
 }
 
+#[glib::derived_properties]
 impl ObjectImpl for Window {
     fn constructed(&self) {
         self.parent_constructed();
@@ -139,7 +144,16 @@ impl ObjectImpl for Window {
     }
 }
 
-impl WidgetImpl for Window {}
+impl WidgetImpl for Window {
+    fn realize(&self) {
+        self.parent_realize();
+
+        if !self.decorations.get() {
+            self.header.set_visible(false);
+            self.obj().remove_css_class("csd");
+        }
+    }
+}
 
 impl WindowImpl for Window {
     fn activate_default(&self) {
