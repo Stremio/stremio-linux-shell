@@ -28,7 +28,7 @@ jobs:
         run: |
           sudo apt-get -y update
           sudo apt-get -y install libmpv-dev
-          sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu/ plucky main restricted" >> /etc/apt/sources.list'
+          sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu/ questing main" >> /etc/apt/sources.list'
           sudo apt-get -y update
           sudo apt-get -y install libssl-dev libgtk-4-dev libadwaita-1-dev gettext nodejs flatpak-builder python3-aiohttp python3-tomlkit
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
