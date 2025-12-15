@@ -49,21 +49,6 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                     }
                 ])),
             }),
-            IpcEvent::Minimized(state) => Ok(IpcMessageResponse {
-                id: 1,
-                r#type: 1,
-                object: TRANSPORT_NAME.to_owned(),
-                data: None,
-                args: Some(json!([
-                    "win-state-changed",
-                    {
-                        "state": match state {
-                            true => 9,
-                            false => 8,
-                        },
-                    }
-                ])),
-            }),
             IpcEvent::OpenMedia(deeplink) => Ok(IpcMessageResponse {
                 id: 1,
                 r#type: 1,

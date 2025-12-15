@@ -17,7 +17,6 @@ pub enum IpcEvent {
     Init,
     Ready,
     Quit,
-    Minimized(bool),
     Visibility(bool),
     OpenMedia(String),
     Mpv(IpcEventMpv),
