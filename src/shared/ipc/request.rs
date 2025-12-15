@@ -10,6 +10,11 @@ pub struct IpcMessageRequest {
     args: Option<serde_json::Value>,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct IpcMessageRequestWinSetVisilibty {
+    fullscreen: bool,
+}
+
 impl TryFrom<IpcMessageRequest> for IpcEvent {
     type Error = &'static str;
 
@@ -25,6 +30,13 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                     match data {
                         Some(data) => match name {
                             "app-ready" => Ok(IpcEvent::Ready),
+                            "win-set-visibility" => {
+                                let data: IpcMessageRequestWinSetVisilibty =
+                                    serde_json::from_value(data)
+                                        .expect("Invalid win-set-visibility object");
+
+                                Ok(IpcEvent::Fullscreen(data.fullscreen))
+                            }
                             "mpv-command" => {
                                 let data: Vec<String> = serde_json::from_value(data)
                                     .expect("Invalid mpv-command arguments");

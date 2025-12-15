@@ -175,6 +175,13 @@ impl ApplicationImpl for Application {
                                     IpcEvent::Quit => {
                                         app.quit();
                                     }
+                                    IpcEvent::Fullscreen(state) => {
+                                        window.set_fullscreen(state);
+
+                                        let message =
+                                            ipc::create_response(IpcEvent::Fullscreen(state));
+                                        browser.post_message(message);
+                                    }
                                     IpcEvent::Mpv(event) => match event {
                                         IpcEventMpv::Observe(name) => {
                                             video.observe_mpv_property(name)

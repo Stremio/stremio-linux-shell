@@ -35,6 +35,20 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                     }
                 })),
             }),
+            IpcEvent::Fullscreen(state) => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!([
+                    "win-visibility-changed",
+                    {
+                        "visible": true,
+                        "visibility": 1,
+                        "isFullscreen": state,
+                    }
+                ])),
+            }),
             IpcEvent::Visibility(state) => Ok(IpcMessageResponse {
                 id: 1,
                 r#type: 1,
