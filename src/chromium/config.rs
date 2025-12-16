@@ -1,3 +1,5 @@
+pub const MAX_FRAME_RATE: f64 = 60.0;
+
 pub const IPC_SENDER: &str = "__postMessage";
 pub const IPC_RECEIVER: &str = "__onMessage";
 

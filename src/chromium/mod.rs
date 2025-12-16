@@ -20,6 +20,7 @@ use config::IPC_SENDER;
 use types::Viewport;
 use url::Url;
 
+use crate::chromium::config::MAX_FRAME_RATE;
 use crate::shared::{
     Frame,
     states::{KeyboardState, PointerState},
@@ -144,7 +145,7 @@ impl Chromium {
         }
 
         if let Some(browser_host) = self.browser_host() {
-            browser_host.set_windowless_frame_rate(refresh_rate as i32);
+            browser_host.set_windowless_frame_rate(refresh_rate.min(MAX_FRAME_RATE) as i32);
             browser_host.notify_screen_info_changed();
         }
     }
