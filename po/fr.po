@@ -1,0 +1,19 @@
+msgid ""
+msgstr ""
+"Language: fr\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Main menu"
+msgstr "Menu principal"
+
+msgid "_About Stremio"
+msgstr "_À propos de Stremio"
+
+msgid "Show"
+msgstr "Afficher"
+
+msgid "Hide"
+msgstr "Masquer"
+
+msgid "Quit"
+msgstr "Quitter"

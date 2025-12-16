@@ -1,19 +1,19 @@
 {
     "app-id": "com.stremio.Stremio.Devel",
-    "runtime": "org.freedesktop.Platform",
-    "runtime-version": "24.08",
-    "sdk": "org.freedesktop.Sdk",
+    "runtime": "org.gnome.Platform",
+    "runtime-version": "49",
+    "sdk": "org.gnome.Sdk",
     "sdk-extensions": [
         "org.freedesktop.Sdk.Extension.rust-stable"
     ],
     "add-extensions": {
         "org.freedesktop.Platform.ffmpeg-full": {
-            "version": "24.08",
+            "version": "25.08",
             "directory": "lib/ffmpeg",
             "add-ld-path": "."
         },
         "org.freedesktop.Platform.VAAPI.Intel": {
-            "version": "24.08",
+            "version": "25.08",
             "directory": "lib/intel-vaapi-driver",
             "add-ld-path": ".",
             "download-if": "have-intel-gpu",
@@ -23,19 +23,18 @@
     "command": "stremio",
     "finish-args": [
         "--socket=wayland",
-        "--socket=x11",
+        "--socket=fallback-x11",
         "--socket=pulseaudio",
         "--share=ipc",
         "--share=network",
         "--device=dri",
         "--persist=.stremio-server",
         "--filesystem=xdg-download",
-        "--filesystem=xdg-run/stremio:create",
-        "--env=LD_LIBRARY_PATH=/app/lib/:/app/lib64/:/app/share/stremio",
-        "--system-talk-name=org.freedesktop.systemd1",
-        "--system-talk-name=org.freedesktop.UPower",
         "--talk-name=org.kde.StatusNotifierWatcher",
-        "--talk-name=org.kde.kwalletd6"
+        "--own-name=com.stremio.Stremio.Devel",
+        "--env=LD_LIBRARY_PATH=/app/lib/:/app/lib64/:/app/share/stremio",
+        "--env=SERVER_PATH=/app/bin/server.js",
+        "--env=RUST_LOG=debug"
     ],
     "build-options": {
         "append-path": "/usr/lib/sdk/rust-stable/bin",
@@ -56,17 +55,20 @@
             },
             "build-commands": [
                 "cargo --offline fetch --manifest-path Cargo.toml --verbose",
-                "cargo --offline build --verbose -F offline-build"
+                "cargo --offline build --verbose"
             ],
             "post-install": [
-                "install -Dm755 data/stremio -t /app/bin/",
-                "install -Dm755 target/debug/stremio-linux-shell /app/share/stremio/stremio",
-                "install -Dm644 data/server.js -t /app/share/stremio/",
+                "install -Dm755 target/debug/stremio-linux-shell /app/bin/stremio",
+                "install -Dm644 data/server.js -t /app/bin/",
                 "install -Dm644 data/icons/com.stremio.Stremio.Devel.svg -t /app/share/icons/hicolor/scalable/apps/",
                 "install -Dm644 data/com.stremio.Stremio.desktop /app/share/applications/com.stremio.Stremio.Devel.desktop",
                 "sed -i -e 's/com.stremio.Stremio/com.stremio.Stremio.Devel/g' /app/share/applications/com.stremio.Stremio.Devel.desktop",
                 "install -Dm644 data/com.stremio.Stremio.metainfo.xml /app/share/metainfo/com.stremio.Stremio.Devel.metainfo.xml",
                 "sed -i -e 's/com.stremio.Stremio/com.stremio.Stremio.Devel/g' /app/share/metainfo/com.stremio.Stremio.Devel.metainfo.xml",
+                "install -Dm644 data/com.stremio.Stremio.service /app/share/dbus-1/services/com.stremio.Stremio.Devel.service",
+                "sed -i -e 's/com.stremio.Stremio/com.stremio.Stremio.Devel/g' /app/share/dbus-1/services/com.stremio.Stremio.Devel.service",
+                "install -Dm644 po/es/LC_MESSAGES/stremio.mo -t /app/share/locale/es/LC_MESSAGES/",
+                "install -Dm644 po/fr/LC_MESSAGES/stremio.mo -t /app/share/locale/fr/LC_MESSAGES/",
                 "mkdir -p /app/lib/ffmpeg",
                 "mkdir -p /app/lib/intel-vaapi-driver"
             ],
@@ -113,7 +115,7 @@
                                 {
                                     "type": "git",
                                     "url": "https://github.com/haasn/libplacebo.git",
-                                    "tag": "v7.349.0"
+                                    "branch": "master"
                                 }
                             ]
                         },
@@ -150,8 +152,8 @@
                     "sources": [
                         {
                             "type": "archive",
-                            "url": "https://cef-builds.spotifycdn.com/cef_binary_138.0.21+g54811fe+chromium-138.0.7204.101_linux64_minimal.tar.bz2",
-                            "sha256": "2a86ffe653dd65cf4920fc73aa225735231ac4bb80bcd40a75dfc0643897bcd2"
+                            "url": "https://cef-builds.spotifycdn.com/cef_binary_143.0.9+ge88e818+chromium-143.0.7499.40_linux64_minimal.tar.bz2",
+                            "sha256": "f94065a9ff31bab8a2aa8b1089afef528b614a949f928ba9c19d644c290d964f"
                         }
                     ]
                 }
@@ -170,7 +172,6 @@
                     "sha256": "dafe2e8f82cb97de1bd10db9e2ec4c07bbf53389b0799b1e095a918951e78fd4"
                 }
             ]
-        },
-        "shared-modules/libappindicator/libappindicator-gtk3-12.10.json"
+        }
     ]
 }
