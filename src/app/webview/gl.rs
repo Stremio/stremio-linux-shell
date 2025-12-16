@@ -179,3 +179,21 @@ pub fn update_texture(
         BindTexture(TEXTURE_2D, 0);
     }
 }
+
+pub fn resize_viewport(width: i32, height: i32) {
+    unsafe {
+        epoxy::Viewport(0, 0, width, height);
+    }
+}
+
+pub fn draw_texture(program: GLuint, texture: GLuint, texture_uniform: GLint, vao: GLuint) {
+    unsafe {
+        epoxy::UseProgram(program);
+        epoxy::ActiveTexture(epoxy::TEXTURE0);
+        epoxy::BindTexture(epoxy::TEXTURE_2D, texture);
+        epoxy::Uniform1i(texture_uniform, 0);
+
+        epoxy::BindVertexArray(vao);
+        epoxy::DrawArrays(epoxy::TRIANGLE_STRIP, 0, 4);
+    }
+}

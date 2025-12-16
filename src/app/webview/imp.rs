@@ -121,22 +121,17 @@ impl GLAreaImpl for WebView {
                     &frame.buffer,
                 );
 
-                unsafe {
-                    epoxy::Viewport(
-                        0,
-                        0,
-                        frame.full_width * scale_factor,
-                        frame.full_height * scale_factor,
-                    );
+                gl::resize_viewport(
+                    frame.full_width * scale_factor,
+                    frame.full_height * scale_factor,
+                );
 
-                    epoxy::UseProgram(self.program.get());
-                    epoxy::ActiveTexture(epoxy::TEXTURE0);
-                    epoxy::BindTexture(epoxy::TEXTURE_2D, self.texture.get());
-                    epoxy::Uniform1i(self.texture_uniform.get(), 0);
-
-                    epoxy::BindVertexArray(self.vao.get());
-                    epoxy::DrawArrays(epoxy::TRIANGLE_STRIP, 0, 4);
-                }
+                gl::draw_texture(
+                    self.program.get(),
+                    self.texture.get(),
+                    self.texture_uniform.get(),
+                    self.vao.get(),
+                );
             } else {
                 break;
             }
