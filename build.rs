@@ -2,13 +2,55 @@ use std::{
     fs::{self, File},
     io::BufReader,
     path::{Path, PathBuf},
+    process::Command,
 };
 
-use anyhow::{Error, Ok, Result};
+use anyhow::{Error, Result};
 use bzip2::bufread::BzDecoder;
 use globset::GlobBuilder;
 use serde::{Deserialize, Serialize};
+use tar::Archive;
 use toml::Value;
+
+fn main() -> Result<()> {
+    setup_cef()?;
+    setup_po()?;
+
+    Ok(())
+}
+
+pub const GETTEXT_DOMAIN: &str = "stremio";
+pub const GETTEXT_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/po");
+
+fn setup_po() -> Result<()> {
+    println!("cargo:rerun-if-changed={GETTEXT_DIR}");
+
+    let po_dir = Path::new(GETTEXT_DIR);
+
+    for entry in fs::read_dir(po_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if let Some(extension) = path.extension()
+            && extension == "po"
+            && let Some(po_lang) = path.file_stem()
+        {
+            let mo_dir = po_dir.join(po_lang).join("LC_MESSAGES");
+
+            fs::create_dir_all(&mo_dir)?;
+
+            let mo_path = mo_dir.join(format!("{GETTEXT_DOMAIN}.mo"));
+
+            Command::new("msgfmt")
+                .arg("-o")
+                .arg(mo_path)
+                .arg(path)
+                .spawn()?;
+        }
+    }
+
+    Ok(())
+}
 
 const CEF_CDN: &str = "https://cef-builds.spotifycdn.com";
 const CEF_CDN_INDEX: &str = "index.json";
@@ -48,7 +90,7 @@ pub struct CefIndex {
     pub linux64: CefPlatform,
 }
 
-fn main() -> Result<()> {
+fn setup_cef() -> Result<()> {
     let cef_path = PathBuf::from(std::env::var("CEF_PATH")?);
 
     #[cfg(not(feature = "offline-build"))]
@@ -87,6 +129,7 @@ fn get_version() -> Result<String> {
             }
         })
         .and_then(|v| v.as_str())
+        .and_then(|s| s.split("+").last())
         .map(|s| s.to_string())
         .ok_or(Error::msg("Failed to get cef version"))
 }
@@ -134,7 +177,7 @@ fn unpack_archive(path: &Path, out: &Path) -> Result<()> {
 
     if path.exists() {
         let decoder = BzDecoder::new(BufReader::new(File::open(path)?));
-        let mut archive = tar::Archive::new(decoder);
+        let mut archive = Archive::new(decoder);
 
         for entry in archive.entries()? {
             let mut entry = entry?;

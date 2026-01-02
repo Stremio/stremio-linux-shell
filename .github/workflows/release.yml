@@ -27,14 +27,17 @@ jobs:
       - name: Install requirements
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install build-essential libssl-dev libnss3 libmpv-dev flatpak-builder libgtk-3-dev libappindicator3-dev
+          sudo apt-get -y install libmpv-dev
+          sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu/ questing main" >> /etc/apt/sources.list'
+          sudo apt-get -y update
+          sudo apt-get -y install libssl-dev libgtk-4-dev libadwaita-1-dev gettext nodejs flatpak-builder python3-aiohttp python3-tomlkit
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y \
-            org.freedesktop.Sdk//24.08 \
-            org.freedesktop.Platform//24.08 \
-            org.freedesktop.Sdk.Extension.rust-stable//24.08 \
-            org.freedesktop.Platform.ffmpeg-full//24.08
-          python3 -m pip install toml aiohttp
+            org.gnome.Sdk//49 \
+            org.gnome.Platform//49 \
+            org.freedesktop.Sdk.Extension.rust-stable//25.08 \
+            org.freedesktop.Platform.ffmpeg-full//25.08 \
+            org.freedesktop.Platform.VAAPI.Intel//25.08
 
       - name: Build flatpak package
         run: ./flatpak/build.sh

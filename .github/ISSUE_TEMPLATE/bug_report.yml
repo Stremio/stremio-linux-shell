@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a bug
+body:
+  - type: dropdown
+    id: install
+    attributes:
+      label: "Installation type"
+      options:
+        - Flatpak (.flatpak)
+        - Source
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: "Platform"
+      placeholder: Fedora 42
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Describe the bug"
+    validations:
+      required: true
