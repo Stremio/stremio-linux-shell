@@ -29,7 +29,7 @@ pub struct Window {
     #[property(get, set)]
     decorations: Cell<bool>,
     #[template_child]
-    pub header: TemplateChild<adw::HeaderBar>,
+    header: TemplateChild<adw::HeaderBar>,
     #[template_child]
     pub overlay: TemplateChild<gtk::Overlay>,
     pub inhibit_request: Arc<Mutex<Option<Request<()>>>>,
@@ -116,6 +116,10 @@ impl Window {
             }
         ));
     }
+
+    pub fn show_header(&self, state: bool) {
+        self.header.set_visible(self.decorations.get() && state);
+    }
 }
 
 #[glib::object_subclass]
@@ -149,7 +153,7 @@ impl WidgetImpl for Window {
         self.parent_realize();
 
         if !self.decorations.get() {
-            self.header.set_visible(false);
+            self.show_header(false);
             self.obj().remove_css_class("csd");
         }
     }

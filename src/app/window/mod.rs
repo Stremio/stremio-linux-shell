@@ -38,9 +38,7 @@ impl Window {
     }
 
     pub fn set_fullscreen(&self, fullscreen: bool) {
-        let window = self.imp();
-
-        window.header.set_visible(!fullscreen);
+        self.imp().show_header(!fullscreen);
         self.set_fullscreened(fullscreen);
     }
 
