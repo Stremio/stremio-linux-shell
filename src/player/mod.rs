@@ -160,11 +160,16 @@ impl Player {
             _ => "all=no",
         };
 
+        /* BzzzThe18th:
+        set config and config-dir so mpv-mpris can function
+        mpv automatically converts '~' symbols into $HOME */
         let mpv = Mpv::with_initializer(|init| {
             init.set_property("vo", "libmpv")?;
             init.set_property("video-timing-offset", "0")?;
             init.set_property("terminal", "yes")?;
             init.set_property("msg-level", msg_level)?;
+            init.set_property("config", "yes")?;
+            init.set_property("config-dir", "~/.config/mpv")?;
             Ok(())
         })
         .expect("Failed to create mpv");

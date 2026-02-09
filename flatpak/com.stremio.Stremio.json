@@ -1,5 +1,5 @@
 {
-    "app-id": "com.stremio.Stremio.Devel",
+    "app-id": "com.stremio.Stremio",
     "runtime": "org.freedesktop.Platform",
     "runtime-version": "24.08",
     "sdk": "org.freedesktop.Sdk",
@@ -58,17 +58,17 @@
             },
             "build-commands": [
                 "cargo --offline fetch --manifest-path Cargo.toml --verbose",
-                "cargo --offline build --verbose -F offline-build"
+                "cargo --offline build --release --verbose -F offline-build"
             ],
             "post-install": [
                 "install -Dm755 data/stremio -t /app/bin/",
-                "install -Dm755 target/debug/stremio-linux-shell /app/share/stremio/stremio",
+                "install -Dm755 target/release/stremio-linux-shell /app/share/stremio/stremio",
                 "install -Dm644 data/server.js -t /app/share/stremio/",
-                "install -Dm644 data/icons/com.stremio.Stremio.Devel.svg -t /app/share/icons/hicolor/scalable/apps/",
-                "install -Dm644 data/com.stremio.Stremio.desktop /app/share/applications/com.stremio.Stremio.Devel.desktop",
-                "sed -i -e 's/com.stremio.Stremio/com.stremio.Stremio.Devel/g' /app/share/applications/com.stremio.Stremio.Devel.desktop",
-                "install -Dm644 data/com.stremio.Stremio.metainfo.xml /app/share/metainfo/com.stremio.Stremio.Devel.metainfo.xml",
-                "sed -i -e 's/com.stremio.Stremio/com.stremio.Stremio.Devel/g' /app/share/metainfo/com.stremio.Stremio.Devel.metainfo.xml",
+                "install -Dm644 data/icons/com.stremio.Stremio.svg -t /app/share/icons/hicolor/scalable/apps/",
+                "install -Dm644 data/com.stremio.Stremio.desktop /app/share/applications/com.stremio.Stremio.desktop",
+                "sed -i -e 's/com.stremio.Stremio/com.stremio.Stremio/g' /app/share/applications/com.stremio.Stremio.desktop",
+                "install -Dm644 data/com.stremio.Stremio.metainfo.xml /app/share/metainfo/com.stremio.Stremio.metainfo.xml",
+                "sed -i -e 's/com.stremio.Stremio/com.stremio.Stremio/g' /app/share/metainfo/com.stremio.Stremio.metainfo.xml",
                 "mkdir -p /app/lib/ffmpeg",
                 "mkdir -p /app/lib/intel-vaapi-driver",
                 "mkdir -p ~/.config/mpv && mkdir -p ~/.config/mpv/scripts",
