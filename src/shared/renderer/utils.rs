@@ -1,6 +1,6 @@
 use std::{mem, ptr};
 
-use gl::types::{GLenum, GLfloat, GLint, GLsizei, GLsizeiptr, GLuint};
+use gl::types::{GLchar, GLenum, GLfloat, GLint, GLsizei, GLsizeiptr, GLuint};
 
 use super::constants::BYTES_PER_PIXEL;
 
@@ -139,7 +139,7 @@ pub fn compile_shader(kind: GLenum, src: &str) -> GLuint {
             gl::GetShaderiv(shader, gl::INFO_LOG_LENGTH, &mut len);
 
             let mut buffer = vec![0u8; len as usize];
-            gl::GetShaderInfoLog(shader, len, ptr::null_mut(), buffer.as_mut_ptr() as *mut i8);
+            gl::GetShaderInfoLog(shader, len, ptr::null_mut(), buffer.as_mut_ptr() as *mut GLchar);
 
             panic!(
                 "Shader compile error: {}",
