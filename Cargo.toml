@@ -13,7 +13,7 @@ offline-build = []
 [dependencies]
 gtk = { package = "gtk4", version = "0.10.3", features = ["v4_20"] }
 adw = { package = "libadwaita", version = "0.8.1", features = ["v1_8"] }
-cef = { version = "143.5.0+143.0.13", git = "https://github.com/Stremio/cef-rs" }
+cef = { version = "145.0.0+145.0.22", git = "https://github.com/Stremio/cef-rs" }
 tokio = { version = "1.48.0", features = ["full"] }
 ashpd = { version = "0.12.0", features = ["gtk4"] }
 ksni = "0.3.1"
