@@ -17,7 +17,6 @@ wrap_permission_handler! {
             requested_permissions: u32,
             callback: Option<&mut PermissionPromptCallback>,
         ) -> i32 {
-            println!("{}", requested_permissions);
             if requested_permissions == CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS as u32
                 || requested_permissions == CEF_PERMISSION_TYPE_LOOPBACK_NETWORK as u32
             {
