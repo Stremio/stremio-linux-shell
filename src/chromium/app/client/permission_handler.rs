@@ -1,6 +1,7 @@
 use cef::sys::{
     cef_permission_request_result_t::CEF_PERMISSION_RESULT_ACCEPT,
     cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS,
+    cef_permission_request_types_t::CEF_PERMISSION_TYPE_LOOPBACK_NETWORK,
 };
 use cef::{rc::*, *};
 
@@ -18,10 +19,13 @@ wrap_permission_handler! {
         ) -> i32 {
             println!("{}", requested_permissions);
             if requested_permissions == CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS as u32
-                && let Some(callback) = callback {
+                || requested_permissions == CEF_PERMISSION_TYPE_LOOPBACK_NETWORK as u32
+            {
+                if let Some(callback) = callback {
                     callback.cont(CEF_PERMISSION_RESULT_ACCEPT.into());
                     return true.into();
                 }
+            }
 
             Default::default()
         }
