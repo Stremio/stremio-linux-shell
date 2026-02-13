@@ -1,19 +1,20 @@
-use std::sync::{
-    Arc, LazyLock, OnceLock,
-    mpsc::{Sender, channel},
-};
+use std::sync::{Arc, LazyLock, OnceLock};
 
+use flume::{Sender, unbounded};
 use gettextrs::gettext;
 use gtk::{
-    glib::{self, object::ObjectExt, subclass::Signal},
+    glib::{self, clone, object::ObjectExt, subclass::Signal},
     subclass::prelude::*,
 };
 use ksni::{Handle, MenuItem, TrayMethods, menu::StandardItem};
 use tokio::sync::Mutex;
 
-use crate::app::{
-    config::{APP_ID, APP_NAME},
-    tray::config::ICON_FILE,
+use crate::{
+    app::{
+        config::{APP_ID, APP_NAME},
+        tray::config::ICON_FILE,
+    },
+    spawn_local,
 };
 
 #[derive(Default)]
@@ -55,7 +56,7 @@ impl ObjectImpl for Tray {
     fn constructed(&self) {
         self.parent_constructed();
 
-        let (sender, receiver) = channel::<TrayEvent>();
+        let (sender, receiver) = unbounded::<TrayEvent>();
 
         let tray_icon = TrayIcon {
             sender,
@@ -72,20 +73,19 @@ impl ObjectImpl for Tray {
             *handle_guard = Some(handle);
         });
 
-        let object_weak = self.obj().downgrade();
-        glib::idle_add_local(move || {
-            receiver.try_iter().for_each(|event| {
-                if let Some(object) = object_weak.upgrade() {
+        spawn_local!(clone!(
+            #[weak(rename_to = object)]
+            self.obj(),
+            async move {
+                while let Ok(event) = receiver.recv_async().await {
                     match event {
                         TrayEvent::Show => object.emit_by_name::<()>("show", &[]),
                         TrayEvent::Hide => object.emit_by_name::<()>("hide", &[]),
                         TrayEvent::Quit => object.emit_by_name::<()>("quit", &[]),
                     }
                 }
-            });
-
-            glib::ControlFlow::Continue
-        });
+            }
+        ));
     }
 }
 
