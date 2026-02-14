@@ -11,6 +11,8 @@ use crate::{
     shared::Frame,
 };
 
+const BYTES_PER_PIXEL: usize = 4;
+
 wrap_render_handler! {
     pub struct ChromiumRenderHandler {
         viewport: Arc<RwLock<Viewport>>,
@@ -57,11 +59,26 @@ wrap_render_handler! {
             width: i32,
             height: i32,
         ) {
-            if let Some(dirty_rects) = dirty_rects
-                && let Some(dirty_rect) = dirty_rects.first() {
-                    let size = (width * height * 4) as usize;
-                    let buffer_slice = unsafe { slice::from_raw_parts(buffer, size) };
-                    let buffer = Arc::from(buffer_slice);
+            if let Some(dirty_rects) = dirty_rects {
+                for dirty_rect in dirty_rects {
+                    let x = dirty_rect.x as usize;
+                    let y = dirty_rect.y as usize;
+                    let dirty_width = dirty_rect.width as usize;
+                    let dirty_height = dirty_rect.height as usize;
+
+                    let mut dirty_buffer = Vec::with_capacity(dirty_width * dirty_height * BYTES_PER_PIXEL);
+                    let stride = (width as usize) * BYTES_PER_PIXEL;
+
+                    unsafe {
+                        for row in y..(y + dirty_height) {
+                            let offset = row * stride + x * BYTES_PER_PIXEL;
+                            let row_data = slice::from_raw_parts(
+                                buffer.add(offset),
+                                dirty_width * BYTES_PER_PIXEL,
+                            );
+                            dirty_buffer.extend_from_slice(row_data);
+                        }
+                    }
 
                     let frame = Frame {
                         x: dirty_rect.x,
@@ -70,11 +87,12 @@ wrap_render_handler! {
                         height: dirty_rect.height,
                         full_width: width,
                         full_height: height,
-                        buffer,
+                        buffer: Arc::from(dirty_buffer),
                     };
 
                     self.sender.send(ChromiumEvent::Render(frame)).ok();
                 }
+            }
         }
     }
 }

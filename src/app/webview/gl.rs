@@ -2,6 +2,8 @@ use std::{ffi::CString, mem, ptr};
 
 use epoxy::{types::*, *};
 
+const BYTES_PER_PIXEL: usize = 4;
+
 pub fn create_geometry(program: u32) -> (GLuint, GLuint) {
     unsafe {
         let vertices: [f32; 16] = [
@@ -97,6 +99,25 @@ pub fn create_program(vertex_shader: GLuint, fragment_shader: GLuint) -> GLuint 
     }
 }
 
+pub fn create_pbo() -> GLuint {
+    unsafe {
+        let mut pbo = 0;
+        GenBuffers(1, &mut pbo);
+
+        BindBuffer(PIXEL_UNPACK_BUFFER, pbo);
+        BufferData(
+            PIXEL_UNPACK_BUFFER,
+            BYTES_PER_PIXEL as GLsizeiptr,
+            ptr::null(),
+            STREAM_DRAW,
+        );
+
+        BindBuffer(PIXEL_UNPACK_BUFFER, 0);
+
+        pbo
+    }
+}
+
 pub fn create_texture(program: GLuint, uniform_name: &str) -> (GLuint, GLint) {
     unsafe {
         let mut texture = 0;
@@ -148,20 +169,25 @@ pub fn resize_texture(texture: GLuint, width: i32, height: i32) {
 }
 
 pub fn update_texture(
+    pbo: GLuint,
     texture: GLuint,
     x: GLint,
     y: GLint,
     width: GLint,
     height: GLint,
-    stride: GLint,
     buffer: &[u8],
 ) {
     unsafe {
+        BindBuffer(PIXEL_UNPACK_BUFFER, pbo);
         BindTexture(TEXTURE_2D, texture);
-        PixelStorei(UNPACK_ROW_LENGTH, stride);
 
-        let offset = ((y * stride + x) * 4) as usize;
-        let pixels = buffer.as_ptr().add(offset);
+        PixelStorei(UNPACK_ROW_LENGTH, 0);
+        BufferData(
+            PIXEL_UNPACK_BUFFER,
+            (mem::size_of_val(buffer)) as GLsizeiptr,
+            buffer.as_ptr() as _,
+            STREAM_DRAW,
+        );
 
         TexSubImage2D(
             TEXTURE_2D,
@@ -172,11 +198,11 @@ pub fn update_texture(
             height,
             BGRA,
             UNSIGNED_BYTE,
-            pixels as _,
+            ptr::null(),
         );
 
-        PixelStorei(UNPACK_ROW_LENGTH, 0);
         BindTexture(TEXTURE_2D, 0);
+        BindBuffer(PIXEL_UNPACK_BUFFER, 0);
     }
 }
 

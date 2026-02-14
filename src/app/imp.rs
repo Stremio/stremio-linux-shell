@@ -127,6 +127,7 @@ impl ApplicationImpl for Application {
         let startup_url = self.startup_url.clone();
         let open_uri = self.open_uri.clone();
         let deeplink = self.deeplink.clone();
+
         glib::idle_add_local(clone!(
             #[weak]
             webview,
@@ -198,7 +199,7 @@ impl ApplicationImpl for Application {
                                 }
                             }
                         }
-                    });
+                    })
                 }
 
                 ControlFlow::Continue
