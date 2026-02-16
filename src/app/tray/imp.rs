@@ -67,7 +67,8 @@ impl ObjectImpl for Tray {
         tokio::spawn(async move {
             let mut handle_guard = local_handle.lock().await;
             let handle = tray_icon
-                .spawn_without_dbus_name()
+                .disable_dbus_name(true)
+                .spawn()
                 .await
                 .expect("Failed to create tray icon");
             *handle_guard = Some(handle);
