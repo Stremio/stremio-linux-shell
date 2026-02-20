@@ -1,6 +1,0 @@
-show: Show
-hide: Hide
-quit: Quit
-
-player_error_quit: The player had to quit
-player_error_general: The player was unable to read this file
