@@ -134,11 +134,6 @@ impl WidgetImpl for WebView {
         let dev_w = (width as f64 * scale).round() as i32;
         let dev_h = (height as f64 * scale).round() as i32;
 
-        tracing::debug!(
-            "size_allocate: css={}x{} scale={} -> dev={}x{}",
-            width, height, scale, dev_w, dev_h
-        );
-
         if let Some(callback) = self.resize_callback.borrow().as_ref() {
             callback(dev_w, dev_h, scale);
         }

@@ -46,14 +46,8 @@ wrap_render_handler! {
         fn view_rect(&self, _browser: Option<&mut Browser>, rect: Option<&mut Rect>) {
             if let Some(rect) = rect
                 && let Ok(viewport) = self.viewport.read() {
-                    // Return device pixel dimensions directly since
-                    // device_scale_factor is 1.0
                     rect.width = viewport.width;
                     rect.height = viewport.height;
-                    tracing::debug!(
-                        "view_rect: dev={}x{} scale={}",
-                        viewport.width, viewport.height, viewport.scale_factor
-                    );
                 }
         }
 
@@ -66,7 +60,6 @@ wrap_render_handler! {
             width: i32,
             height: i32,
         ) {
-            tracing::debug!("on_paint: buffer={}x{}", width, height);
             if let Some(dirty_rects) = dirty_rects {
                 for dirty_rect in dirty_rects {
                     let x = dirty_rect.x as usize;

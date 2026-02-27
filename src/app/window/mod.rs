@@ -44,6 +44,7 @@ impl Window {
 
     pub fn connect_monitor_info<F: Fn(f64, f64) + Clone + 'static>(&self, callback: F) {
         let realize_callback = callback.clone();
+        let scale_callback = callback.clone();
         self.connect_realize(move |window| {
             let display = window.display();
             let surface = window.surface();
@@ -55,21 +56,19 @@ impl Window {
                 let scale_factor = surface.scale();
 
                 realize_callback(refresh_rate, scale_factor);
-            }
-        });
 
-        let scale_callback = callback.clone();
-        self.connect_notify_local(Some("scale-factor"), move |window, _| {
-            let display = window.display();
-            let surface = window.surface();
+                // Listen for fractional scale changes on the surface
+                // (fires when moving between monitors with different scales)
+                let cb = scale_callback.clone();
+                let display = display.clone();
+                surface.connect_notify_local(Some("scale"), move |surface, _| {
+                    if let Some(monitor) = display.monitor_at_surface(surface) {
+                        let refresh_rate = monitor.refresh_rate() as f64 / 1000.0;
+                        let scale_factor = surface.scale();
 
-            if let Some(surface) = surface
-                && let Some(monitor) = display.monitor_at_surface(&surface)
-            {
-                let refresh_rate = monitor.refresh_rate() as f64 / 1000.0;
-                let scale_factor = surface.scale();
-
-                scale_callback(refresh_rate, scale_factor);
+                        cb(refresh_rate, scale_factor);
+                    }
+                });
             }
         });
     }
