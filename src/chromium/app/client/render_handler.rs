@@ -45,8 +45,8 @@ wrap_render_handler! {
         fn view_rect(&self, _browser: Option<&mut Browser>, rect: Option<&mut Rect>) {
             if let Some(rect) = rect
                 && let Ok(viewport) = self.viewport.read() {
-                    rect.width = viewport.width / viewport.scale_factor;
-                    rect.height = viewport.height / viewport.scale_factor;
+                    rect.width = (viewport.width as f64 / viewport.scale_factor).round() as i32;
+                    rect.height = (viewport.height as f64 / viewport.scale_factor).round() as i32;
                 }
         }
 

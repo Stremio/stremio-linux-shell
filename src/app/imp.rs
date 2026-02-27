@@ -83,13 +83,10 @@ impl ApplicationImpl for Application {
         window.connect_monitor_info(clone!(
             #[weak]
             video,
-            #[weak]
-            webview,
-            move |refresh_rate, scale_factor| {
+            move |refresh_rate, scale_factor: f64| {
                 if let Some(ref browser) = *browser.borrow() {
                     browser.set_monitor_info(refresh_rate, scale_factor);
-                    video.set_property("scale-factor", scale_factor);
-                    webview.set_property("scale-factor", scale_factor);
+                    video.set_property("scale-factor", scale_factor.ceil() as i32);
                 }
             }
         ));

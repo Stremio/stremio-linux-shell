@@ -139,7 +139,7 @@ impl Chromium {
         self.receiver.try_iter().for_each(handler);
     }
 
-    pub fn set_monitor_info(&self, refresh_rate: f64, scale_factor: i32) {
+    pub fn set_monitor_info(&self, refresh_rate: f64, scale_factor: f64) {
         if let Ok(mut viewport) = self.viewport.write() {
             viewport.scale_factor = scale_factor;
         }
@@ -147,6 +147,7 @@ impl Chromium {
         if let Some(browser_host) = self.browser_host() {
             browser_host.set_windowless_frame_rate(refresh_rate.min(MAX_FRAME_RATE) as i32);
             browser_host.notify_screen_info_changed();
+            browser_host.was_resized();
         }
     }
 
@@ -154,11 +155,11 @@ impl Chromium {
         if let Ok(mut viewport) = self.viewport.write() {
             viewport.width = width;
             viewport.height = height;
+        }
 
-            if let Some(browser_host) = self.browser_host() {
-                browser_host.was_resized();
-                browser_host.invalidate(PET_VIEW.into());
-            }
+        if let Some(browser_host) = self.browser_host() {
+            browser_host.was_resized();
+            browser_host.invalidate(PET_VIEW.into());
         }
     }
 

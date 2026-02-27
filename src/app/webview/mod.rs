@@ -1,4 +1,3 @@
-mod gl;
 mod imp;
 
 use std::{path::PathBuf, rc::Rc};
@@ -24,7 +23,7 @@ use crate::shared::{
 
 glib::wrapper! {
     pub struct WebView(ObjectSubclass<imp::WebView>)
-        @extends gtk::GLArea, gtk::Widget,
+        @extends gtk::Widget,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
 }
 
@@ -45,9 +44,7 @@ impl WebView {
     }
 
     pub fn connect_resized<T: Fn(i32, i32) + 'static>(&self, callback: T) {
-        self.connect_resize(move |_, width, height| {
-            callback(width, height);
-        });
+        self.imp().resize_callback.replace(Some(Box::new(callback)));
     }
 
     pub fn connect_motion<T: Fn(Rc<PointerState>) + 'static>(&self, callback: T) {
