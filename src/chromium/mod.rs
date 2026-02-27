@@ -186,9 +186,20 @@ impl Chromium {
         }
     }
 
+    // Scale GTK CSS pixel coordinates to device pixel coordinates for CEF,
+    // since view_rect is in device pixels with device_scale_factor=1.
+    fn scaled_mouse_event(&self, pointer_state: &PointerState) -> MouseEvent {
+        let mut event = MouseEvent::from(pointer_state);
+        if let Ok(viewport) = self.viewport.read() {
+            event.x = (event.x as f64 * viewport.scale_factor).round() as i32;
+            event.y = (event.y as f64 * viewport.scale_factor).round() as i32;
+        }
+        event
+    }
+
     pub fn forward_motion(&self, pointer_state: &PointerState) {
         if let Some(browser_host) = self.browser_host() {
-            let mouse_event = MouseEvent::from(pointer_state);
+            let mouse_event = self.scaled_mouse_event(pointer_state);
             let mouse_leave = (!pointer_state.over()).into();
             browser_host.send_mouse_move_event(Some(&mouse_event), mouse_leave);
         }
@@ -196,7 +207,7 @@ impl Chromium {
 
     pub fn forward_scroll(&self, pointer_state: &PointerState, delta_x: f64, delta_y: f64) {
         if let Some(browser_host) = self.browser_host() {
-            let mouse_event = MouseEvent::from(pointer_state);
+            let mouse_event = self.scaled_mouse_event(pointer_state);
 
             browser_host.send_mouse_wheel_event(Some(&mouse_event), delta_x as i32, delta_y as i32);
         }
@@ -207,7 +218,7 @@ impl Chromium {
             let pressed = pointer_state.pressed();
             let button = pointer_state.button();
 
-            let mouse_event = MouseEvent::from(pointer_state);
+            let mouse_event = self.scaled_mouse_event(pointer_state);
 
             let r#type = match button {
                 1 => Some(MBT_LEFT.into()),
@@ -257,7 +268,7 @@ impl Chromium {
             if let Some(mut drag_data) = cef::drag_data_create() {
                 drag_data.add_file(file_path.as_ref(), file_name.as_ref());
 
-                let mouse_event = MouseEvent::from(pointer_state);
+                let mouse_event = self.scaled_mouse_event(pointer_state);
 
                 browser_host.drag_target_drag_enter(
                     Some(&mut drag_data),
@@ -270,7 +281,7 @@ impl Chromium {
 
     pub fn forward_file_hover(&self, pointer_state: &PointerState) {
         if let Some(browser_host) = self.browser_host() {
-            let mouse_event = MouseEvent::from(pointer_state);
+            let mouse_event = self.scaled_mouse_event(pointer_state);
 
             browser_host.drag_target_drag_over(
                 Some(&mouse_event),
@@ -281,7 +292,7 @@ impl Chromium {
 
     pub fn forward_file_drop(&self, pointer_state: &PointerState) {
         if let Some(browser_host) = self.browser_host() {
-            let mouse_event = MouseEvent::from(pointer_state);
+            let mouse_event = self.scaled_mouse_event(pointer_state);
 
             browser_host.drag_target_drop(Some(&mouse_event));
         }
