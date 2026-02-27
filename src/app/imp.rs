@@ -85,12 +85,13 @@ impl ApplicationImpl for Application {
             video,
             #[weak]
             webview,
-            move |refresh_rate, scale_factor| {
+            move |refresh_rate, scale_factor: f64| {
                 if let Some(ref browser) = *browser.borrow() {
                     browser.set_monitor_info(refresh_rate, scale_factor);
-                    video.set_property("scale-factor", scale_factor);
-                    webview.set_property("scale-factor", scale_factor);
+                    video.set_property("scale-factor", scale_factor.ceil() as i32);
                 }
+                // Trigger size_allocate to recompute device pixel dimensions
+                webview.queue_allocate();
             }
         ));
 
@@ -230,9 +231,9 @@ impl ApplicationImpl for Application {
         });
 
         let browser = self.browser.clone();
-        webview.connect_resized(move |width, height| {
+        webview.connect_resized(move |width, height, scale| {
             if let Some(ref browser) = *browser.borrow() {
-                browser.resize(width, height);
+                browser.resize(width, height, scale);
             }
         });
 

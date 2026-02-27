@@ -3,10 +3,10 @@ mod imp;
 use adw::subclass::prelude::*;
 use gtk::{
     Widget,
-    gdk::prelude::{DisplayExt, MonitorExt},
+    gdk::prelude::{DisplayExt, MonitorExt, SurfaceExt},
     gio,
     glib::{self, object::IsA},
-    prelude::{GtkWindowExt, NativeExt, WidgetExt},
+    prelude::{GtkWindowExt, NativeExt, ObjectExt, WidgetExt},
 };
 use url::Url;
 
@@ -42,7 +42,9 @@ impl Window {
         self.set_fullscreened(fullscreen);
     }
 
-    pub fn connect_monitor_info<F: Fn(f64, i32) + 'static>(&self, callback: F) {
+    pub fn connect_monitor_info<F: Fn(f64, f64) + Clone + 'static>(&self, callback: F) {
+        let realize_callback = callback.clone();
+        let scale_callback = callback.clone();
         self.connect_realize(move |window| {
             let display = window.display();
             let surface = window.surface();
@@ -51,9 +53,22 @@ impl Window {
                 && let Some(monitor) = display.monitor_at_surface(&surface)
             {
                 let refresh_rate = monitor.refresh_rate() as f64 / 1000.0;
-                let scale_factor = monitor.scale_factor();
+                let scale_factor = surface.scale();
 
-                callback(refresh_rate, scale_factor);
+                realize_callback(refresh_rate, scale_factor);
+
+                // Listen for fractional scale changes on the surface
+                // (fires when moving between monitors with different scales)
+                let cb = scale_callback.clone();
+                let display = display.clone();
+                surface.connect_notify_local(Some("scale"), move |surface, _| {
+                    if let Some(monitor) = display.monitor_at_surface(surface) {
+                        let refresh_rate = monitor.refresh_rate() as f64 / 1000.0;
+                        let scale_factor = surface.scale();
+
+                        cb(refresh_rate, scale_factor);
+                    }
+                });
             }
         });
     }
