@@ -151,13 +151,24 @@ impl Chromium {
         }
     }
 
-    pub fn resize(&self, width: i32, height: i32) {
+    pub fn resize(&self, width: i32, height: i32, scale_factor: f64) {
         if let Ok(mut viewport) = self.viewport.write() {
             viewport.width = width;
             viewport.height = height;
+            viewport.scale_factor = scale_factor;
         }
 
         if let Some(browser_host) = self.browser_host() {
+            // DPI compensation: CEF renders at device pixel dimensions (view_rect)
+            // with device_scale_factor=1. Use zoom level to make content layout
+            // at the correct CSS pixel size.
+            // Formula: zoom_percent = 100 * 1.2^level, so level = ln(scale) / ln(1.2)
+            if scale_factor > 0.0 {
+                let zoom_level = scale_factor.ln() / 1.2_f64.ln();
+                browser_host.set_zoom_level(zoom_level);
+            }
+
+            browser_host.notify_screen_info_changed();
             browser_host.was_resized();
             browser_host.invalidate(PET_VIEW.into());
         }

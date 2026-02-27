@@ -227,9 +227,9 @@ impl ApplicationImpl for Application {
         });
 
         let browser = self.browser.clone();
-        webview.connect_resized(move |width, height| {
+        webview.connect_resized(move |width, height, scale| {
             if let Some(ref browser) = *browser.borrow() {
-                browser.resize(width, height);
+                browser.resize(width, height, scale);
             }
         });
 

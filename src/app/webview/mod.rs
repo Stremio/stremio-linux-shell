@@ -43,7 +43,7 @@ impl WebView {
         self.imp().frames.push(frame);
     }
 
-    pub fn connect_resized<T: Fn(i32, i32) + 'static>(&self, callback: T) {
+    pub fn connect_resized<T: Fn(i32, i32, f64) + 'static>(&self, callback: T) {
         self.imp().resize_callback.replace(Some(Box::new(callback)));
     }
 

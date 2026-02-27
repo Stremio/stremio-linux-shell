@@ -21,12 +21,13 @@ wrap_render_handler! {
 
     impl RenderHandler {
         fn screen_info(&self, _browser: Option<&mut Browser>, screen_info: Option<&mut ScreenInfo>) -> i32 {
-            if let Ok(viewport) = self.viewport.read()
-                && let Some(screen_info) = screen_info {
-                    screen_info.device_scale_factor = viewport.scale_factor as f32;
-
-                    return true.into();
-                }
+            if let Some(screen_info) = screen_info {
+                // CEF OSR doesn't apply device_scale_factor to the paint buffer,
+                // so we set it to 1.0 and give device pixel dimensions directly
+                // as view_rect. DPI scaling is handled via zoom level instead.
+                screen_info.device_scale_factor = 1.0;
+                return true.into();
+            }
 
             false.into()
         }
@@ -45,8 +46,14 @@ wrap_render_handler! {
         fn view_rect(&self, _browser: Option<&mut Browser>, rect: Option<&mut Rect>) {
             if let Some(rect) = rect
                 && let Ok(viewport) = self.viewport.read() {
-                    rect.width = (viewport.width as f64 / viewport.scale_factor).round() as i32;
-                    rect.height = (viewport.height as f64 / viewport.scale_factor).round() as i32;
+                    // Return device pixel dimensions directly since
+                    // device_scale_factor is 1.0
+                    rect.width = viewport.width;
+                    rect.height = viewport.height;
+                    tracing::debug!(
+                        "view_rect: dev={}x{} scale={}",
+                        viewport.width, viewport.height, viewport.scale_factor
+                    );
                 }
         }
 
@@ -59,6 +66,7 @@ wrap_render_handler! {
             width: i32,
             height: i32,
         ) {
+            tracing::debug!("on_paint: buffer={}x{}", width, height);
             if let Some(dirty_rects) = dirty_rects {
                 for dirty_rect in dirty_rects {
                     let x = dirty_rect.x as usize;
