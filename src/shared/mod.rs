@@ -6,6 +6,19 @@ use std::{
     sync::{Mutex, RwLock},
 };
 
+use once_cell::sync::OnceCell;
+use winit::event_loop::EventLoopProxy;
+
+use self::types::UserEvent;
+
+pub static EVENT_LOOP_PROXY: OnceCell<EventLoopProxy<UserEvent>> = OnceCell::new();
+
+pub fn wake_event_loop() {
+    if let Some(proxy) = EVENT_LOOP_PROXY.get() {
+        proxy.send_event(UserEvent::Redraw).ok();
+    }
+}
+
 use glutin::{
     context::{NotCurrentContext, PossiblyCurrentContext},
     prelude::{NotCurrentGlContext, PossiblyCurrentGlContext},

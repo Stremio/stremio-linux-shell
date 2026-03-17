@@ -55,6 +55,7 @@ cef_impl!(
 
                         if let Some(sender) = SENDER.get() {
                             sender.send(WebViewEvent::Paint).ok();
+                            crate::shared::wake_event_loop();
                         }
                     } else if let Some(sender) = SENDER.get() {
                         sender.send(WebViewEvent::Resized).ok();
