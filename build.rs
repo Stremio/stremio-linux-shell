@@ -1,7 +1,5 @@
 use std::{
-    fs::{self, File},
-    io::BufReader,
-    path::{Path, PathBuf},
+    fmt::Debug, fs::{self, File}, io::BufReader, path::{Path, PathBuf}
 };
 
 use anyhow::{Error, Ok, Result};
@@ -62,6 +60,15 @@ fn main() -> Result<()> {
         download_archive(&archive_url, &archive_path)?;
         unpack_archive(&archive_path, &cef_path)?;
         fs::remove_file(&archive_path)?;
+    }
+
+    /* BzzzThe18th:
+    scripts_path uses $HOME variable to get user home, then creates both mpv folder and scripts folder if they don't exist
+    canonicalize makes the path absolute */
+    let scripts_path = PathBuf::from(std::env::var("HOME")? + "/.config/mpv/scripts").canonicalize()?;
+
+    if !scripts_path.exists() {
+        fs::create_dir_all(scripts_path)?;
     }
 
     println!(
