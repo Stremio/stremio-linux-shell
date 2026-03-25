@@ -8,12 +8,12 @@
     ],
     "add-extensions": {
         "org.freedesktop.Platform.ffmpeg-full": {
-            "version": "24.08",
+            "version": "25.08",
             "directory": "lib/ffmpeg",
             "add-ld-path": "."
         },
         "org.freedesktop.Platform.VAAPI.Intel": {
-            "version": "24.08",
+            "version": "25.08",
             "directory": "lib/intel-vaapi-driver",
             "add-ld-path": ".",
             "download-if": "have-intel-gpu",
