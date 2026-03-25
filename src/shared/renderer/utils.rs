@@ -139,7 +139,12 @@ pub fn compile_shader(kind: GLenum, src: &str) -> GLuint {
             gl::GetShaderiv(shader, gl::INFO_LOG_LENGTH, &mut len);
 
             let mut buffer = vec![0u8; len as usize];
-            gl::GetShaderInfoLog(shader, len, ptr::null_mut(), buffer.as_mut_ptr() as *mut GLchar);
+            gl::GetShaderInfoLog(
+                shader,
+                len,
+                ptr::null_mut(),
+                buffer.as_mut_ptr() as *mut GLchar,
+            );
 
             panic!(
                 "Shader compile error: {}",
