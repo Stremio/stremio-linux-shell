@@ -212,6 +212,7 @@ impl Player {
         let sender = self.sender.clone();
         render_context.set_update_callback(move || {
             sender.send(PlayerEvent::Update).ok();
+            crate::shared::wake_event_loop();
         });
 
         self.render_context = Some(render_context);

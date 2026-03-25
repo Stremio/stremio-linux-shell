@@ -40,7 +40,7 @@ impl Tray {
             let menu = Self::create_menu();
             let tray = Self::create(menu, config);
 
-            glib::timeout_add_local(Duration::from_millis(16), move || {
+            glib::timeout_add_local(Duration::from_millis(100), move || {
                 tray_receiver.try_iter().for_each(|event| match event {
                     TrayEvent::Visibility(state) => {
                         let menu = Self::create_menu();

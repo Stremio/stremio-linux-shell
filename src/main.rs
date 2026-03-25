@@ -82,9 +82,10 @@ fn main() -> ExitCode {
         .build()
         .expect("Failed to create event loop");
 
-    event_loop.set_control_flow(ControlFlow::Poll);
+    event_loop.set_control_flow(ControlFlow::Wait);
 
     let event_loop_proxy = event_loop.create_proxy();
+    shared::EVENT_LOOP_PROXY.set(event_loop_proxy.clone()).ok();
 
     let mut needs_redraw = false;
 

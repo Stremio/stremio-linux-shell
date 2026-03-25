@@ -47,4 +47,5 @@ pub enum UserEvent {
     Show,
     Hide,
     Quit,
+    Redraw,
 }
