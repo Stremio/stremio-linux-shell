@@ -56,11 +56,11 @@
             },
             "build-commands": [
                 "cargo --offline fetch --manifest-path Cargo.toml --verbose",
-                "cargo --offline build --verbose -F offline-build"
+                "cargo --offline build --release --verbose -F offline-build"
             ],
             "post-install": [
                 "install -Dm755 data/stremio -t /app/bin/",
-                "install -Dm755 target/debug/stremio-linux-shell /app/share/stremio/stremio",
+                "install -Dm755 target/release/stremio-linux-shell /app/share/stremio/stremio",
                 "install -Dm644 data/server.js -t /app/share/stremio/",
                 "install -Dm644 data/icons/com.stremio.Stremio.Devel.svg -t /app/share/icons/hicolor/scalable/apps/",
                 "install -Dm644 data/com.stremio.Stremio.desktop /app/share/applications/com.stremio.Stremio.Devel.desktop",
