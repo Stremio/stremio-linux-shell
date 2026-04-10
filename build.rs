@@ -49,10 +49,14 @@ pub struct CefIndex {
 }
 
 fn main() -> Result<()> {
-    let cef_path = PathBuf::from(std::env::var("CEF_PATH")?);
+    println!("cargo:rerun-if-env-changed=CEF_PATH")
+        
+    let cef_path = std::env::var("CEF_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("cef"));
 
     #[cfg(not(feature = "offline-build"))]
-    if !cef_path.exists() {
+    if !cef_path.join("libcef.so").exists() {
         let cef_version = get_version()?;
         let archive_name = get_archive_name(cef_version)?;
         let archive_url = format!("{CEF_CDN}/{archive_name}");
