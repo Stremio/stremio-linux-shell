@@ -8,15 +8,17 @@ mod server;
 mod shared;
 mod tray;
 mod webview;
+mod discord;
 
 use app::{App, AppEvent};
 use clap::Parser;
 use config::Config;
 use constants::{STARTUP_URL, URI_SCHEME};
+use discord::Discord;
 use glutin::{display::GetGlDisplay, surface::GlSurface};
 use instance::{Instance, InstanceEvent};
 use ipc::{IpcEvent, IpcEventMpv};
-use player::{Player, PlayerEvent};
+use player::{MpvPropertyValue, Player, PlayerEvent};
 use rust_i18n::i18n;
 use server::Server;
 use shared::{types::UserEvent, with_gl, with_renderer_read, with_renderer_write};
@@ -77,6 +79,7 @@ fn main() -> ExitCode {
     let tray = Tray::new(config.tray);
     let mut app = App::new();
     let mut player = Player::new();
+    let mut discord = Discord::new();
 
     let mut event_loop = EventLoop::<UserEvent>::with_user_event()
         .build()
@@ -88,6 +91,8 @@ fn main() -> ExitCode {
     shared::EVENT_LOOP_PROXY.set(event_loop_proxy.clone()).ok();
 
     let mut needs_redraw = false;
+    let mut media_title = String::new();
+    let mut is_playing = false;
 
     loop {
         let timeout = match needs_redraw {
@@ -147,6 +152,7 @@ fn main() -> ExitCode {
                 shared::with_gl(|surface, _| {
                     player.setup(Rc::new(surface.display()));
                 });
+                player.observe_property("media-title".to_string());
             }
             AppEvent::Resized(size) => {
                 with_gl(|surface, context| {
@@ -266,10 +272,14 @@ fn main() -> ExitCode {
         player.events(|event| match event {
             PlayerEvent::Start => {
                 futures::executor::block_on(app.disable_idling());
+                is_playing = true;
+                discord.set_activity(&media_title);
             }
             PlayerEvent::Stop(error) => {
                 futures::executor::block_on(app.enable_idling());
-
+                is_playing = false;
+                media_title.clear();
+                discord.clear_activity();
                 let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended(error)));
                 webview.post_message(message);
             }
@@ -277,6 +287,14 @@ fn main() -> ExitCode {
                 needs_redraw = true;
             }
             PlayerEvent::PropertyChange(property) => {
+                if property.name() == "media-title" {
+                    if let Ok(MpvPropertyValue::String(title)) = property.value() {
+                        media_title = title;
+                        if is_playing {
+                            discord.set_activity(&media_title);
+                        }
+                    }
+                }
                 let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Change(property)));
                 webview.post_message(message);
             }
