@@ -19,15 +19,14 @@ pub struct Discord {
 
 impl Discord {
     pub fn new() -> Self {
-        let client = DiscordIpcClient::new(APP_ID)
-            .ok()
-            .and_then(|mut c| match c.connect() {
-                Ok(()) => Some(c),
-                Err(e) => {
-                    warn!("Discord RPC unavailable: {e}");
-                    None
-                }
-            });
+        let mut c = DiscordIpcClient::new(APP_ID);
+        let client = match c.connect() {
+            Ok(()) => Some(c),
+            Err(e) => {
+                warn!("Discord RPC unavailable: {e}");
+                None
+            }
+        };
 
         Self {
             client,
