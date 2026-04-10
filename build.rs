@@ -1,168 +1,55 @@
 use std::{
-    fs::{self, File},
-    io::BufReader,
+    fs,
     path::{Path, PathBuf},
 };
 
-use anyhow::{Error, Ok, Result};
-use bzip2::bufread::BzDecoder;
-use globset::GlobBuilder;
-use serde::{Deserialize, Serialize};
-use toml::Value;
-
-const CEF_CDN: &str = "https://cef-builds.spotifycdn.com";
-const CEF_CDN_INDEX: &str = "index.json";
-const CEF_FILE_TYPE: &str = "minimal";
-const CEF_ARCHIVE_FILES: &[[&str; 2]] = &[
-    ["*/Resources/locales/**", "locales"],
-    ["*/Resources/*.pak", ""],
-    ["*/Resources/icudtl.dat", ""],
-    ["*/Release/libcef.so", ""],
-    ["*/Release/libEGL.so", ""],
-    ["*/Release/libGLESv2.so", ""],
-    ["*/Release/libvk_swiftshader.so", ""],
-    ["*/Release/v8_context_snapshot.bin", ""],
-];
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct CefFile {
-    #[serde(rename = "type")]
-    pub file_type: String,
-    pub name: String,
-    pub sha1: String,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct CefVersion {
-    pub cef_version: String,
-    pub files: Vec<CefFile>,
-}
-
-#[derive(Deserialize, Serialize, Default, Debug)]
-pub struct CefPlatform {
-    pub versions: Vec<CefVersion>,
-}
-
-#[derive(Deserialize, Serialize, Default, Debug)]
-pub struct CefIndex {
-    pub linux64: CefPlatform,
-}
+use anyhow::{Error, Result};
 
 fn main() -> Result<()> {
-    println!("cargo:rerun-if-env-changed=CEF_PATH")
-        
-    let cef_path = std::env::var("CEF_PATH")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("cef"));
+    println!("cargo:rerun-if-env-changed=CEF_PATH");
+
+    // $ORIGIN--------: finds libcef.so when binary and CEF are in the same directory (installed flat)
+    // $ORIGIN/bundle-: finds libcef.so inside the bundle/ staging directory produced by this build
+    println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN");
+    println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN/bundle");
 
     #[cfg(not(feature = "offline-build"))]
-    if !cef_path.join("libcef.so").exists() {
-        let cef_version = get_version()?;
-        let archive_name = get_archive_name(cef_version)?;
-        let archive_url = format!("{CEF_CDN}/{archive_name}");
-        let archive_path = cef_path.join(archive_name);
-
-        fs::create_dir_all(&cef_path)?;
-        download_archive(&archive_url, &archive_path)?;
-        unpack_archive(&archive_path, &cef_path)?;
-        fs::remove_file(&archive_path)?;
-    }
-
-    println!(
-        "cargo:rustc-env=LD_LIBRARY_PATH={}",
-        cef_path.to_str().unwrap()
-    );
+    copy_cef_to_target()?;
 
     Ok(())
 }
 
-fn get_version() -> Result<String> {
-    let cargo_toml = fs::read_to_string("Cargo.toml")?;
-    let value: Value = toml::from_str(&cargo_toml)?;
+#[cfg(not(feature = "offline-build"))]
+fn copy_cef_to_target() -> Result<()> {
+    // cef-dll-sys's build script downloads (or locates) CEF and emits its path via
+    // cargo::metadata=CEF_DIR. Cargo exposes this to our build script as DEP_CEF_DLL_WRAPPER_CEF_DIR.
+    let cef_dir = std::env::var("DEP_CEF_DLL_WRAPPER_CEF_DIR")
+        .map(PathBuf::from)
+        .map_err(|_| Error::msg("DEP_CEF_DLL_WRAPPER_CEF_DIR not set — ensure cef-dll-sys ran first"))?;
 
-    value
-        .get("dependencies")
-        .and_then(|deps| deps.get("cef"))
-        .and_then(|dep| {
-            if let Value::Table(table) = dep {
-                table.get("version")
-            } else {
-                Some(dep)
-            }
-        })
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
-        .ok_or(Error::msg("Failed to get cef version"))
+    // OUT_DIR is target/<profile>/build/<crate>-<hash>/out and only three leves up is target/<profile>/.
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR")?);
+    let target_dir = out_dir
+        .ancestors()
+        .nth(3)
+        .ok_or_else(|| Error::msg("Cannot determine target directory from OUT_DIR"))?;
+
+    let bundle_dir = target_dir.join("bundle");
+    fs::create_dir_all(&bundle_dir)?;
+    copy_dir(&cef_dir, &bundle_dir)
 }
 
-fn get_archive_name(cef_version: String) -> Result<String> {
-    println!("Fetch archive name...");
-
-    let index_url = format!("{CEF_CDN}/{CEF_CDN_INDEX}");
-    let index = ureq::get(index_url)
-        .call()?
-        .into_body()
-        .read_json::<CefIndex>()?;
-
-    let version = index
-        .linux64
-        .versions
-        .iter()
-        .find(|version| version.cef_version.starts_with(&cef_version))
-        .ok_or(Error::msg("Failed to find version"))?;
-
-    let file = version
-        .files
-        .iter()
-        .find(|file| file.file_type == CEF_FILE_TYPE)
-        .ok_or(Error::msg("Failed to find file"))?;
-
-    Ok(file.name.to_owned())
-}
-
-fn download_archive(url: &str, out: &Path) -> Result<()> {
-    println!("Downloading archive...");
-
-    if !out.exists() {
-        let resp = ureq::get(url).call()?;
-        let mut file = File::create(out)?;
-
-        std::io::copy(&mut resp.into_body().into_reader(), &mut file)?;
-    }
-
-    Ok(())
-}
-
-fn unpack_archive(path: &Path, out: &Path) -> Result<()> {
-    println!("Unpacking archive...");
-
-    if path.exists() {
-        let decoder = BzDecoder::new(BufReader::new(File::open(path)?));
-        let mut archive = tar::Archive::new(decoder);
-
-        for entry in archive.entries()? {
-            let mut entry = entry?;
-            let file_path = entry.path()?.into_owned();
-
-            if let Some(file_name) = file_path.file_name() {
-                for archive_file in CEF_ARCHIVE_FILES {
-                    let glob = GlobBuilder::new(archive_file[0])
-                        .literal_separator(true)
-                        .build()?
-                        .compile_matcher();
-
-                    if glob.is_match(&file_path) {
-                        let dest_path = out.join(archive_file[1]);
-                        let dest_file_path = dest_path.join(file_name);
-                        println!("Writting {file_path:?} to {dest_file_path:?}");
-
-                        fs::create_dir_all(&dest_path)?;
-                        entry.unpack(dest_file_path)?;
-                    }
-                }
-            }
+#[cfg(not(feature = "offline-build"))]
+fn copy_dir(src: &Path, dest: &Path) -> Result<()> {
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let dest_path = dest.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            fs::create_dir_all(&dest_path)?;
+            copy_dir(&entry.path(), &dest_path)?;
+        } else {
+            fs::copy(entry.path(), &dest_path)?;
         }
     }
-
     Ok(())
 }
