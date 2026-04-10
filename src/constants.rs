@@ -5,7 +5,7 @@ pub const APP_ID: &str = match cfg!(debug_assertions) {
 
 pub const APP_NAME: &str = "Stremio";
 pub const WINDOW_SIZE: (i32, i32) = (1700, 1050);
-pub const STARTUP_URL: &str = "https:/web.stremio.com";
+pub const STARTUP_URL: &str = "https://web.stremio.com";
 pub const URI_SCHEME: &str = "stremio://";
 pub const DATA_DIR: &str = "stremio";
 
