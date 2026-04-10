@@ -19,6 +19,7 @@ pub const BOOL_PROPERTIES: &[&str] = &[
 
 pub const STRING_PROPERTIES: &[&str] = &[
     "path",
+    "media-title",
     "mpv-version",
     "ffmpeg-version",
     "hwdec",
