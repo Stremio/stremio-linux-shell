@@ -23,10 +23,10 @@ jobs:
             libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev libmpv-dev gettext nodejs flatpak-builder python3-aiohttp python3-tomlkit
           flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           flatpak install -y \
-            org.gnome.Sdk//49 \
-            org.gnome.Platform//49 \
+            org.gnome.Sdk//50 \
+            org.gnome.Platform//50 \
             org.freedesktop.Sdk.Extension.rust-stable//25.08 \
-            org.freedesktop.Platform.ffmpeg-full//25.08 \
+            org.freedesktop.Platform.ffmpeg-full//24.08 \
             org.freedesktop.Platform.VAAPI.Intel//25.08
 
       - name: Update git submodules
