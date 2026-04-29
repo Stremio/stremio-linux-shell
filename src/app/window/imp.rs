@@ -104,16 +104,16 @@ impl Window {
             #[weak]
             object,
             async move {
-                if let Some(identifier) = WindowIdentifier::from_native(&object).await {
-                    if let Ok(uri) = Uri::parse(&uri) {
-                        let request = OpenFileRequest::default().identifier(identifier);
+                if let Some(identifier) = WindowIdentifier::from_native(&object).await
+                    && let Ok(uri) = Uri::parse(&uri)
+                {
+                    let request = OpenFileRequest::default().identifier(identifier);
 
-                        request
-                            .send_uri(&uri)
-                            .await
-                            .map_err(|e| error!("Failed to open uri: {e}"))
-                            .ok();
-                    }
+                    request
+                        .send_uri(&uri)
+                        .await
+                        .map_err(|e| error!("Failed to open uri: {e}"))
+                        .ok();
                 }
             }
         ));
