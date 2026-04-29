@@ -15,16 +15,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Update git submodules
         run: git submodule update --init --recursive
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-  
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
 
       - name: Install requirements
         run: |
@@ -38,6 +31,14 @@ jobs:
             org.freedesktop.Sdk.Extension.rust-stable//25.08 \
             org.freedesktop.Platform.ffmpeg-full//25.08 \
             org.freedesktop.Platform.VAAPI.Intel//25.08
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+  
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
 
       - name: Build flatpak package
         run: ./flatpak/build.sh

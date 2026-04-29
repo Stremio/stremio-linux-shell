@@ -15,10 +15,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Rust setup
-        uses: dtolnay/rust-toolchain@stable
-        with: 
-          components: rustfmt, clippy
 
       - name: Install dependencies
         run: |
@@ -26,9 +22,16 @@ jobs:
           sudo apt-get -y install build-essential curl libssl-dev \
             libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev libmpv-dev gettext nodejs
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with: 
+          components: rustfmt, clippy
+
       - name: Lint fmt
         run: cargo fmt --all -- --check
+
       - name: Lint clippy
         run: cargo clippy --all --no-deps -- -D warnings
+
       - name: Build
         run: cargo build
