@@ -29,7 +29,8 @@ jobs:
       - name: Install requirements
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install libssl-dev libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev libmpv-dev gettext nodejs flatpak-builder python3-aiohttp python3-tomlkit
+          sudo apt-get -y install build-essential curl libssl-dev \
+            libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev libmpv-dev gettext nodejs flatpak-builder python3-aiohttp python3-tomlkit
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y \
             org.gnome.Sdk//49 \
