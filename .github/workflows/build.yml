@@ -24,7 +24,7 @@ jobs:
           sudo apt-get -y install libmpv-dev
           sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu/ resolute main" >> /etc/apt/sources.list'
           sudo apt-get -y update
-          sudo apt-get -y install libssl-dev libgtk-4-dev libadwaita-1-dev gettext nodejs
+          sudo apt-get -y install libssl-dev libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev gettext nodejs
 
       - name: Lint fmt
         run: cargo fmt --all -- --check
