@@ -16,9 +16,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Update git submodules
-        run: git submodule update --init --recursive
-
       - name: Install requirements
         run: |
           apt-get -y update
@@ -31,6 +28,9 @@ jobs:
             org.freedesktop.Sdk.Extension.rust-stable//25.08 \
             org.freedesktop.Platform.ffmpeg-full//25.08 \
             org.freedesktop.Platform.VAAPI.Intel//25.08
+
+      - name: Update git submodules
+        run: git submodule update --init --recursive
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
