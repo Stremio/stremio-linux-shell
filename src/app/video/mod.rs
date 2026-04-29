@@ -77,7 +77,7 @@ impl Video {
         );
     }
 
-    pub fn send_command(&self, name: String, args: Vec<String>) {
+    pub fn send_mpv_command(&self, name: String, args: Vec<String>) {
         let widget = self.imp();
 
         let args = args.iter().map(String::as_ref).collect_vec();

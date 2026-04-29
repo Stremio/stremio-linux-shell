@@ -1,24 +1,21 @@
 mod about;
 mod config;
 mod imp;
+mod ipc;
 mod tray;
 mod video;
 mod webview;
 mod window;
 
-use adw::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{
     gio::{self, ActionEntry, ApplicationFlags, prelude::*},
     glib::{self, ExitCode, Object},
     prelude::*,
 };
 
-use crate::{
-    app::{
-        about::AboutDialog,
-        config::{APP_ID, APP_NAME},
-    },
-    chromium::Chromium,
+use crate::app::{
+    about::AboutDialog,
+    config::{APP_ID, APP_NAME},
 };
 
 glib::wrapper! {
@@ -41,10 +38,6 @@ impl Application {
             .property("application-id", APP_ID)
             .property("flags", ApplicationFlags::HANDLES_OPEN)
             .build()
-    }
-
-    pub fn set_browser(&self, browser: Chromium) {
-        self.imp().set_browser(browser);
     }
 
     pub async fn run(&self) -> ExitCode {

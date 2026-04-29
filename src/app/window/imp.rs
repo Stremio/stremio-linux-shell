@@ -3,11 +3,11 @@ use std::{cell::Cell, sync::Arc};
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use ashpd::{
-    WindowIdentifier,
+    Uri, WindowIdentifier,
     desktop::{
         Request,
         background::Background,
-        inhibit::{InhibitFlags, InhibitProxy},
+        inhibit::{InhibitFlags, InhibitOptions, InhibitProxy},
         open_uri::OpenFileRequest,
     },
     enumflags2::BitFlags,
@@ -18,7 +18,6 @@ use gtk::{
 };
 use tokio::sync::Mutex;
 use tracing::error;
-use url::Url;
 
 use crate::spawn_local;
 
@@ -69,11 +68,12 @@ impl Window {
                     let mut flags = BitFlags::empty();
                     flags.insert(InhibitFlags::Idle);
 
-                    let reason = "Prevent screen from going blank during media playback";
+                    let options = InhibitOptions::default()
+                        .set_reason("Prevent screen from going blank during media playback");
 
                     let mut inhibit_request = inhibit_request.lock().await;
                     *inhibit_request = proxy
-                        .inhibit(Some(&identifier), flags, reason)
+                        .inhibit(Some(&identifier), flags, options)
                         .await
                         .map_err(|e| error!("Failed to prevent idling: {e}"))
                         .ok();
@@ -97,7 +97,7 @@ impl Window {
         });
     }
 
-    pub fn open_uri(&self, uri: Url) {
+    pub fn open_uri(&self, uri: String) {
         let object = self.obj();
 
         spawn_local!(clone!(
@@ -105,13 +105,15 @@ impl Window {
             object,
             async move {
                 if let Some(identifier) = WindowIdentifier::from_native(&object).await {
-                    let request = OpenFileRequest::default().identifier(identifier);
+                    if let Ok(uri) = Uri::parse(&uri) {
+                        let request = OpenFileRequest::default().identifier(identifier);
 
-                    request
-                        .send_uri(&uri)
-                        .await
-                        .map_err(|e| error!("Failed to open uri: {e}"))
-                        .ok();
+                        request
+                            .send_uri(&uri)
+                            .await
+                            .map_err(|e| error!("Failed to open uri: {e}"))
+                            .ok();
+                    }
                 }
             }
         ));

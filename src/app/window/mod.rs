@@ -8,7 +8,6 @@ use gtk::{
     glib::{self, object::IsA},
     prelude::{GtkWindowExt, NativeExt, WidgetExt},
 };
-use url::Url;
 
 use crate::app::Application;
 
@@ -42,7 +41,7 @@ impl Window {
         self.set_fullscreened(fullscreen);
     }
 
-    pub fn connect_monitor_info<F: Fn(f64, i32) + 'static>(&self, callback: F) {
+    pub fn connect_monitor_info<F: Fn(i32) + 'static>(&self, callback: F) {
         self.connect_realize(move |window| {
             let display = window.display();
             let surface = window.surface();
@@ -50,10 +49,9 @@ impl Window {
             if let Some(surface) = surface
                 && let Some(monitor) = display.monitor_at_surface(&surface)
             {
-                let refresh_rate = monitor.refresh_rate() as f64 / 1000.0;
                 let scale_factor = monitor.scale_factor();
 
-                callback(refresh_rate, scale_factor);
+                callback(scale_factor);
             }
         });
     }
@@ -76,7 +74,7 @@ impl Window {
         self.imp().enable_idling();
     }
 
-    pub fn open_uri(&self, uri: Url) {
+    pub fn open_uri(&self, uri: String) {
         self.imp().open_uri(uri);
     }
 }

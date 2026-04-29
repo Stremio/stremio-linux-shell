@@ -1,14 +1,14 @@
 const createIpc = () => {
     let listeners = [];
 
-    globalThis.IPC_SENDER = (data) =>  {
+    globalThis.__postMessage = (data) => {
         listeners.forEach((listener) => {
             listener({ data });
         });
     };
 
     const postMessage = (data) => {
-        globalThis.IPC_RECEIVER(data);
+        globalThis.webkit.messageHandlers.ipc.postMessage(data);
     };
 
     const addEventListener = (name, listener) => {
