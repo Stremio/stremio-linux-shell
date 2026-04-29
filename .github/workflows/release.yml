@@ -10,6 +10,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    container:
+      image: ubuntu:resolute
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,10 +29,7 @@ jobs:
       - name: Install requirements
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install libmpv-dev
-          sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu/ resolute main" >> /etc/apt/sources.list'
-          sudo apt-get -y update
-          sudo apt-get -y install libssl-dev libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev gettext nodejs flatpak-builder python3-aiohttp python3-tomlkit
+          sudo apt-get -y install libssl-dev libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev libmpv-dev gettext nodejs flatpak-builder python3-aiohttp python3-tomlkit
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y \
             org.gnome.Sdk//49 \
