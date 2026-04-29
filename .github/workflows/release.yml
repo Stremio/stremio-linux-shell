@@ -13,9 +13,6 @@ jobs:
     container:
       image: ubuntu:resolute
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Install requirements
         run: |
           apt-get -y update
@@ -28,6 +25,11 @@ jobs:
             org.freedesktop.Sdk.Extension.rust-stable//25.08 \
             org.freedesktop.Platform.ffmpeg-full//24.08 \
             org.freedesktop.Platform.VAAPI.Intel//25.08
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Update git submodules
         run: git submodule update --init --recursive
