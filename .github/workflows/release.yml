@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:resolute
+      options: --privileged
     steps:
       - name: Install requirements
         run: |
