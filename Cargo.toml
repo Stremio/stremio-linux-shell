@@ -40,10 +40,3 @@ dirs = "6.0.0"
 
 [build-dependencies]
 anyhow = "1.0.101"
-serde = "1.0.228"
-serde_json = "1.0.149"
-toml = "0.9.8"
-ureq = { version = "3.2.0", features = ["json"] }
-bzip2 = "0.6.1"
-tar = "0.4.44"
-globset = "0.4.18"
