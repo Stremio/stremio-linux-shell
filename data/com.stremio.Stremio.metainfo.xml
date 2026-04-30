@@ -13,8 +13,8 @@
     </developer>
 
     <branding>
-        <color type="primary" scheme_preference="light">#1a173e</color>
-        <color type="primary" scheme_preference="dark">#0c0b11</color>
+        <color type="primary" scheme_preference="light">#9C97D8</color>
+        <color type="primary" scheme_preference="dark">#2E286D</color>
     </branding>
 
     <screenshots>
@@ -44,6 +44,8 @@
 
     <url type="homepage">https://github.com/Stremio/stremio-linux-shell</url>
     <url type="bugtracker">https://github.com/Stremio/stremio-linux-shell/issues</url>
+
+    <translation type="gettext">stremio</translation>
 
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
