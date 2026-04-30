@@ -1,0 +1,7 @@
+{
+    "rust-analyzer.files.exclude": [
+        ".flatpak-builder",
+        "flatpak/build",
+        "flatpak/repo"
+    ]
+}
