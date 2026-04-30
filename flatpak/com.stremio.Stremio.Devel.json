@@ -91,8 +91,8 @@
                     "sources": [
                         {
                             "type": "archive",
-                            "url": "https://github.com/mpv-player/mpv/archive/v0.40.0.tar.gz",
-                            "sha256": "10a0f4654f62140a6dd4d380dcf0bbdbdcf6e697556863dc499c296182f081a3"
+                            "url": "https://github.com/mpv-player/mpv/archive/v0.41.0.tar.gz",
+                            "sha256": "ee21092a5ee427353392360929dc64645c54479aefdb5babc5cfbb5fad626209"
                         }
                     ],
                     "modules": [
@@ -110,7 +110,7 @@
                                 {
                                     "type": "git",
                                     "url": "https://github.com/haasn/libplacebo.git",
-                                    "branch": "master"
+                                    "tag": "v7.360.1"
                                 }
                             ]
                         },
@@ -124,8 +124,8 @@
                             "sources": [
                                 {
                                     "type": "archive",
-                                    "url": "https://github.com/libass/libass/archive/0.17.3.tar.gz",
-                                    "sha256": "26fbfb7a7bd3e6d5c713f8a65a12b36084d1dde6efaed8a9996489054c4aeca0"
+                                    "url": "https://github.com/libass/libass/archive/0.17.4.tar.gz",
+                                    "sha256": "c287d180d93dc9c9021872574b618ac49027e84cc90e1289318b1ee68bb42251"
                                 }
                             ]
                         }
