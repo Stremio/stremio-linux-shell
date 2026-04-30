@@ -7,6 +7,7 @@ pub const FLOAT_PROPERTIES: &[&str] = &[
     "sub-scale",
     "sub-delay",
     "cache-buffering-state",
+    "panscan",
 ];
 
 pub const BOOL_PROPERTIES: &[&str] = &[
@@ -18,6 +19,7 @@ pub const BOOL_PROPERTIES: &[&str] = &[
     "input-vo-keyboard",
     "eof-reached",
     "paused-for-cache",
+    "keepaspect",
 ];
 
 pub const STRING_PROPERTIES: &[&str] = &[
