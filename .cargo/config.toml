@@ -1,3 +1,2 @@
 [env]
-CEF_PATH = "vendor/cef"
 SERVER_PATH = "data/server.js"
