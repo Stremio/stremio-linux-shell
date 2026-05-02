@@ -33,7 +33,8 @@
         "--talk-name=org.kde.StatusNotifierWatcher",
         "--own-name=com.stremio.Stremio.Devel",
         "--env=SERVER_PATH=/app/bin/server.js",
-        "--env=RUST_LOG=debug"
+        "--env=RUST_LOG=debug",
+        "--own-name=org.mpris.MediaPlayer2.Stremio"
     ],
     "build-options": {
         "append-path": "/usr/lib/sdk/rust-stable/bin"

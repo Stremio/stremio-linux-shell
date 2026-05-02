@@ -92,6 +92,15 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                     }
                 ])),
             }),
+            IpcEvent::MediaStatus(paused) => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!(["media.status", {
+                    "paused": paused
+                }])),
+            }),
             _ => Err("Failed to convert IpcEvent to IpcMessageResponse"),
         }
     }
