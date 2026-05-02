@@ -15,6 +15,19 @@ pub struct IpcMessageRequestWinSetVisilibty {
     fullscreen: bool,
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct IpcMessageRequestMediaMetadata {
+    title: String,
+    artist: Option<String>,
+    art_url: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct IpcMessageRequestMediaStatus {
+    paused: bool,
+}
+
 impl TryFrom<IpcMessageRequest> for IpcEvent {
     type Error = &'static str;
 
@@ -69,6 +82,24 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                                     .to_owned();
 
                                 Ok(IpcEvent::Mpv(IpcEventMpv::Set((name, value))))
+                            }
+                            "media.metadata" => {
+                                let data: IpcMessageRequestMediaMetadata =
+                                    serde_json::from_value(data)
+                                        .map_err(|_| "Invalid media.metadata object")?;
+
+                                Ok(IpcEvent::MediaMetadata((
+                                    data.title,
+                                    data.artist,
+                                    data.art_url,
+                                )))
+                            }
+                            "media.status" => {
+                                let data: IpcMessageRequestMediaStatus =
+                                    serde_json::from_value(data)
+                                        .map_err(|_| "Invalid media.status object")?;
+
+                                Ok(IpcEvent::MediaStatus(data.paused))
                             }
                             _ => Err("Unknown method"),
                         },

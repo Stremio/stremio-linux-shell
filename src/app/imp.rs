@@ -4,11 +4,12 @@ use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib::{self, Properties, clone};
 
 use crate::app::{
-    config::URI_SCHEME,
+    config::{APP_ID, APP_NAME, URI_SCHEME},
     ipc::{
         self,
         event::{IpcEvent, IpcEventMpv},
     },
+    mpris::Mpris,
     tray::Tray,
     video::Video,
     webview::WebView,
@@ -27,6 +28,7 @@ pub struct Application {
     #[property(get, set)]
     decorations: Cell<bool>,
     tray: RefCell<Option<Tray>>,
+    mpris: RefCell<Option<Mpris>>,
     webview: RefCell<Option<WebView>>,
     deeplink: RefCell<Option<String>>,
 }
@@ -62,6 +64,7 @@ impl ApplicationImpl for Application {
 
         let tray = Tray::default();
         let video = Video::default();
+        let mpris = Mpris::default();
 
         let startup_url = self.startup_url.borrow();
         let dev_mode = self.dev_mode.get();
@@ -121,6 +124,8 @@ impl ApplicationImpl for Application {
             window,
             #[weak]
             video,
+            #[weak]
+            mpris,
             move |webview: WebView, message: &str| {
                 if let Ok(event) = ipc::parse_request(message) {
                     match event {
@@ -140,6 +145,12 @@ impl ApplicationImpl for Application {
 
                             let message = ipc::create_response(IpcEvent::Fullscreen(state));
                             webview.send(&message);
+                        }
+                        IpcEvent::MediaStatus(status) => {
+                            mpris.set_status(status);
+                        }
+                        IpcEvent::MediaMetadata((title, artist, artwork)) => {
+                            mpris.set_metadata(title, artist, artwork);
                         }
                         IpcEvent::Quit => {
                             app.quit();
@@ -186,7 +197,6 @@ impl ApplicationImpl for Application {
                 tray.update(state);
             }
         ));
-
         tray.connect_show(clone!(
             #[weak]
             window,
@@ -211,7 +221,27 @@ impl ApplicationImpl for Application {
             }
         ));
 
+        mpris.connect_status(clone!(
+            #[weak]
+            webview,
+            move |paused| {
+                let message = ipc::create_response(IpcEvent::MediaStatus(paused));
+                webview.send(&message);
+            }
+        ));
+
+        mpris.connect_raise(clone!(
+            #[weak]
+            window,
+            move || {
+                window.activate();
+            }
+        ));
+
+        mpris.start(APP_ID, APP_NAME);
+
         *self.tray.borrow_mut() = Some(tray);
+        *self.mpris.borrow_mut() = Some(mpris);
         *self.webview.borrow_mut() = Some(webview);
 
         window.present();
