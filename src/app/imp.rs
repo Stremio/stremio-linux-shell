@@ -1,7 +1,4 @@
-use std::{
-    cell::{Cell, RefCell},
-    rc::Rc,
-};
+use std::cell::{Cell, RefCell};
 
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib::{self, Properties, clone};
@@ -33,7 +30,7 @@ pub struct Application {
     tray: RefCell<Option<Tray>>,
     mpris: RefCell<Option<Mpris>>,
     webview: RefCell<Option<WebView>>,
-    deeplink: Rc<RefCell<Option<String>>>,
+    deeplink: RefCell<Option<String>>,
 }
 
 #[glib::object_subclass]

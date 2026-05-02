@@ -7,6 +7,7 @@ pub const FLOAT_PROPERTIES: &[&str] = &[
     "sub-scale",
     "sub-delay",
     "cache-buffering-state",
+    "demuxer-cache-time",
     "panscan",
 ];
 
@@ -34,6 +35,7 @@ pub const STRING_PROPERTIES: &[&str] = &[
     "sub-border-color",
     "sid",
     "aid",
+    "vid",
     "mute",
     "metadata",
     "video-params",

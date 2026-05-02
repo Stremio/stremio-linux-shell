@@ -36,7 +36,8 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
             3 => Ok(IpcEvent::Init),
             6 => match value.args {
                 Some(args) => {
-                    let args: Vec<Value> = serde_json::from_value(args).expect("Invalid arguments");
+                    let args: Vec<Value> =
+                        serde_json::from_value(args).map_err(|_| "Invalid arguments")?;
                     let name = args.first().and_then(Value::as_str).ok_or("Invalid name")?;
                     let data = args.get(1).cloned();
 
@@ -46,13 +47,13 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                             "win-set-visibility" => {
                                 let data: IpcMessageRequestWinSetVisilibty =
                                     serde_json::from_value(data)
-                                        .expect("Invalid win-set-visibility object");
+                                        .map_err(|_| "Invalid win-set-visibility object")?;
 
                                 Ok(IpcEvent::Fullscreen(data.fullscreen))
                             }
                             "mpv-command" => {
                                 let data: Vec<String> = serde_json::from_value(data)
-                                    .expect("Invalid mpv-command arguments");
+                                    .map_err(|_| "Invalid mpv-command arguments")?;
                                 let name = data[0].clone();
 
                                 let mut args = vec![];
@@ -63,21 +64,21 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                                 Ok(IpcEvent::Mpv(IpcEventMpv::Command((name, args))))
                             }
                             "mpv-observe-prop" => {
-                                let name = data.as_str().expect("Invalid mpv-observe-prop name");
+                                let name = data.as_str().ok_or("Invalid mpv-observe-prop name")?;
                                 Ok(IpcEvent::Mpv(IpcEventMpv::Observe(name.to_owned())))
                             }
                             "mpv-set-prop" => {
                                 let key_value: Vec<Value> = serde_json::from_value(data)
-                                    .expect("Invalid mpv-set-prop arguments");
+                                    .map_err(|_| "Invalid mpv-set-prop arguments")?;
 
                                 let name = key_value[0]
                                     .as_str()
-                                    .expect("Invalid mpv-set-prop name")
+                                    .ok_or("Invalid mpv-set-prop name")?
                                     .to_owned();
 
                                 let value = key_value
                                     .get(1)
-                                    .expect("Invalid mpv-set-prop value")
+                                    .ok_or("Invalid mpv-set-prop value")?
                                     .to_owned();
 
                                 Ok(IpcEvent::Mpv(IpcEventMpv::Set((name, value))))
@@ -85,7 +86,7 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                             "media.metadata" => {
                                 let data: IpcMessageRequestMediaMetadata =
                                     serde_json::from_value(data)
-                                        .expect("Invalid media.metadata object");
+                                        .map_err(|_| "Invalid media.metadata object")?;
 
                                 Ok(IpcEvent::MediaMetadata((
                                     data.title,
@@ -96,7 +97,7 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                             "media.status" => {
                                 let data: IpcMessageRequestMediaStatus =
                                     serde_json::from_value(data)
-                                        .expect("Invalid media.status object");
+                                        .map_err(|_| "Invalid media.status object")?;
 
                                 Ok(IpcEvent::MediaStatus(data.paused))
                             }
