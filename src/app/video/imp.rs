@@ -29,7 +29,6 @@ pub struct Video {
     scale_factor: Cell<i32>,
     mpv: RefCell<Mpv>,
     render_context: RefCell<Option<RenderContext>>,
-    fbo: Cell<u32>,
 }
 
 impl Default for Video {
@@ -60,29 +59,11 @@ impl Default for Video {
             scale_factor: Cell::new(1),
             mpv: RefCell::new(mpv),
             render_context: Default::default(),
-            fbo: Default::default(),
         }
     }
 }
 
 impl Video {
-    fn fbo(&self) -> i32 {
-        let mut fbo = self.fbo.get();
-
-        if fbo == 0 {
-            let mut current_fbo = 0;
-
-            unsafe {
-                epoxy::GetIntegerv(epoxy::FRAMEBUFFER_BINDING, &mut current_fbo);
-            }
-
-            fbo = current_fbo as u32;
-            self.fbo.set(fbo);
-        }
-
-        fbo as i32
-    }
-
     fn on_event<T: Fn(Event)>(&self, callback: T) {
         if let Some(result) = self.mpv.borrow_mut().wait_event(0.0) {
             match result {
@@ -237,7 +218,11 @@ impl GLAreaImpl for Video {
     fn render(&self, _context: &GLContext) -> Propagation {
         let object = self.obj();
 
-        let fbo = self.fbo();
+        let mut fbo = 0;
+        unsafe {
+            epoxy::GetIntegerv(epoxy::FRAMEBUFFER_BINDING, &mut fbo);
+        }
+
         let scale_factor = self.scale_factor.get();
         let width = object.width();
         let height = object.height();
