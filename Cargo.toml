@@ -31,7 +31,6 @@ itertools = "0.14.0"
 rand = "0.10.1"
 libc = "0.2.186"
 libmpv2 = "5.0.3"
-reqwest = { version = "0.13.3", features = ["json"] }
 image = "0.25.10"
 chrono = "0.4.44"
 anyhow = "1.0.102"
