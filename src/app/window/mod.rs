@@ -2,11 +2,9 @@ mod imp;
 
 use adw::subclass::prelude::*;
 use gtk::{
-    Widget,
-    gdk::prelude::{DisplayExt, MonitorExt},
-    gio,
+    Widget, gio,
     glib::{self, object::IsA},
-    prelude::{GtkWindowExt, NativeExt, WidgetExt},
+    prelude::{GtkWindowExt, WidgetExt},
 };
 
 use crate::app::Application;
@@ -39,21 +37,6 @@ impl Window {
     pub fn set_fullscreen(&self, fullscreen: bool) {
         self.imp().show_header(!fullscreen);
         self.set_fullscreened(fullscreen);
-    }
-
-    pub fn connect_monitor_info<F: Fn(i32) + 'static>(&self, callback: F) {
-        self.connect_realize(move |window| {
-            let display = window.display();
-            let surface = window.surface();
-
-            if let Some(surface) = surface
-                && let Some(monitor) = display.monitor_at_surface(&surface)
-            {
-                let scale_factor = monitor.scale_factor();
-
-                callback(scale_factor);
-            }
-        });
     }
 
     pub fn connect_visibility<T: Fn(bool) + 'static>(&self, callback: T) {

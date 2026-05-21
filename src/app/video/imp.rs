@@ -11,7 +11,7 @@ use libmpv2::{
     render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType},
 };
 use std::{
-    cell::{Cell, RefCell},
+    cell::RefCell,
     env,
     os::raw::c_void,
     sync::{OnceLock, mpsc::channel},
@@ -25,8 +25,6 @@ fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
 #[derive(Properties)]
 #[properties(wrapper_type = super::Video)]
 pub struct Video {
-    #[property(get, set)]
-    scale_factor: Cell<i32>,
     mpv: RefCell<Mpv>,
     render_context: RefCell<Option<RenderContext>>,
 }
@@ -56,7 +54,6 @@ impl Default for Video {
         mpv.disable_deprecated_events().ok();
 
         Self {
-            scale_factor: Cell::new(1),
             mpv: RefCell::new(mpv),
             render_context: Default::default(),
         }
@@ -223,13 +220,13 @@ impl GLAreaImpl for Video {
             epoxy::GetIntegerv(epoxy::FRAMEBUFFER_BINDING, &mut fbo);
         }
 
-        let scale_factor = self.scale_factor.get();
-        let width = object.width();
-        let height = object.height();
+        let scale_factor = object.scale_factor();
+        let width = object.width() * scale_factor;
+        let height = object.height() * scale_factor;
 
         if let Some(ref render_context) = *self.render_context.borrow() {
             render_context
-                .render::<GLContext>(fbo, width * scale_factor, height * scale_factor, true)
+                .render::<GLContext>(fbo, width, height, true)
                 .expect("Failed to render");
         }
 
