@@ -79,14 +79,6 @@ impl ApplicationImpl for Application {
         window.set_underlay(&video);
         window.set_overlay(&webview);
 
-        window.connect_monitor_info(clone!(
-            #[weak]
-            video,
-            move |scale_factor| {
-                video.set_property("scale-factor", scale_factor);
-            }
-        ));
-
         video.connect_playback_started(clone!(
             #[weak]
             window,

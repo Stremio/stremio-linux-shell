@@ -32,9 +32,9 @@
         "--filesystem=xdg-download",
         "--talk-name=org.kde.StatusNotifierWatcher",
         "--own-name=com.stremio.Stremio.Devel",
-        "--env=SERVER_PATH=/app/bin/server.js",
-        "--env=RUST_LOG=debug",
-        "--own-name=org.mpris.MediaPlayer2.Stremio"
+        "--own-name=org.mpris.MediaPlayer2.Stremio",
+        "--env=SERVER_PATH=/app/libexec/stremio/server.js",
+        "--env=RUST_LOG=debug"
     ],
     "build-options": {
         "append-path": "/usr/lib/sdk/rust-stable/bin"
@@ -54,8 +54,9 @@
                 "cargo --offline build --verbose"
             ],
             "post-install": [
-                "install -Dm755 target/debug/stremio-linux-shell /app/bin/stremio",
-                "install -Dm644 data/server.js -t /app/bin/",
+                "install -Dm755 target/debug/stremio-linux-shell /app/libexec/stremio/stremio",
+                "install -Dm644 data/server.js -t /app/libexec/stremio",
+                "install -Dm755 data/stremio.sh /app/bin/stremio",
                 "install -Dm644 data/icons/com.stremio.Stremio.Devel.svg -t /app/share/icons/hicolor/scalable/apps/",
                 "install -Dm644 data/com.stremio.Stremio.desktop /app/share/applications/com.stremio.Stremio.Devel.desktop",
                 "sed -i -e 's/com.stremio.Stremio/com.stremio.Stremio.Devel/g' /app/share/applications/com.stremio.Stremio.Devel.desktop",
