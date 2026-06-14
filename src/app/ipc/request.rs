@@ -29,7 +29,7 @@ pub struct IpcMessageRequestMediaStatus {
 }
 
 impl TryFrom<IpcMessageRequest> for IpcEvent {
-    type Error = &'static str;
+    type Error = String;
 
     fn try_from(value: IpcMessageRequest) -> Result<Self, Self::Error> {
         match value.r#type {
@@ -101,17 +101,17 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
 
                                 Ok(IpcEvent::MediaStatus(data.paused))
                             }
-                            _ => Err("Unknown method"),
+                            method => Err(format!("Invalid method: {method}")),
                         },
                         None => match name {
                             "quit" => Ok(IpcEvent::Quit),
-                            _ => Err("Unknown method"),
+                            method => Err(format!("Invalid method: {method}")),
                         },
                     }
                 }
-                None => Err("Missing args"),
+                None => Err("Invalid arguments".into()),
             },
-            _ => Err("Unknown type"),
+            r#type => Err(format!("Invalid type: {}", r#type)),
         }
     }
 }
