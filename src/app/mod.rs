@@ -2,6 +2,7 @@ mod about;
 mod config;
 mod imp;
 mod ipc;
+mod mpris;
 mod tray;
 mod video;
 mod webview;

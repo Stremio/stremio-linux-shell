@@ -32,6 +32,7 @@
         "--filesystem=xdg-download",
         "--talk-name=org.kde.StatusNotifierWatcher",
         "--own-name=com.stremio.Stremio.Devel",
+        "--own-name=org.mpris.MediaPlayer2.Stremio",
         "--env=SERVER_PATH=/app/libexec/stremio/server.js",
         "--env=RUST_LOG=debug"
     ],

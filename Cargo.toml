@@ -17,6 +17,7 @@ adw = { package = "libadwaita", version = "0.9.1", features = ["v1_9"] }
 webkit = { package = "webkit6", version = "0.6.1", features = ["v2_52"] }
 ashpd = { version = "0.13.10", features = ["background", "gtk4", "inhibit", "open_uri"] }
 ksni = "0.3.4"
+mpris-server = "0.10.0"
 clap = { version = "4.6.1", features = ["derive"] }
 gettext-rs = { version = "0.7.7", features = ["gettext-system"] }
 tokio = { version = "1.52.1", features = ["full"] }
