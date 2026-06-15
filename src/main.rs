@@ -16,7 +16,7 @@ use crate::{
 };
 
 #[derive(Parser, Debug)]
-#[command(version, ignore_errors(true))]
+#[command(version, ignore_errors(true), allow_hyphen_values(true))]
 struct Args {
     /// Open dev tools
     #[arg(short, long)]
@@ -27,6 +27,9 @@ struct Args {
     /// Disable window decorations
     #[arg(short, long)]
     no_window_decorations: bool,
+
+    #[arg(trailing_var_arg = true)]
+    trailing: Vec<String>,
 }
 
 fn main() -> ExitCode {
@@ -68,5 +71,5 @@ fn main() -> ExitCode {
     app.set_property("decorations", !args.no_window_decorations);
 
     let runtime = Runtime::new().expect("Failed to create Tokio runtime");
-    runtime.block_on(app.run())
+    runtime.block_on(app.run(args.trailing))
 }

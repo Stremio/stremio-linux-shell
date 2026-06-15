@@ -13,6 +13,7 @@ use gtk::{
     glib::{self, ExitCode, Object},
     prelude::*,
 };
+use itertools::Itertools;
 
 use crate::app::{
     about::AboutDialog,
@@ -41,9 +42,10 @@ impl Application {
             .build()
     }
 
-    pub async fn run(&self) -> ExitCode {
-        let args: Vec<String> = vec![];
-        self.run_with_args(&args)
+    pub async fn run(&self, args: Vec<String>) -> ExitCode {
+        let mut program = std::env::args().take(1).collect_vec();
+        program.extend(args);
+        self.run_with_args(&program)
     }
 
     fn setup_actions(&self) {

@@ -242,8 +242,6 @@ impl ApplicationImpl for Application {
     fn open(&self, files: &[gtk::gio::File], hint: &str) {
         self.parent_open(files, hint);
 
-        self.activate();
-
         if let Some(file) = files.first() {
             let uri = file.uri().to_string();
             if uri.starts_with(URI_SCHEME) {
@@ -256,6 +254,8 @@ impl ApplicationImpl for Application {
                 }
             }
         }
+
+        self.activate();
     }
 }
 
