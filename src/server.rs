@@ -16,7 +16,11 @@ pub struct Server {
 
 impl Server {
     pub fn new() -> Self {
-        let server_path = env::var("SERVER_PATH").expect("Failed to read SERVER_PATH env");
+        let server_path = env::var("SERVER_PATH").unwrap_or_else(|_| {
+            option_env!("SERVER_PATH")
+                .unwrap_or("data/server.js")
+                .to_string()
+        });
         let file = PathBuf::from(&server_path);
 
         Self {
