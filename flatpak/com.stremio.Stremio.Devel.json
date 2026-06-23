@@ -66,6 +66,7 @@
                 "sed -i -e 's/com.stremio.Stremio/com.stremio.Stremio.Devel/g' /app/share/dbus-1/services/com.stremio.Stremio.Devel.service",
                 "install -Dm644 po/es/LC_MESSAGES/stremio.mo -t /app/share/locale/es/LC_MESSAGES/",
                 "install -Dm644 po/fr/LC_MESSAGES/stremio.mo -t /app/share/locale/fr/LC_MESSAGES/",
+                "install -Dm644 ./LICENSE -t /app/share/licenses/stremio/",
                 "mkdir -p /app/lib/ffmpeg",
                 "mkdir -p /app/lib/intel-vaapi-driver"
             ],
