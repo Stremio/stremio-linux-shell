@@ -30,8 +30,7 @@ impl Server {
             .env("NO_CORS", (dev as i32).to_string())
             .arg(self.file.as_os_str())
             .stdout(process::Stdio::piped())
-            .spawn()
-            .context("Failed to start server")?;
+            .spawn()?;
 
         if let Some(stdout) = child.stdout.take() {
             let reader = BufReader::new(stdout);
