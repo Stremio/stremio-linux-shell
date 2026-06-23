@@ -50,6 +50,16 @@
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
     <releases>
+        <release version="1.0.0-beta.14" date="2026-06-23">
+            <description>
+                <ul>
+                    <li>Add media control support (MPRIS)</li>
+                    <li>Improve video playback</li>
+                    <li>Fix copy / paste</li>
+                    <li>Fix interface scaling</li>
+                </ul>
+            </description>
+        </release>
         <release version="1.0.0-beta.13" date="2026-01-09">
             <description>
                 <ul>
