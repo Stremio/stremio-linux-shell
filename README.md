@@ -14,6 +14,7 @@ Client for Stremio on Linux using [`gtk4`](https://docs.gtk.org/gtk4/) + [`libad
 ```bash
 flatpak remote-add --if-not-exists flathub-beta https://flathub.org/beta-repo/flathub-beta.flatpakrepo
 flatpak install flathub-beta com.stremio.Stremio
+flatpak install org.freedesktop.Platform.codecs-extra//25.08
 ```
 
 ## Development
@@ -48,7 +49,7 @@ flatpak install -y \
     org.gnome.Sdk//50 \
     org.gnome.Platform//50 \
     org.freedesktop.Sdk.Extension.rust-stable//25.08 \
-    org.freedesktop.Platform.ffmpeg-full//24.08 \
+    org.freedesktop.Platform.codecs-extra//25.08 \
     org.freedesktop.Platform.VAAPI.Intel//25.08
 python3 -m pip install aiohttp tomlkit
 ```

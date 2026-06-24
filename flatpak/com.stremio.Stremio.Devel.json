@@ -7,9 +7,9 @@
         "org.freedesktop.Sdk.Extension.rust-stable"
     ],
     "add-extensions": {
-        "org.freedesktop.Platform.ffmpeg-full": {
+        "org.freedesktop.Platform.codecs-extra": {
             "version": "25.08",
-            "directory": "lib/ffmpeg",
+            "directory": "lib/codecs-extra",
             "add-ld-path": "."
         },
         "org.freedesktop.Platform.VAAPI.Intel": {
@@ -67,7 +67,7 @@
                 "install -Dm644 po/es/LC_MESSAGES/stremio.mo -t /app/share/locale/es/LC_MESSAGES/",
                 "install -Dm644 po/fr/LC_MESSAGES/stremio.mo -t /app/share/locale/fr/LC_MESSAGES/",
                 "install -Dm644 ./LICENSE -t /app/share/licenses/stremio/",
-                "mkdir -p /app/lib/ffmpeg",
+                "mkdir -p /app/lib/codecs-extra",
                 "mkdir -p /app/lib/intel-vaapi-driver"
             ],
             "sources": [
