@@ -8,7 +8,7 @@
     ],
     "add-extensions": {
         "org.freedesktop.Platform.codecs-extra": {
-            "version": "25.08",
+            "version": "25.08-extra",
             "directory": "lib/codecs-extra",
             "add-ld-path": "."
         },
