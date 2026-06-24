@@ -1,5 +1,10 @@
 use adw::subclass::prelude::*;
-use gtk::{gdk::RGBA, glib, prelude::*};
+use gtk::{
+    GestureClick,
+    gdk::RGBA,
+    glib::{self, clone},
+    prelude::*,
+};
 use webkit::{WebView as WebKitWebView, prelude::*};
 
 #[derive(Default)]
@@ -31,6 +36,22 @@ impl ObjectImpl for WebView {
             settings.set_enable_media_stream(false);
             settings.set_enable_webaudio(false);
         }
+
+        let gesture = GestureClick::new();
+        gesture.set_button(0);
+        gesture.connect_pressed(clone!(
+            #[weak(rename_to = webview)]
+            self.webview,
+            move |gesture, _, _, _| {
+                let button = gesture.current_button();
+                match button {
+                    8 => webview.go_back(),
+                    9 => webview.go_forward(),
+                    _ => {}
+                }
+            }
+        ));
+        self.webview.add_controller(gesture);
 
         object.append(&self.webview);
     }
