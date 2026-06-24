@@ -19,6 +19,14 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: gpu
+    attributes:
+      label: "GPU"
+      placeholder: AMD
+    validations:
+      required: true
+
   - type: textarea
     id: description
     attributes:
