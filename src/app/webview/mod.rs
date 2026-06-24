@@ -123,7 +123,9 @@ impl WebView {
 
     pub fn connect_open_external<T: Fn(String) + 'static>(&self, callback: T) {
         let widget = self.imp();
+        let cb = Rc::new(callback);
 
+        let callback = cb.clone();
         widget
             .webview
             .connect_decide_policy(move |_, decision, decision_type| {
@@ -138,5 +140,17 @@ impl WebView {
 
                 true
             });
+
+        let callback = cb.clone();
+        widget.webview.connect_create(move |_, navigation_action| {
+            if let Some(uri) = navigation_action
+                .request()
+                .and_then(|request| request.uri())
+            {
+                callback(uri.to_string());
+            }
+
+            None
+        });
     }
 }
