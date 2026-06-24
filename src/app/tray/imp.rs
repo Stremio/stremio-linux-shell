@@ -8,6 +8,7 @@ use gtk::{
 };
 use ksni::{Handle, MenuItem, TrayMethods, menu::StandardItem};
 use tokio::sync::Mutex;
+use tracing::error;
 
 use crate::{
     app::{
@@ -66,12 +67,14 @@ impl ObjectImpl for Tray {
         let local_handle = self.handle.clone();
         tokio::spawn(async move {
             let mut handle_guard = local_handle.lock().await;
-            let handle = tray_icon
+            *handle_guard = tray_icon
                 .disable_dbus_name(true)
                 .spawn()
                 .await
-                .expect("Failed to create tray icon");
-            *handle_guard = Some(handle);
+                .inspect_err(|err| {
+                    error!("Failed to create tray icon: {err}");
+                })
+                .ok()
         });
 
         spawn_local!(clone!(
