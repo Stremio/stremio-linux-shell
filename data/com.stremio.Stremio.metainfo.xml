@@ -50,6 +50,15 @@
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
     <releases>
+        <release version="1.0.0-beta.16" date="2026-06-25">
+            <description>
+                <ul>
+                    <li>Add support for forward and backward mouse buttons</li>
+                    <li>Fix synchronization between video and audio</li>
+                    <li>Prevent crash when unable to create tray icon</li>
+                </ul>
+            </description>
+        </release>
         <release version="1.0.0-beta.15" date="2026-06-24">
             <description>
                 <ul>
