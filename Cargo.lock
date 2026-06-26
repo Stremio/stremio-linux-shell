@@ -2585,6 +2585,8 @@ dependencies = [
  "dirs",
  "epoxy",
  "flume",
+ "gdk4-wayland",
+ "gdk4-x11",
  "gettext-rs",
  "gtk4",
  "image",
