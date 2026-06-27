@@ -14,7 +14,7 @@ use std::{
     cell::RefCell,
     env,
     os::raw::c_void,
-    sync::{OnceLock, mpsc::channel},
+    sync::OnceLock,
 };
 use tracing::error;
 
@@ -179,7 +179,7 @@ impl WidgetImpl for Video {
             )
             .expect("Failed to create render context");
 
-            let (sender, receiver) = channel::<()>();
+            let (sender, receiver) = flume::unbounded::<()>();
 
             glib::idle_add_local(clone!(
                 #[weak]
