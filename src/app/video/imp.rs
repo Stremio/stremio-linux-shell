@@ -1,6 +1,9 @@
 use gtk::{
-    gdk::GLContext,
-    glib::{self, Propagation, Properties, Variant, clone, subclass::Signal},
+    gdk::{self, GLContext},
+    glib::{
+        self, Propagation, Properties, SignalHandlerId, Variant, clone, subclass::Signal,
+        translate::ToGlibPtr,
+    },
     prelude::*,
     subclass::prelude::*,
 };
@@ -8,10 +11,10 @@ use libc::{LC_NUMERIC, setlocale};
 use libmpv2::{
     Format, Mpv, SetData,
     events::{Event, PropertyData},
-    render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType},
+    render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType, mpv_render_update},
 };
 use std::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
     env,
     os::raw::c_void,
     sync::OnceLock,
@@ -22,11 +25,36 @@ fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
     epoxy::get_proc_addr(name) as _
 }
 
+fn native_display_param(display: &gdk::Display) -> Option<RenderParam<GLContext>> {
+    if let Some(display) = display.downcast_ref::<gdk_wayland::WaylandDisplay>() {
+        let wl_display = unsafe {
+            gdk_wayland::ffi::gdk_wayland_display_get_wl_display(display.to_glib_none().0)
+        };
+
+        if !wl_display.is_null() {
+            return Some(RenderParam::WaylandDisplay(wl_display as *const c_void));
+        }
+    }
+
+    if let Some(display) = display.downcast_ref::<gdk_x11::X11Display>() {
+        let x_display =
+            unsafe { gdk_x11::ffi::gdk_x11_display_get_xdisplay(display.to_glib_none().0) };
+
+        if !x_display.is_null() {
+            return Some(RenderParam::X11Display(x_display as *const c_void));
+        }
+    }
+
+    None
+}
+
 #[derive(Properties)]
 #[properties(wrapper_type = super::Video)]
 pub struct Video {
     mpv: RefCell<Mpv>,
     render_context: RefCell<Option<RenderContext>>,
+    frame_rendered: Cell<bool>,
+    frame_clock_handler: RefCell<Option<(gdk::FrameClock, SignalHandlerId)>>,
 }
 
 impl Default for Video {
@@ -57,6 +85,8 @@ impl Default for Video {
         Self {
             mpv: RefCell::new(mpv),
             render_context: Default::default(),
+            frame_rendered: Default::default(),
+            frame_clock_handler: Default::default(),
         }
     }
 }
@@ -166,29 +196,51 @@ impl WidgetImpl for Video {
             let mut mpv = self.mpv.borrow_mut();
             let mpv_handle = unsafe { mpv.ctx.as_mut() };
 
-            let mut render_context = RenderContext::new(
-                mpv_handle,
-                vec![
-                    RenderParam::ApiType(RenderParamApiType::OpenGl),
-                    RenderParam::InitParams(OpenGLInitParams {
-                        get_proc_address,
-                        ctx: context,
-                    }),
-                    RenderParam::BlockForTargetTime(false),
-                ],
-            )
-            .expect("Failed to create render context");
+            let mut render_params = vec![
+                RenderParam::ApiType(RenderParamApiType::OpenGl),
+                RenderParam::InitParams(OpenGLInitParams {
+                    get_proc_address,
+                    ctx: context,
+                }),
+                RenderParam::AdvancedControl(true),
+            ];
+
+            if let Some(param) = native_display_param(&object.display()) {
+                render_params.push(param);
+            }
+
+            let mut render_context = RenderContext::new(mpv_handle, render_params)
+                .expect("Failed to create render context");
 
             let (sender, receiver) = flume::unbounded::<()>();
 
             glib::idle_add_local(clone!(
+                #[weak(rename_to = video)]
+                self,
                 #[weak]
                 object,
                 #[upgrade_or]
                 glib::ControlFlow::Continue,
                 move || {
-                    if let Ok(()) = receiver.try_recv() {
-                        object.queue_render();
+                    let mut updated = false;
+                    while receiver.try_recv().is_ok() {
+                        updated = true;
+                    }
+
+                    if updated {
+                        object.make_current();
+
+                        if object.error().is_none()
+                            && let Some(ref render_context) = *video.render_context.borrow()
+                        {
+                            match render_context.update() {
+                                Ok(flags) if flags & mpv_render_update::Frame != 0 => {
+                                    object.queue_render();
+                                }
+                                Ok(_) => {}
+                                Err(e) => error!("Failed to update render context: {e}"),
+                            }
+                        }
                     }
 
                     glib::ControlFlow::Continue
@@ -199,11 +251,44 @@ impl WidgetImpl for Video {
                 sender.send(()).ok();
             });
 
+            if let Some((frame_clock, handler)) = self.frame_clock_handler.borrow_mut().take() {
+                frame_clock.disconnect(handler);
+            }
+
+            if let Some(frame_clock) = object.frame_clock() {
+                let handler = frame_clock.connect_after_paint(clone!(
+                    #[weak(rename_to = video)]
+                    self,
+                    #[weak]
+                    object,
+                    move |_| {
+                        if !video.frame_rendered.replace(false) {
+                            return;
+                        }
+
+                        object.make_current();
+
+                        if object.error().is_none()
+                            && let Some(ref render_context) = *video.render_context.borrow()
+                        {
+                            render_context.report_swap();
+                        }
+                    }
+                ));
+
+                *self.frame_clock_handler.borrow_mut() = Some((frame_clock, handler));
+            }
+
             *self.render_context.borrow_mut() = Some(render_context);
         }
     }
 
     fn unrealize(&self) {
+        if let Some((frame_clock, handler)) = self.frame_clock_handler.borrow_mut().take() {
+            frame_clock.disconnect(handler);
+        }
+        self.frame_rendered.set(false);
+
         self.obj().make_current();
         if let Some(render_context) = self.render_context.borrow_mut().take() {
             drop(render_context);
@@ -227,9 +312,10 @@ impl GLAreaImpl for Video {
         let height = object.height() * scale_factor;
 
         if let Some(ref render_context) = *self.render_context.borrow() {
-            render_context
-                .render::<GLContext>(fbo, width, height, true)
-                .expect("Failed to render");
+            match render_context.render::<GLContext>(fbo, width, height, true) {
+                Ok(()) => self.frame_rendered.set(true),
+                Err(e) => error!("Failed to render: {e}"),
+            }
         }
 
         Propagation::Stop
