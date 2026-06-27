@@ -1,6 +1,6 @@
 [package]
 name = "stremio-linux-shell"
-version = "1.0.0"
+version = "1.0.1"
 description = "Freedom to Stream"
 authors = ["Stremio"]
 homepage = "https://stremio.com"

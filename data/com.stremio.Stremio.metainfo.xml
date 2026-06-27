@@ -50,6 +50,11 @@
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
     <releases>
+        <release version="1.0.1" date="2026-06-27">
+            <description>
+                <p>Fix video acceleration with Vulkan for Intel</p>
+            </description>
+        </release>
         <release version="1.0.0" date="2026-06-26" />
     </releases>
 </component>
