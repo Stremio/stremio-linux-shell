@@ -10,12 +10,7 @@ use libmpv2::{
     events::{Event, PropertyData},
     render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType},
 };
-use std::{
-    cell::RefCell,
-    env,
-    os::raw::c_void,
-    sync::OnceLock,
-};
+use std::{cell::RefCell, env, os::raw::c_void, sync::OnceLock};
 use tracing::error;
 
 fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
