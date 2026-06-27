@@ -90,8 +90,13 @@ impl ApplicationImpl for Application {
         video.connect_playback_ended(clone!(
             #[weak]
             window,
+            #[weak]
+            webview,
             move || {
                 window.enable_idling();
+
+                let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended(None)));
+                webview.send(&message);
             }
         ));
 
