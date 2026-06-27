@@ -1,2 +1,3 @@
 [env]
 SERVER_PATH = "data/server.js"
+ANV_DEBUG = "video-decode,video-encode"

@@ -34,6 +34,7 @@
         "--own-name=com.stremio.Stremio.Devel",
         "--own-name=org.mpris.MediaPlayer2.Stremio",
         "--env=SERVER_PATH=/app/libexec/stremio/server.js",
+        "--env=ANV_DEBUG=video-decode,video-encode",
         "--env=RUST_LOG=debug"
     ],
     "build-options": {
