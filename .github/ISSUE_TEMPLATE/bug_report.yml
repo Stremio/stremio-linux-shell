@@ -12,6 +12,14 @@ body:
       required: true
 
   - type: input
+    id: version
+    attributes:
+      label: "Version"
+      placeholder: 1.0.0
+    validations:
+      required: true
+
+  - type: input
     id: platform
     attributes:
       label: "Platform"
