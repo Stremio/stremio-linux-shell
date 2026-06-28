@@ -28,7 +28,6 @@ pub const STRING_PROPERTIES: &[&str] = &[
     "mpv-version",
     "ffmpeg-version",
     "hwdec",
-    "vo",
     "track-list",
     "sub-color",
     "sub-back-color",
