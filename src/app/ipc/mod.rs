@@ -4,13 +4,13 @@ mod response;
 
 use event::IpcEvent;
 use response::IpcMessageResponse;
-use tracing::error;
+use tracing::warn;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const TRANSPORT_NAME: &str = "transport";
 
 pub fn parse_request(data: &str) -> Result<IpcEvent, ()> {
-    IpcEvent::try_from(data).map_err(|e| error!("{e}"))
+    IpcEvent::try_from(data).map_err(|e| warn!("{e}"))
 }
 
 pub fn create_response(event: IpcEvent) -> String {
