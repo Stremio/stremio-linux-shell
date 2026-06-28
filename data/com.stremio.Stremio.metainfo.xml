@@ -50,6 +50,12 @@
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
     <releases>
+        <release version="1.0.2" date="2026-06-28">
+            <description>
+                <p>Fix video acceleration with VA-API for Intel</p>
+                <p>Fix auto play next video when playback ended</p>
+            </description>
+        </release>
         <release version="1.0.1" date="2026-06-27">
             <description>
                 <p>Fix video acceleration with Vulkan for Intel</p>
