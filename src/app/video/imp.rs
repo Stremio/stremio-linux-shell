@@ -1,3 +1,4 @@
+use gdk_wayland::{WaylandDisplay, wayland_client::Proxy};
 use gtk::{
     gdk::GLContext,
     glib::{self, Propagation, Properties, Variant, clone, subclass::Signal},
@@ -155,18 +156,26 @@ impl WidgetImpl for Video {
             let mut mpv = self.mpv.borrow_mut();
             let mpv_handle = unsafe { mpv.ctx.as_mut() };
 
-            let mut render_context = RenderContext::new(
-                mpv_handle,
-                vec![
-                    RenderParam::ApiType(RenderParamApiType::OpenGl),
-                    RenderParam::InitParams(OpenGLInitParams {
-                        get_proc_address,
-                        ctx: context,
-                    }),
-                    RenderParam::BlockForTargetTime(false),
-                ],
-            )
-            .expect("Failed to create render context");
+            let mut render_params = vec![
+                RenderParam::ApiType(RenderParamApiType::OpenGl),
+                RenderParam::InitParams(OpenGLInitParams {
+                    get_proc_address,
+                    ctx: context,
+                }),
+                RenderParam::BlockForTargetTime(false),
+            ];
+
+            let display = object.display();
+            if let Ok(display) = display.downcast::<WaylandDisplay>()
+                && let Some(display) = display.wl_display()
+            {
+                render_params.push(RenderParam::WaylandDisplay(
+                    display.id().as_ptr() as *const c_void
+                ));
+            }
+
+            let mut render_context = RenderContext::new(mpv_handle, render_params)
+                .expect("Failed to create render context");
 
             let (sender, receiver) = flume::unbounded::<()>();
 
