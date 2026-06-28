@@ -87,7 +87,9 @@
                         "-Dbuild-date=false",
                         "-Dcplayer=false",
                         "-Dlibmpv=true",
-                        "-Dmanpage-build=disabled"
+                        "-Dmanpage-build=disabled",
+                        "-Dvaapi=enabled",
+                        "-Dvaapi-wayland=enabled"
                     ],
                     "cleanup": [
                         "/include",
