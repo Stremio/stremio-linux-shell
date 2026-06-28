@@ -1,3 +1,4 @@
 [env]
+LC_NUMERIC = { value = "C", force = true } # For MPV to work alongside GTK
 SERVER_PATH = "data/server.js"
 ANV_DEBUG = "video-decode,video-encode"

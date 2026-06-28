@@ -33,6 +33,7 @@
         "--talk-name=org.kde.StatusNotifierWatcher",
         "--own-name=com.stremio.Stremio.Devel",
         "--own-name=org.mpris.MediaPlayer2.Stremio",
+        "--env=LC_NUMERIC=C",
         "--env=SERVER_PATH=/app/libexec/stremio/server.js",
         "--env=ANV_DEBUG=video-decode,video-encode",
         "--env=RUST_LOG=debug"

@@ -4,7 +4,6 @@ use gtk::{
     prelude::*,
     subclass::prelude::*,
 };
-use libc::{LC_NUMERIC, setlocale};
 use libmpv2::{
     Format, Mpv, SetData,
     events::{Event, PropertyData},
@@ -26,11 +25,6 @@ pub struct Video {
 
 impl Default for Video {
     fn default() -> Self {
-        // Required for libmpv to work alongside gtk
-        unsafe {
-            setlocale(LC_NUMERIC, c"C".as_ptr());
-        }
-
         let log = env::var("RUST_LOG");
         let msg_level = match log {
             Ok(scope) => &format!("all={}", scope.as_str()),

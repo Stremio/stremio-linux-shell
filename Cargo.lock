@@ -2591,7 +2591,6 @@ dependencies = [
  "itertools 0.15.0",
  "ksni",
  "libadwaita",
- "libc",
  "libloading",
  "libmpv2",
  "mpris-server",
