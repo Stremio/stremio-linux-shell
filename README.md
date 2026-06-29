@@ -43,13 +43,13 @@ cargo build --release
 
 #### Flatpak
 ```bash
+python3 -m pip install aiohttp toml
 flatpak install -y \
     org.gnome.Sdk//50 \
     org.gnome.Platform//50 \
     org.freedesktop.Sdk.Extension.rust-stable//25.08 \
     org.freedesktop.Platform.codecs-extra//25.08-extra \
     org.freedesktop.Platform.VAAPI.Intel//25.08
-python3 -m pip install aiohttp tomlkit
 ```
 
 ```bash
