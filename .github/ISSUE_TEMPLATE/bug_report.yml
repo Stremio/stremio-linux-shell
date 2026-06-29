@@ -36,6 +36,12 @@ body:
       required: true
 
   - type: input
+    id: windowing
+    attributes:
+      label: "Windowing System"
+      placeholder: Wayland, X11, ...
+
+  - type: input
     id: gpu
     attributes:
       label: "GPU"
