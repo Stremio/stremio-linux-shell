@@ -28,6 +28,14 @@ body:
       required: true
 
   - type: input
+    id: desktop
+    attributes:
+      label: "Desktop Enviroment"
+      placeholder: GNOME
+    validations:
+      required: true
+
+  - type: input
     id: gpu
     attributes:
       label: "GPU"
@@ -41,3 +49,8 @@ body:
       label: "Describe the bug"
     validations:
       required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Logs"
