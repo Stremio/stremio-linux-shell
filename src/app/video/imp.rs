@@ -1,7 +1,7 @@
 use gdk_wayland::{WaylandDisplay, wayland_client::Proxy};
 use gtk::{
     gdk::GLContext,
-    glib::{self, Propagation, Properties, Variant, clone, subclass::Signal},
+    glib::{self, ControlFlow, Propagation, Properties, Variant, clone, subclass::Signal},
     prelude::*,
     subclass::prelude::*,
 };
@@ -111,7 +111,7 @@ impl ObjectImpl for Video {
             #[weak(rename_to = object)]
             self.obj(),
             #[upgrade_or]
-            glib::ControlFlow::Continue,
+            ControlFlow::Break,
             move || {
                 video.on_event(|event| match event {
                     Event::PropertyChange { name, change, .. } => {
@@ -135,7 +135,7 @@ impl ObjectImpl for Video {
                     _ => {}
                 });
 
-                glib::ControlFlow::Continue
+                ControlFlow::Continue
             }
         ));
     }
@@ -183,13 +183,13 @@ impl WidgetImpl for Video {
                 #[weak]
                 object,
                 #[upgrade_or]
-                glib::ControlFlow::Continue,
+                ControlFlow::Break,
                 move || {
                     if let Ok(()) = receiver.try_recv() {
                         object.queue_render();
                     }
 
-                    glib::ControlFlow::Continue
+                    ControlFlow::Continue
                 }
             ));
 
