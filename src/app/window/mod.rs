@@ -25,7 +25,7 @@ impl Window {
     pub fn set_underlay(&self, widget: &impl IsA<Widget>) {
         let window = self.imp();
 
-        window.overlay.set_child(Some(&graphics_offload(widget)));
+        window.overlay.set_child(Some(widget));
     }
 
     pub fn set_overlay(&self, widget: &impl IsA<Widget>) {
