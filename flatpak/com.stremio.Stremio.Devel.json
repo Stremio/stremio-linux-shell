@@ -37,10 +37,12 @@
         "--env=LC_NUMERIC=C",
         "--env=SERVER_PATH=/app/libexec/stremio/server.js",
         "--env=ANV_DEBUG=video-decode,video-encode",
+        "--env=LD_LIBRARY_PATH=/app/lib:/app/lib64",
         "--env=RUST_LOG=debug"
     ],
     "build-options": {
-        "append-path": "/usr/lib/sdk/rust-stable/bin"
+        "append-path": "/usr/lib/sdk/rust-stable/bin",
+        "append-pkg-config-path": "/app/lib/pkgconfig:/app/lib64/pkgconfig"
     },
     "modules": [
         {
