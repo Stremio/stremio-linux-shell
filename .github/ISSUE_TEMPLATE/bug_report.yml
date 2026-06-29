@@ -30,10 +30,8 @@ body:
   - type: input
     id: desktop
     attributes:
-      label: "Desktop Enviroment"
-      placeholder: GNOME
-    validations:
-      required: true
+      label: "Desktop Environment"
+      placeholder: GNOME, KDE, ...
 
   - type: input
     id: windowing
