@@ -162,7 +162,6 @@ impl WidgetImpl for Video {
                     get_proc_address,
                     ctx: context,
                 }),
-                RenderParam::BlockForTargetTime(false),
             ];
 
             let display = object.display();
