@@ -30,6 +30,7 @@
         "--device=dri",
         "--persist=.stremio-server",
         "--filesystem=xdg-download",
+        "--filesystem=xdg-run/pipewire-0:ro",
         "--talk-name=org.kde.StatusNotifierWatcher",
         "--own-name=com.stremio.Stremio.Devel",
         "--own-name=org.mpris.MediaPlayer2.Stremio",
