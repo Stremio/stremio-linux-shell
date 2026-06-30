@@ -6,6 +6,9 @@ msgstr ""
 msgid "Main menu"
 msgstr "Menu principal"
 
+msgid "_Preferences"
+msgstr "_Préférences"
+
 msgid "_About Stremio"
 msgstr "_À propos de Stremio"
 
@@ -17,3 +20,9 @@ msgstr "Masquer"
 
 msgid "Quit"
 msgstr "Quitter"
+
+msgid "KDE Theme"
+msgstr "Thème KDE"
+
+msgid "Requires restarting the application for changes to take effect"
+msgstr "Nécessite de redémarrer l'application pour que les modifications prennent effet"

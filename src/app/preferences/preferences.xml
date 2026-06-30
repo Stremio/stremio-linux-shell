@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <template class="PreferencesDialog" parent="AdwPreferencesDialog">
+        <property name="title">Preferences</property>
+
+        <child>
+            <object class="AdwPreferencesPage">
+                <child>
+                    <object class="AdwPreferencesGroup">
+                        <child>
+                            <object class="AdwSwitchRow" id="kde_theme">
+                                <property name="title" translatable="yes">KDE Theme</property>
+                                <property name="subtitle" translatable="yes">Requires restarting the application for changes to take effect</property>
+
+                                <signal name="notify::active" handler="on_kde_theme_changed" swapped="true"/>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+    </template>
+</interface>

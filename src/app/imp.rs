@@ -50,6 +50,7 @@ impl ApplicationImpl for Application {
         let app = self.obj();
         app.setup_actions();
         app.setup_accels();
+        app.setup_css();
     }
 
     fn activate(&self) {

@@ -13,13 +13,14 @@ use ashpd::{
     enumflags2::BitFlags,
 };
 use gtk::{
+    gio::Settings,
     glib::{self, clone, subclass::InitializingObject},
     prelude::WidgetExt,
 };
 use tokio::sync::Mutex;
 use tracing::error;
 
-use crate::spawn_local;
+use crate::{app::config::APP_ID, spawn_local, utils::IS_DESKTOP_KDE};
 
 #[derive(Default, glib::Properties, gtk::CompositeTemplate)]
 #[properties(wrapper_type = super::Window)]
@@ -143,6 +144,14 @@ impl ObjectSubclass for Window {
 impl ObjectImpl for Window {
     fn constructed(&self) {
         self.parent_constructed();
+
+        let settings = Settings::new(APP_ID);
+
+        let kde_theme_enabled = settings.boolean("kde-theme");
+
+        if *IS_DESKTOP_KDE && kde_theme_enabled {
+            self.header.add_css_class("kde");
+        }
 
         if cfg!(debug_assertions) {
             self.obj().add_css_class("devel");

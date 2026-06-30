@@ -4,3 +4,4 @@ pub const APP_ID: &str = match cfg!(debug_assertions) {
 };
 pub const APP_NAME: &str = "Stremio";
 pub const URI_SCHEME: &str = "stremio://";
+pub const STYLE: &str = include_str!("style.css");

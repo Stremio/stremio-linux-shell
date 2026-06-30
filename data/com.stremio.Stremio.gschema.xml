@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema id="com.stremio.Stremio" path="/com/stremio/stremio/">
+        <key name="kde-theme" type="b">
+            <default>true</default>
+            <summary>KDE Theme</summary>
+        </key>
+    </schema>
+</schemalist>

@@ -1,0 +1,40 @@
+headerbar.kde {
+    padding: 0px 5px;
+    padding-top: 5px;
+    padding-bottom: 4px;
+    margin: 0px;
+    min-height: 0px;
+}
+
+headerbar.kde > windowhandle > box {
+    padding: 0px;
+}
+
+headerbar.kde windowcontrols > image {
+    margin: 0px;
+}
+
+headerbar.kde windowcontrols > button {
+    min-height: 0px;
+    min-width: 0px;
+    padding: 0px;
+}
+
+headerbar.kde windowcontrols > button > image {
+    padding: 2px;
+}
+
+headerbar.kde windowcontrols > button > image:not(:hover) {
+    background-color: transparent;
+}
+
+headerbar.kde menubutton > button {
+    min-height: 0px;
+    min-width: 0px;
+    padding: 2px;
+    margin-right: 2px;
+}
+
+headerbar.kde .title {
+    font-weight: normal;
+}
