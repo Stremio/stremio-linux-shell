@@ -51,6 +51,7 @@ body:
     id: description
     attributes:
       label: "Describe the bug"
+      placeholder: "Please do not use AI/LLMs to generate the description, it makes it hard to understand the actual issue"
     validations:
       required: true
 
