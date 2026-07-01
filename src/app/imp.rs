@@ -29,6 +29,7 @@ pub struct Application {
     decorations: Cell<bool>,
     tray: RefCell<Option<Tray>>,
     mpris: RefCell<Option<Mpris>>,
+    window: RefCell<Option<Window>>,
     webview: RefCell<Option<WebView>>,
     deeplink: RefCell<Option<String>>,
 }
@@ -238,11 +239,12 @@ impl ApplicationImpl for Application {
 
         mpris.start(APP_ID, APP_NAME);
 
+        window.present();
+
         *self.tray.borrow_mut() = Some(tray);
         *self.mpris.borrow_mut() = Some(mpris);
+        *self.window.borrow_mut() = Some(window);
         *self.webview.borrow_mut() = Some(webview);
-
-        window.present();
     }
 
     fn open(&self, files: &[gtk::gio::File], hint: &str) {
@@ -262,6 +264,14 @@ impl ApplicationImpl for Application {
         }
 
         self.activate();
+    }
+
+    fn shutdown(&self) {
+        if let Some(window) = self.window.take() {
+            window.destroy();
+        }
+
+        self.parent_shutdown();
     }
 }
 
