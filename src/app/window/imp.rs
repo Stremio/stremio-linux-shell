@@ -163,10 +163,54 @@ impl WidgetImpl for Window {
     fn realize(&self) {
         self.parent_realize();
 
+        let widget = self.obj();
+        let settings = Settings::new(APP_ID);
+
         if !self.decorations.get() {
             self.show_header(false);
-            self.obj().remove_css_class("csd");
+            widget.remove_css_class("csd");
         }
+
+        let remember_window_state = settings.boolean("remember-window-state");
+        if remember_window_state {
+            let maximized = settings.boolean("window-maximized");
+            widget.set_maximized(maximized);
+
+            let fullscreen = settings.boolean("window-fullscreen");
+            widget.set_fullscreen(fullscreen);
+
+            if !maximized && !fullscreen {
+                let height = settings.int("window-height");
+                widget.set_default_height(height);
+
+                let width = settings.int("window-width");
+                widget.set_default_width(width);
+            }
+        }
+    }
+
+    fn unrealize(&self) {
+        let widget = self.obj();
+        let settings = Settings::new(APP_ID);
+
+        let remember_window_state = settings.boolean("remember-window-state");
+        if remember_window_state {
+            let maximized = widget.is_maximized();
+            settings.set_boolean("window-maximized", maximized).ok();
+
+            let fullscreen = widget.is_fullscreen();
+            settings.set_boolean("window-fullscreen", fullscreen).ok();
+
+            if !maximized && !fullscreen {
+                let height = widget.default_height();
+                settings.set_int("window-height", height).ok();
+
+                let width = widget.default_width();
+                settings.set_int("window-width", width).ok();
+            }
+        }
+
+        self.parent_unrealize();
     }
 }
 
