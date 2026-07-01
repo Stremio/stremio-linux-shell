@@ -8,6 +8,15 @@
                 <child>
                     <object class="AdwPreferencesGroup">
                         <child>
+                            <object class="AdwSwitchRow" id="remember_window_state">
+                                <property name="title" translatable="yes">Remember window state</property>
+                                <property name="subtitle" translatable="yes">Save and retore window dimensions, maximized and fullscreen state</property>
+
+                                <signal name="notify::active" handler="on_remember_window_state_changed" swapped="true"/>
+                            </object>
+                        </child>
+
+                        <child>
                             <object class="AdwSwitchRow" id="kde_theme">
                                 <property name="title" translatable="yes">KDE Theme</property>
                                 <property name="subtitle" translatable="yes">Requires restarting the application for changes to take effect</property>
