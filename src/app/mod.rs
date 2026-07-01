@@ -1,9 +1,8 @@
-mod about;
 mod config;
+mod dialogs;
 mod imp;
 mod ipc;
 mod mpris;
-mod preferences;
 mod tray;
 mod video;
 mod webview;
@@ -19,9 +18,8 @@ use gtk::{
 use itertools::Itertools;
 
 use crate::app::{
-    about::AboutDialog,
     config::{APP_ID, APP_NAME, STYLE},
-    preferences::PreferencesDialog,
+    dialogs::{about::AboutDialog, preferences::PreferencesDialog},
 };
 
 glib::wrapper! {
