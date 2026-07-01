@@ -6,7 +6,7 @@ use gtk::glib::{self, Variant, closure_local, object::ObjectExt};
 use itertools::Itertools;
 use libmpv2::Format;
 use serde_json::{Number, Value};
-use tracing::error;
+use tracing::warn;
 
 use crate::app::video::config::{BOOL_PROPERTIES, FLOAT_PROPERTIES, STRING_PROPERTIES};
 
@@ -97,7 +97,7 @@ impl Video {
             name if STRING_PROPERTIES.contains(&name) => {
                 widget.observe_property(name, Format::String);
             }
-            _ => error!("Failed to observe property {name}: Unsupported"),
+            _ => warn!("Failed to observe property {name}: Unsupported"),
         };
     }
 
@@ -120,7 +120,7 @@ impl Video {
                     widget.set_property(name, value);
                 }
             }
-            name => error!("Failed to set property {name}: Unsupported"),
+            name => warn!("Failed to set property {name}: Unsupported"),
         };
     }
 }
