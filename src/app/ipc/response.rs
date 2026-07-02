@@ -80,7 +80,7 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                     "data": value,
                 }])),
             }),
-            IpcEvent::Mpv(IpcEventMpv::Ended(error)) => Ok(IpcMessageResponse {
+            IpcEvent::Mpv(IpcEventMpv::Ended((reason, error))) => Ok(IpcMessageResponse {
                 id: 1,
                 r#type: 1,
                 object: TRANSPORT_NAME.to_owned(),
@@ -88,6 +88,7 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                 args: Some(json!([
                     "mpv-event-ended",
                     {
+                        "reason": reason,
                         "error": error,
                     }
                 ])),

@@ -94,10 +94,13 @@ impl ApplicationImpl for Application {
             window,
             #[weak]
             webview,
-            move || {
+            move |reason| {
                 window.enable_idling();
 
-                let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended(None)));
+                let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended((
+                    reason.to_string(),
+                    None,
+                ))));
                 webview.send(&message);
             }
         ));
