@@ -21,15 +21,13 @@ flatpak install com.stremio.Stremio
 git clone --recurse-submodules https://github.com/Stremio/stremio-linux-shell
 ```
 
-### Building
-
 #### Fedora
 ```bash
 dnf install gtk4-devel libadwaita-devel webkitgtk6.0-devel mpv-devel libepoxy-devel flatpak-builder
 ```
 
 ```bash
-cargo build --release
+cargo run --release # RUST_LOG=debug to print debug logs
 ```
 
 #### Ubuntu
@@ -38,7 +36,7 @@ apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev libwebkitgt
 ```
 
 ```bash
-cargo build --release
+cargo run --release # RUST_LOG=debug to print debug logs
 ```
 
 #### Flatpak
@@ -54,4 +52,6 @@ flatpak install -y \
 
 ```bash
 ./flatpak/build.sh
+flatpak install ./flatpak/com.stremio.Stremio.Devel.flatpak
+flatpak run com.stremio.Stremio.Devel
 ```
