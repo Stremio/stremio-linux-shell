@@ -9,7 +9,7 @@ pub enum IpcEventMpv {
     Command((String, Vec<String>)),
     Set((String, Value)),
     Change((String, Value)),
-    Ended(Option<String>),
+    Ended((String, Option<String>)),
 }
 
 #[derive(Deserialize, Debug)]

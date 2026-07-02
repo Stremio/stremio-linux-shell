@@ -8,6 +8,7 @@ use gtk::{
 use libmpv2::{
     Format, Mpv, SetData,
     events::{Event, PropertyData},
+    mpv_end_file_reason,
     render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType},
 };
 use std::{cell::RefCell, env, os::raw::c_void, sync::OnceLock};
@@ -97,7 +98,9 @@ impl ObjectImpl for Video {
                     .param_types([str::static_type(), Variant::static_type()])
                     .build(),
                 Signal::builder("playback-started").build(),
-                Signal::builder("playback-ended").build(),
+                Signal::builder("playback-ended")
+                    .param_types([str::static_type()])
+                    .build(),
             ]
         })
     }
@@ -129,8 +132,17 @@ impl ObjectImpl for Video {
                     Event::StartFile => {
                         object.emit_by_name::<()>("playback-started", &[]);
                     }
-                    Event::EndFile(_) => {
-                        object.emit_by_name::<()>("playback-ended", &[]);
+                    Event::EndFile(reason) => {
+                        let reason = match reason {
+                            mpv_end_file_reason::Eof => "eof".to_string(),
+                            mpv_end_file_reason::Stop => "stop".to_string(),
+                            mpv_end_file_reason::Redirect => "redirect".to_string(),
+                            mpv_end_file_reason::Error => "error".to_string(),
+                            mpv_end_file_reason::Quit => "quit".to_string(),
+                            _ => "other".to_string(),
+                        };
+
+                        object.emit_by_name::<()>("playback-ended", &[&reason]);
                     }
                     _ => {}
                 });

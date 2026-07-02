@@ -67,12 +67,12 @@ impl Video {
         );
     }
 
-    pub fn connect_playback_ended<T: Fn() + 'static>(&self, callback: T) {
+    pub fn connect_playback_ended<T: Fn(&str) + 'static>(&self, callback: T) {
         self.connect_closure(
             "playback-ended",
             false,
-            closure_local!(move |_: Video| {
-                callback();
+            closure_local!(move |_: Video, reason: &str| {
+                callback(reason);
             }),
         );
     }
