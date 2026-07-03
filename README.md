@@ -24,6 +24,7 @@ git clone --recurse-submodules https://github.com/Stremio/stremio-linux-shell
 #### Fedora
 ```bash
 dnf install gtk4-devel libadwaita-devel webkitgtk6.0-devel mpv-devel libepoxy-devel flatpak-builder
+python3 -m pip install aiohttp toml # Only for Flatpak build
 ```
 
 ```bash
@@ -33,6 +34,7 @@ cargo run --release # RUST_LOG=debug to print debug logs
 #### Ubuntu
 ```bash
 apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev libmpv-dev gettext nodejs flatpak-builder
+apt install python3-aiohttp python3-toml # Only for Flatpak build
 ```
 
 ```bash
@@ -41,7 +43,6 @@ cargo run --release # RUST_LOG=debug to print debug logs
 
 #### Flatpak
 ```bash
-python3 -m pip install aiohttp toml
 flatpak install -y \
     org.gnome.Sdk//50 \
     org.gnome.Platform//50 \
