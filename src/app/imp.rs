@@ -2,18 +2,22 @@ use std::cell::{Cell, RefCell};
 
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib::{self, Properties, clone};
+use tracing::error;
 
-use crate::app::{
-    config::{APP_ID, APP_NAME, URI_SCHEME},
-    ipc::{
-        self,
-        event::{IpcEvent, IpcEventMpv},
+use crate::{
+    app::{
+        config::{APP_ID, APP_NAME, URI_SCHEME},
+        ipc::{
+            self,
+            event::{IpcEvent, IpcEventMpv},
+        },
+        mpris::Mpris,
+        tray::Tray,
+        video::Video,
+        webview::WebView,
+        window::Window,
     },
-    mpris::Mpris,
-    tray::Tray,
-    video::Video,
-    webview::WebView,
-    window::Window,
+    spawn_local, utils,
 };
 
 const PRELOAD_SCRIPT: &str = include_str!("ipc/preload.js");
@@ -182,8 +186,17 @@ impl ApplicationImpl for Application {
         webview.connect_open_external(clone!(
             #[weak]
             window,
-            move |uri| {
-                window.open_uri(uri);
+            move |data| {
+                if data.starts_with("application/octet-stream") {
+                    spawn_local!(async move {
+                        match utils::download_file("playlist.m3u8", data).await {
+                            Ok(file_path) => window.open_file(file_path),
+                            Err(e) => error!("Failed to download file: {e}"),
+                        }
+                    });
+                } else {
+                    window.open_uri(data);
+                }
             }
         ));
 
