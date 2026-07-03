@@ -31,10 +31,10 @@ dnf install python3 && python3 -m pip install aiohttp toml # Needed for Flatpak 
 cargo run --release # RUST_LOG=debug to print debug logs
 ```
 
-#### Ubuntu
+#### Debian-based (Ubuntu, etc.)
 ```bash
 apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev libwebkitgtk-6.0-dev libmpv-dev gettext nodejs flatpak-builder
-apt install python3 python3-aiohttp python3-toml # Needed for Flatpak build
+apt install python3 python3-aiohttp python3-toml elfutils # Needed for Flatpak build
 ```
 
 ```bash
