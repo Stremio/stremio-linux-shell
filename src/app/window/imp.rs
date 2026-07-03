@@ -1,4 +1,4 @@
-use std::{cell::Cell, sync::Arc};
+use std::{cell::Cell, fs::File, os::fd::AsFd, sync::Arc};
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
@@ -115,6 +115,28 @@ impl Window {
                         .await
                         .map_err(|e| error!("Failed to open uri: {e}"))
                         .ok();
+                }
+            }
+        ));
+    }
+
+    pub fn open_file(&self, file_path: String) {
+        let object = self.obj();
+
+        spawn_local!(clone!(
+            #[weak]
+            object,
+            async move {
+                if let Some(identifier) = WindowIdentifier::from_native(&object).await {
+                    let request = OpenFileRequest::default().identifier(identifier);
+
+                    if let Ok(file) = File::open(&file_path) {
+                        request
+                            .send_file(&file.as_fd())
+                            .await
+                            .map_err(|e| error!("Failed to open file: {e}"))
+                            .ok();
+                    }
                 }
             }
         ));

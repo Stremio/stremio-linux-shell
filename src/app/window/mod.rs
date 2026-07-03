@@ -60,6 +60,10 @@ impl Window {
     pub fn open_uri(&self, uri: String) {
         self.imp().open_uri(uri);
     }
+
+    pub fn open_file(&self, file_path: String) {
+        self.imp().open_file(file_path);
+    }
 }
 
 fn graphics_offload(widget: &impl IsA<Widget>) -> gtk::GraphicsOffload {
