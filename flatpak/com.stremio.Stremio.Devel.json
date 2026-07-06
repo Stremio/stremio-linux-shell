@@ -153,15 +153,17 @@
                 "install -D bin/node -t /app/bin/"
             ],
             "sources": [
-                {
+                 {
                     "type": "archive",
                     "url": "https://nodejs.org/dist/v22.15.0/node-v22.15.0-linux-x64.tar.xz",
-                    "sha256": "dafe2e8f82cb97de1bd10db9e2ec4c07bbf53389b0799b1e095a918951e78fd4"
+                    "sha256": "dafe2e8f82cb97de1bd10db9e2ec4c07bbf53389b0799b1e095a918951e78fd4",
+                    "only-arches": ["x86_64"]
                 },
                 {
                     "type": "archive",
                     "url": "https://nodejs.org/dist/v22.23.1/node-v22.23.1-linux-arm64.tar.xz",
-                    "sha256": "0294e8b915ab75f92c7513d2fcb830ae06e10684e6c603e99a87dbf8835389c1"
+                    "sha256": "0294e8b915ab75f92c7513d2fcb830ae06e10684e6c603e99a87dbf8835389c1",
+                    "only-arches": ["aarch64"]
                 }
             ]
         }
