@@ -57,4 +57,6 @@ window.ipc.addEventListener('message', (message) => {
     window.qt.webChannelTransport.onmessage(message);
 });
 
+window.stremio_server_ipc_key = "LINUX";
+
 console.log('IPC script injected');

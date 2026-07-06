@@ -9,6 +9,8 @@ use std::{
 use anyhow::{Context, Ok};
 use tracing::debug;
 
+use crate::config::IPC_KEY;
+
 pub struct Server {
     process: Option<Child>,
     file: PathBuf,
@@ -28,6 +30,7 @@ impl Server {
     pub fn start(&mut self, dev: bool) -> anyhow::Result<()> {
         let mut child = Command::new("node")
             .env("NO_CORS", (dev as i32).to_string())
+            .env("SERVER_IPC_KEY", IPC_KEY)
             .arg(self.file.as_os_str())
             .stdout(process::Stdio::piped())
             .spawn()?;
