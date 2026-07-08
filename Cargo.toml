@@ -41,3 +41,26 @@ base64 = "0.22.1"
 [build-dependencies]
 anyhow = "1.0.103"
 dirs = "6.0.0"
+
+[package.metadata.deb]
+name = "stremio"
+depends = [
+    "libgtk-4",
+    "libadwaita-1",
+    "libwebkitgtk-6.0",
+    "libmpv2",
+    "nodejs",
+]
+assets = [
+    ["target/release/stremio-linux-shell", "/usr/libexec/stremio/stremio", "755"],
+    ["data/server.js", "/usr/libexec/stremio/server.js", "644"],
+    ["data/stremio.sh", "/usr/bin/stremio", "755"],
+    ["data/com.stremio.Stremio.desktop", "/usr/share/applications/com.stremio.Stremio.desktop", "644"],
+    ["data/com.stremio.Stremio.service", "/usr/share/dbus-1/services/com.stremio.Stremio.service", "644"],
+    ["data/com.stremio.Stremio.metainfo.xml", "/usr/share/metainfo/com.stremio.Stremio.metainfo.xml", "644"],
+    ["data/com.stremio.Stremio.gschema.xml", "/usr/share/glib-2.0/schemas/com.stremio.Stremio.gschema.xml", "644"],
+    ["data/icons/com.stremio.Stremio.svg", "/usr/share/icons/hicolor/scalable/apps/com.stremio.Stremio.svg", "644"],
+    ["po/es/LC_MESSAGES/stremio.mo", "/usr/share/locale/es/LC_MESSAGES/stremio.mo", "644"],
+    ["po/fr/LC_MESSAGES/stremio.mo", "/usr/share/locale/fr/LC_MESSAGES/stremio.mo", "644"],
+    ["LICENSE", "/usr/share/licenses/stremio/LICENSE", "644"],
+]
