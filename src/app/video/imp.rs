@@ -14,6 +14,13 @@ use libmpv2::{
 use std::{cell::RefCell, env, os::raw::c_void, sync::OnceLock};
 use tracing::error;
 
+use crate::spawn_local;
+
+/// How often mpv's event queue is drained (~60 Hz). Small enough that playback
+/// state and observed properties reach the UI promptly, large enough that the
+/// GLib main loop still sleeps between ticks so idle CPU stays negligible.
+const EVENT_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(16);
+
 fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
     epoxy::get_proc_addr(name) as _
 }
@@ -53,13 +60,17 @@ impl Default for Video {
 }
 
 impl Video {
-    fn on_event<T: Fn(Event)>(&self, callback: T) {
-        if let Some(result) = self.mpv.borrow_mut().wait_event(0.0) {
-            match result {
-                Ok(event) => callback(event),
-                Err(e) => error!("Failed to wait for event: {e}"),
+    fn process_events<T: Fn(Event)>(&self, callback: T) {
+        loop {
+            match self.mpv.borrow_mut().wait_event(0.0) {
+                Some(Ok(event)) => callback(event),
+                Some(Err(e)) => {
+                    error!("Failed to wait for event: {e}");
+                    break;
+                }
+                None => break,
             }
-        };
+        }
     }
 
     pub fn send_command(&self, name: &str, args: &[&str]) {
@@ -108,48 +119,67 @@ impl ObjectImpl for Video {
     fn constructed(&self) {
         self.parent_constructed();
 
-        glib::idle_add_local(clone!(
-            #[weak(rename_to = video)]
-            self,
-            #[weak(rename_to = object)]
-            self.obj(),
-            #[upgrade_or]
-            ControlFlow::Break,
-            move || {
-                video.on_event(|event| match event {
-                    Event::PropertyChange { name, change, .. } => {
-                        let value = match change {
-                            PropertyData::Str(v) => Some(v.to_variant()),
-                            PropertyData::Flag(v) => Some(v.to_variant()),
-                            PropertyData::Double(v) => Some(v.to_variant()),
-                            _ => None,
-                        };
+        // Drain mpv's event queue on a timer.
+        //
+        // We deliberately do NOT drive this purely from `mpv_set_wakeup_callback`.
+        // That callback is only a best-effort "there might be new events" hint:
+        // mpv coalesces property changes (they are only produced once the queue
+        // drains to MPV_EVENT_NONE) and explicitly "there's only one wakeup
+        // callback invocation for multiple events", plus there is an inherent
+        // lost-wakeup race between the callback firing and `wait_event` clearing
+        // the pending-wakeup flag. Relying on it alone latches after the first
+        // burst, so StartFile / property changes / EndFile never reach the web UI
+        // and playback appears stuck (the Stremio player sits on the loading
+        // screen showing 0 peers).
+        //
+        // A `timeout` source drains the whole queue unconditionally every tick,
+        // so no event is lost. Unlike the previous `idle_add_local`, a timeout
+        // lets the GLib main loop sleep between ticks, keeping idle CPU low.
+        glib::timeout_add_local(
+            EVENT_POLL_INTERVAL,
+            clone!(
+                #[weak(rename_to = video)]
+                self,
+                #[weak(rename_to = object)]
+                self.obj(),
+                #[upgrade_or]
+                ControlFlow::Break,
+                move || {
+                    video.process_events(|event| match event {
+                        Event::PropertyChange { name, change, .. } => {
+                            let value = match change {
+                                PropertyData::Str(v) => Some(v.to_variant()),
+                                PropertyData::Flag(v) => Some(v.to_variant()),
+                                PropertyData::Double(v) => Some(v.to_variant()),
+                                _ => None,
+                            };
 
-                        if let Some(value) = value {
-                            object.emit_by_name::<()>("property-changed", &[&name, &value]);
+                            if let Some(value) = value {
+                                object.emit_by_name::<()>("property-changed", &[&name, &value]);
+                            }
                         }
-                    }
-                    Event::StartFile => {
-                        object.emit_by_name::<()>("playback-started", &[]);
-                    }
-                    Event::EndFile(reason) => {
-                        let reason = match reason {
-                            mpv_end_file_reason::Eof => "eof".to_string(),
-                            mpv_end_file_reason::Stop => "stop".to_string(),
-                            mpv_end_file_reason::Redirect => "redirect".to_string(),
-                            mpv_end_file_reason::Error => "error".to_string(),
-                            mpv_end_file_reason::Quit => "quit".to_string(),
-                            _ => "other".to_string(),
-                        };
+                        Event::StartFile => {
+                            object.emit_by_name::<()>("playback-started", &[]);
+                        }
+                        Event::EndFile(reason) => {
+                            let reason = match reason {
+                                mpv_end_file_reason::Eof => "eof".to_string(),
+                                mpv_end_file_reason::Stop => "stop".to_string(),
+                                mpv_end_file_reason::Redirect => "redirect".to_string(),
+                                mpv_end_file_reason::Error => "error".to_string(),
+                                mpv_end_file_reason::Quit => "quit".to_string(),
+                                _ => "other".to_string(),
+                            };
 
-                        object.emit_by_name::<()>("playback-ended", &[&reason]);
-                    }
-                    _ => {}
-                });
+                            object.emit_by_name::<()>("playback-ended", &[&reason]);
+                        }
+                        _ => {}
+                    });
 
-                ControlFlow::Continue
-            }
-        ));
+                    ControlFlow::Continue
+                }
+            ),
+        );
     }
 }
 
@@ -190,17 +220,17 @@ impl WidgetImpl for Video {
 
             let (sender, receiver) = flume::unbounded::<()>();
 
-            glib::idle_add_local(clone!(
+            spawn_local!(clone!(
                 #[weak]
                 object,
-                #[upgrade_or]
-                ControlFlow::Break,
-                move || {
-                    if let Ok(()) = receiver.try_recv() {
+                async move {
+                    while receiver.recv_async().await.is_ok() {
+                        // Drain any additional pending updates so a burst of
+                        // update callbacks only triggers a single redraw.
+                        while receiver.try_recv().is_ok() {}
+
                         object.queue_render();
                     }
-
-                    ControlFlow::Continue
                 }
             ));
 
