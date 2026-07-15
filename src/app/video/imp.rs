@@ -44,6 +44,13 @@ impl Default for Video {
             init.set_property("vo", "libmpv")?;
             init.set_property("video-timing-offset", "0")?;
             init.set_property("video-sync", "audio")?;
+            // Enable zero-copy hardware decoding by default. mpv otherwise
+            // defaults to software decoding, and the web UI only ever asks for
+            // the copy-back path (`hwdec=auto-copy`, remapped in mod.rs). Our GL
+            // render context is created with the Wayland display, so mpv can use
+            // the EGL/dmabuf interop (VAAPI on Mesa) and keep frames on the GPU.
+            // `auto-safe` falls back to software when no safe interop exists.
+            init.set_property("hwdec", "auto-safe")?;
             init.set_property("terminal", "yes")?;
             init.set_property("msg-level", msg_level)?;
             Ok(())
