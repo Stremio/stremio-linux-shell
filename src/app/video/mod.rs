@@ -117,6 +117,23 @@ impl Video {
             }
             name if STRING_PROPERTIES.contains(&name) => {
                 if let Some(value) = value.as_str() {
+                    // The Stremio web UI enables hardware decoding by sending
+                    // `hwdec=auto-copy`. That decodes on the GPU but copies every
+                    // frame back to system memory and re-uploads it for rendering
+                    // (the "copy-back" path), which is CPU- and bandwidth-heavy —
+                    // the reason playback here costs more CPU than mpv/VLC. Our
+                    // render context is created with the Wayland display, so mpv
+                    // can keep frames on the GPU via a zero-copy interop (VAAPI,
+                    // Vulkan, NVDEC, ... depending on the driver) instead. Remap
+                    // to `auto-safe`, which uses such an interop when a known-good
+                    // one is available and otherwise falls back to software
+                    // decoding, so playback can never break.
+                    let value = if name == "hwdec" && value == "auto-copy" {
+                        "auto-safe"
+                    } else {
+                        value
+                    };
+
                     widget.set_property(name, value);
                 }
             }
