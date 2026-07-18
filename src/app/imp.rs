@@ -7,6 +7,7 @@ use tracing::error;
 use crate::{
     app::{
         config::{APP_ID, APP_NAME, URI_SCHEME},
+        discord::Discord,
         ipc::{
             self,
             event::{IpcEvent, IpcEventMpv},
@@ -33,6 +34,7 @@ pub struct Application {
     decorations: Cell<bool>,
     tray: RefCell<Option<Tray>>,
     mpris: RefCell<Option<Mpris>>,
+    discord: RefCell<Option<Discord>>,
     window: RefCell<Option<Window>>,
     webview: RefCell<Option<WebView>>,
     deeplink: RefCell<Option<String>>,
@@ -71,6 +73,7 @@ impl ApplicationImpl for Application {
         let tray = Tray::default();
         let video = Video::default();
         let mpris = Mpris::default();
+        let discord = Discord::default();
 
         let startup_url = self.startup_url.borrow();
         let dev_mode = self.dev_mode.get();
@@ -132,6 +135,8 @@ impl ApplicationImpl for Application {
             video,
             #[weak]
             mpris,
+            #[weak]
+            discord,
             move |webview: WebView, message: &str| {
                 if let Ok(event) = ipc::parse_request(message) {
                     match event {
@@ -160,6 +165,18 @@ impl ApplicationImpl for Application {
                         }
                         IpcEvent::Quit => {
                             app.quit();
+                        }
+                        IpcEvent::DiscordConnect => {
+                            discord.connect();
+                        }
+                        IpcEvent::DiscordDisconnect => {
+                            discord.disconnect();
+                        }
+                        IpcEvent::DiscordSetActivity(activity) => {
+                            discord.set_activity(activity);
+                        }
+                        IpcEvent::DiscordClearActivity => {
+                            discord.clear_activity();
                         }
                         IpcEvent::Mpv(event) => match event {
                             IpcEventMpv::Observe(name) => video.observe_mpv_property(name),
@@ -255,10 +272,22 @@ impl ApplicationImpl for Application {
 
         mpris.start(APP_ID, APP_NAME);
 
+        discord.connect_status(clone!(
+            #[weak]
+            webview,
+            move |connected| {
+                let message = ipc::create_response(IpcEvent::DiscordStatus(connected));
+                webview.send(&message);
+            }
+        ));
+
+        discord.start();
+
         window.present();
 
         *self.tray.borrow_mut() = Some(tray);
         *self.mpris.borrow_mut() = Some(mpris);
+        *self.discord.borrow_mut() = Some(discord);
         *self.window.borrow_mut() = Some(window);
         *self.webview.borrow_mut() = Some(webview);
     }
@@ -283,6 +312,10 @@ impl ApplicationImpl for Application {
     }
 
     fn shutdown(&self) {
+        if let Some(discord) = self.discord.take() {
+            discord.stop();
+        }
+
         if let Some(window) = self.window.take() {
             window.destroy();
         }

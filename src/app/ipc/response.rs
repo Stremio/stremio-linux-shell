@@ -102,7 +102,52 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                     "paused": paused
                 }])),
             }),
+            IpcEvent::DiscordStatus(connected) => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!(["discord-status", {
+                    "connected": connected
+                }])),
+            }),
             _ => Err("Failed to convert IpcEvent to IpcMessageResponse"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::Value;
+
+    use super::*;
+
+    fn serialize(event: IpcEvent) -> Value {
+        let response = IpcMessageResponse::try_from(event).expect("Failed to create response");
+        serde_json::to_value(response).expect("Failed to serialize response")
+    }
+
+    #[test]
+    fn serializes_discord_status_connected() {
+        let value = serialize(IpcEvent::DiscordStatus(true));
+
+        assert_eq!(value.get("type"), Some(&json!(1)));
+        assert_eq!(value.get("object"), Some(&json!("transport")));
+        assert_eq!(
+            value.get("args"),
+            Some(&json!(["discord-status", { "connected": true }]))
+        );
+    }
+
+    #[test]
+    fn serializes_discord_status_disconnected() {
+        let value = serialize(IpcEvent::DiscordStatus(false));
+
+        assert_eq!(value.get("type"), Some(&json!(1)));
+        assert_eq!(value.get("object"), Some(&json!("transport")));
+        assert_eq!(
+            value.get("args"),
+            Some(&json!(["discord-status", { "connected": false }]))
+        );
     }
 }
