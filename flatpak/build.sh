@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 app_id="com.stremio.Stremio.Devel"
 cwd="flatpak"
 
