@@ -73,11 +73,17 @@ impl Window {
                         .set_reason("Prevent screen from going blank during media playback");
 
                     let mut inhibit_request = inhibit_request.lock().await;
-                    *inhibit_request = proxy
-                        .inhibit(Some(&identifier), flags, options)
-                        .await
-                        .map_err(|e| error!("Failed to prevent idling: {e}"))
-                        .ok();
+                    if let Some(request) = inhibit_request.take() {
+                        if let Err(e) = request.close().await {
+                            error!("Failed to close the inhibit request: {e}");
+                        }
+
+                        *inhibit_request = proxy
+                            .inhibit(Some(&identifier), flags, options)
+                            .await
+                            .map_err(|e| error!("Failed to prevent idling: {e}"))
+                            .ok();
+                    }
                 }
             }
         ));
