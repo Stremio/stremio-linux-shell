@@ -37,6 +37,7 @@ anyhow = "1.0.103"
 url = "2.5.8"
 dirs = "6.0.0"
 base64 = "0.22.1"
+libc = "0.2.189"
 
 [build-dependencies]
 anyhow = "1.0.103"

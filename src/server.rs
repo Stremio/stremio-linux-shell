@@ -1,12 +1,13 @@
 use std::{
     env,
     io::{BufRead, BufReader},
+    os::unix::process::CommandExt,
     path::PathBuf,
     process::{self, Child, Command},
     thread,
 };
 
-use anyhow::{Context, Ok};
+use anyhow::Context;
 use tracing::debug;
 
 use crate::config::IPC_KEY;
@@ -28,19 +29,29 @@ impl Server {
     }
 
     pub fn start(&mut self, dev: bool) -> anyhow::Result<()> {
-        let mut child = Command::new("node")
+        let mut command = Command::new("node");
+        command
             .env("NO_CORS", (dev as i32).to_string())
             .env("SERVER_IPC_KEY", IPC_KEY)
             .arg(self.file.as_os_str())
             .stdout(process::Stdio::piped())
-            .spawn()?;
+            .process_group(0);
+
+        unsafe {
+            command.pre_exec(move || {
+                libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGTERM);
+                Ok(())
+            });
+        }
+
+        let mut child = command.spawn()?;
 
         if let Some(stdout) = child.stdout.take() {
             let reader = BufReader::new(stdout);
             let mut lines = reader.lines();
 
             thread::spawn(move || {
-                while let Some(Result::Ok(line)) = lines.next() {
+                while let Some(Ok(line)) = lines.next() {
                     debug!(target: "server", "{}", line);
                 }
             });
