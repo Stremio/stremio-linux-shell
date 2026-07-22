@@ -1,4 +1,5 @@
 {
+    "search.followSymlinks": false,
     "files.watcherExclude": {
         ".flatpak-builder": true,
         "flatpak/build": true,
