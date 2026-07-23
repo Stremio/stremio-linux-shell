@@ -97,7 +97,6 @@ impl ObjectImpl for Video {
                 Signal::builder("property-changed")
                     .param_types([str::static_type(), Variant::static_type()])
                     .build(),
-                Signal::builder("playback-started").build(),
                 Signal::builder("playback-ended")
                     .param_types([str::static_type()])
                     .build(),
@@ -128,9 +127,6 @@ impl ObjectImpl for Video {
                         if let Some(value) = value {
                             object.emit_by_name::<()>("property-changed", &[&name, &value]);
                         }
-                    }
-                    Event::StartFile => {
-                        object.emit_by_name::<()>("playback-started", &[]);
                     }
                     Event::EndFile(reason) => {
                         let reason = match reason {

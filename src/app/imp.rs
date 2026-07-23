@@ -85,14 +85,6 @@ impl ApplicationImpl for Application {
         window.set_underlay(&video);
         window.set_overlay(&webview);
 
-        video.connect_playback_started(clone!(
-            #[weak]
-            window,
-            move || {
-                window.disable_idling();
-            }
-        ));
-
         video.connect_playback_ended(clone!(
             #[weak]
             window,
@@ -154,6 +146,12 @@ impl ApplicationImpl for Application {
                         }
                         IpcEvent::MediaStatus(status) => {
                             mpris.set_status(status);
+
+                            if status {
+                                window.enable_idling();
+                            } else {
+                                window.disable_idling();
+                            }
                         }
                         IpcEvent::MediaMetadata((title, artist, artwork)) => {
                             mpris.set_metadata(title, artist, artwork);

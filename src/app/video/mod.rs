@@ -57,16 +57,6 @@ impl Video {
         );
     }
 
-    pub fn connect_playback_started<T: Fn() + 'static>(&self, callback: T) {
-        self.connect_closure(
-            "playback-started",
-            false,
-            closure_local!(move |_: Video| {
-                callback();
-            }),
-        );
-    }
-
     pub fn connect_playback_ended<T: Fn(&str) + 'static>(&self, callback: T) {
         self.connect_closure(
             "playback-ended",

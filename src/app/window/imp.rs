@@ -63,27 +63,28 @@ impl Window {
             #[weak]
             object,
             async move {
-                if let Some(identifier) = WindowIdentifier::from_native(&object).await
-                    && let Ok(proxy) = InhibitProxy::new().await
+                if let Some(request) = inhibit_request.lock().await.take()
+                    && let Err(e) = request.close().await
                 {
-                    let mut flags = BitFlags::empty();
-                    flags.insert(InhibitFlags::Idle);
+                    error!("Failed to close the inhibit request: {e}");
+                }
 
-                    let options = InhibitOptions::default()
-                        .set_reason("Prevent screen from going blank during media playback");
+                if let Ok(proxy) = InhibitProxy::new().await {
+                    let identifier = WindowIdentifier::from_native(&object).await;
 
-                    let mut inhibit_request = inhibit_request.lock().await;
-                    if let Some(request) = inhibit_request.take() {
-                        if let Err(e) = request.close().await {
-                            error!("Failed to close the inhibit request: {e}");
-                        }
+                    tokio::spawn(async move {
+                        let mut flags = BitFlags::empty();
+                        flags.insert(InhibitFlags::Idle);
 
-                        *inhibit_request = proxy
-                            .inhibit(Some(&identifier), flags, options)
+                        let options = InhibitOptions::default()
+                            .set_reason("Prevent screen from going blank during media playback");
+
+                        *inhibit_request.lock().await = proxy
+                            .inhibit(identifier.as_ref(), flags, options)
                             .await
                             .map_err(|e| error!("Failed to prevent idling: {e}"))
                             .ok();
-                    }
+                    });
                 }
             }
         ));
