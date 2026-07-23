@@ -54,7 +54,9 @@ globalThis.chrome = {
 };
 
 window.ipc.addEventListener('message', (message) => {
-    window.qt.webChannelTransport.onmessage(message);
+    if (typeof window.qt.webChannelTransport.onmessage === 'function') {
+        window.qt.webChannelTransport.onmessage(message);
+    }
 });
 
 window.stremio_server_ipc_key = "LINUX";
