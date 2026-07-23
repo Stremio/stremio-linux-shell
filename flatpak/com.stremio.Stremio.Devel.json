@@ -27,7 +27,7 @@
         "--socket=pulseaudio",
         "--share=ipc",
         "--share=network",
-        "--device=dri",
+        "--device=all",
         "--persist=.stremio-server",
         "--filesystem=xdg-download",
         "--filesystem=xdg-run/pipewire-0:ro",
