@@ -13,6 +13,15 @@ pub enum IpcEventMpv {
 }
 
 #[derive(Deserialize, Debug)]
+pub enum IpcEventDiscord {
+    Status(bool),
+    Connect,
+    Disconnect,
+    SetActivity((String, String, Option<String>)),
+    ClearActivity,
+}
+
+#[derive(Deserialize, Debug)]
 pub enum IpcEvent {
     Init,
     Ready,
@@ -23,6 +32,7 @@ pub enum IpcEvent {
     Mpv(IpcEventMpv),
     MediaMetadata((String, Option<String>, Option<String>)),
     MediaStatus(bool),
+    Discord(IpcEventDiscord),
 }
 
 impl TryFrom<&str> for IpcEvent {
