@@ -45,7 +45,7 @@ impl Application {
             .build()
     }
 
-    pub async fn run(&self, args: Vec<String>) -> ExitCode {
+    pub fn run(&self, args: Vec<String>) -> ExitCode {
         let mut program = std::env::args().take(1).collect_vec();
         program.extend(args);
         self.run_with_args(&program)
