@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::app::ipc::event::IpcEventDiscord;
+
 use super::event::{IpcEvent, IpcEventMpv};
 
 #[derive(Deserialize, Debug)]
@@ -26,6 +28,14 @@ pub struct IpcMessageRequestMediaMetadata {
 #[derive(Deserialize, Debug)]
 pub struct IpcMessageRequestMediaStatus {
     paused: bool,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct IpcMessageRequestDiscordSetActivity {
+    details: String,
+    state: String,
+    image: Option<String>,
 }
 
 impl TryFrom<IpcMessageRequest> for IpcEvent {
@@ -99,6 +109,24 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                                         .map_err(|_| "Invalid media.status object")?;
 
                                 Ok(IpcEvent::MediaStatus(data.paused))
+                            }
+                            "discord-connect" => Ok(IpcEvent::Discord(IpcEventDiscord::Connect)),
+                            "discord-disconnect" => {
+                                Ok(IpcEvent::Discord(IpcEventDiscord::Disconnect))
+                            }
+                            "discord-set-activity" => {
+                                let data: IpcMessageRequestDiscordSetActivity =
+                                    serde_json::from_value(data)
+                                        .map_err(|_| "Invalid discord-set-activity object")?;
+
+                                Ok(IpcEvent::Discord(IpcEventDiscord::SetActivity((
+                                    data.details,
+                                    data.state,
+                                    data.image,
+                                ))))
+                            }
+                            "discord-clear-activity" => {
+                                Ok(IpcEvent::Discord(IpcEventDiscord::ClearActivity))
                             }
                             method => Err(format!("Invalid method: {method}")),
                         },

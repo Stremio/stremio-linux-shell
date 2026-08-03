@@ -1,6 +1,8 @@
 use serde::Serialize;
 use serde_json::json;
 
+use crate::app::ipc::event::IpcEventDiscord;
+
 use super::{
     TRANSPORT_NAME, VERSION,
     event::{IpcEvent, IpcEventMpv},
@@ -100,6 +102,15 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                 data: None,
                 args: Some(json!(["media.status", {
                     "paused": paused
+                }])),
+            }),
+            IpcEvent::Discord(IpcEventDiscord::Status(connected)) => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!(["discord-status", {
+                    "connected": connected
                 }])),
             }),
             _ => Err("Failed to convert IpcEvent to IpcMessageResponse"),

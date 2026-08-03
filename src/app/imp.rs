@@ -7,9 +7,10 @@ use tracing::error;
 use crate::{
     app::{
         config::{APP_ID, APP_NAME, URI_SCHEME},
+        discord::Discord,
         ipc::{
             self,
-            event::{IpcEvent, IpcEventMpv},
+            event::{IpcEvent, IpcEventDiscord, IpcEventMpv},
         },
         mpris::Mpris,
         tray::Tray,
@@ -71,6 +72,7 @@ impl ApplicationImpl for Application {
         let tray = Tray::default();
         let video = Video::default();
         let mpris = Mpris::default();
+        let discord = Discord::new();
 
         let startup_url = self.startup_url.borrow();
         let dev_mode = self.dev_mode.get();
@@ -159,6 +161,21 @@ impl ApplicationImpl for Application {
                         IpcEvent::Quit => {
                             app.quit();
                         }
+                        IpcEvent::Discord(event) => match event {
+                            IpcEventDiscord::Connect => {
+                                let connected = discord.connect();
+                                let message = ipc::create_response(IpcEvent::Discord(
+                                    IpcEventDiscord::Status(connected),
+                                ));
+                                webview.send(&message);
+                            }
+                            IpcEventDiscord::Disconnect => discord.disconnect(),
+                            IpcEventDiscord::SetActivity((details, state, image)) => {
+                                discord.set_activity(details, state, image)
+                            }
+                            IpcEventDiscord::ClearActivity => discord.clear_activity(),
+                            _ => {}
+                        },
                         IpcEvent::Mpv(event) => match event {
                             IpcEventMpv::Observe(name) => video.observe_mpv_property(name),
                             IpcEventMpv::Command((name, args)) => {

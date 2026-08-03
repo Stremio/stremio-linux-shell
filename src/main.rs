@@ -71,5 +71,6 @@ fn main() -> ExitCode {
     app.set_property("decorations", !args.no_window_decorations);
 
     let runtime = Runtime::new().expect("Failed to create Tokio runtime");
-    runtime.block_on(app.run(args.trailing))
+    let _guard = runtime.enter();
+    app.run(args.trailing)
 }
