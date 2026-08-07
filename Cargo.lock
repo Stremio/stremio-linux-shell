@@ -2622,6 +2622,7 @@ dependencies = [
  "libc",
  "libloading 0.9.0",
  "libmpv2",
+ "libmpv2-sys",
  "mpris-server",
  "serde",
  "serde_json",
