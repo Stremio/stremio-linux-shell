@@ -15,7 +15,7 @@
 
     <template class="Window" parent="AdwApplicationWindow">
         <property name="width-request">400</property>
-        <property name="height-request">700</property>
+        <property name="height-request">406</property>
         <property name="default-width">1700</property>
         <property name="default-height">1050</property>
 
