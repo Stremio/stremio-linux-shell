@@ -14,6 +14,10 @@ use libmpv2::{
 use std::{cell::RefCell, env, os::raw::c_void, sync::OnceLock};
 use tracing::error;
 
+use crate::spawn_local;
+
+const EVENT_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(16);
+
 fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
     epoxy::get_proc_addr(name) as _
 }
@@ -53,13 +57,17 @@ impl Default for Video {
 }
 
 impl Video {
-    fn on_event<T: Fn(Event)>(&self, callback: T) {
-        if let Some(result) = self.mpv.borrow_mut().wait_event(0.0) {
-            match result {
-                Ok(event) => callback(event),
-                Err(e) => error!("Failed to wait for event: {e}"),
+    fn process_events<T: Fn(Event)>(&self, callback: T) {
+        loop {
+            match self.mpv.borrow_mut().wait_event(0.0) {
+                Some(Ok(event)) => callback(event),
+                Some(Err(e)) => {
+                    error!("Failed to wait for event: {e}");
+                    break;
+                }
+                None => break,
             }
-        };
+        }
     }
 
     pub fn send_command(&self, name: &str, args: &[&str]) {
@@ -107,45 +115,48 @@ impl ObjectImpl for Video {
     fn constructed(&self) {
         self.parent_constructed();
 
-        glib::idle_add_local(clone!(
-            #[weak(rename_to = video)]
-            self,
-            #[weak(rename_to = object)]
-            self.obj(),
-            #[upgrade_or]
-            ControlFlow::Break,
-            move || {
-                video.on_event(|event| match event {
-                    Event::PropertyChange { name, change, .. } => {
-                        let value = match change {
-                            PropertyData::Str(v) => Some(v.to_variant()),
-                            PropertyData::Flag(v) => Some(v.to_variant()),
-                            PropertyData::Double(v) => Some(v.to_variant()),
-                            _ => None,
-                        };
+        glib::timeout_add_local(
+            EVENT_POLL_INTERVAL,
+            clone!(
+                #[weak(rename_to = video)]
+                self,
+                #[weak(rename_to = object)]
+                self.obj(),
+                #[upgrade_or]
+                ControlFlow::Break,
+                move || {
+                    video.process_events(|event| match event {
+                        Event::PropertyChange { name, change, .. } => {
+                            let value = match change {
+                                PropertyData::Str(v) => Some(v.to_variant()),
+                                PropertyData::Flag(v) => Some(v.to_variant()),
+                                PropertyData::Double(v) => Some(v.to_variant()),
+                                _ => None,
+                            };
 
-                        if let Some(value) = value {
-                            object.emit_by_name::<()>("property-changed", &[&name, &value]);
+                            if let Some(value) = value {
+                                object.emit_by_name::<()>("property-changed", &[&name, &value]);
+                            }
                         }
-                    }
-                    Event::EndFile(reason) => {
-                        let reason = match reason {
-                            mpv_end_file_reason::Eof => "eof".to_string(),
-                            mpv_end_file_reason::Stop => "stop".to_string(),
-                            mpv_end_file_reason::Redirect => "redirect".to_string(),
-                            mpv_end_file_reason::Error => "error".to_string(),
-                            mpv_end_file_reason::Quit => "quit".to_string(),
-                            _ => "other".to_string(),
-                        };
+                        Event::EndFile(reason) => {
+                            let reason = match reason {
+                                mpv_end_file_reason::Eof => "eof".to_string(),
+                                mpv_end_file_reason::Stop => "stop".to_string(),
+                                mpv_end_file_reason::Redirect => "redirect".to_string(),
+                                mpv_end_file_reason::Error => "error".to_string(),
+                                mpv_end_file_reason::Quit => "quit".to_string(),
+                                _ => "other".to_string(),
+                            };
 
-                        object.emit_by_name::<()>("playback-ended", &[&reason]);
-                    }
-                    _ => {}
-                });
+                            object.emit_by_name::<()>("playback-ended", &[&reason]);
+                        }
+                        _ => {}
+                    });
 
-                ControlFlow::Continue
-            }
-        ));
+                    ControlFlow::Continue
+                }
+            ),
+        );
     }
 }
 
@@ -186,17 +197,15 @@ impl WidgetImpl for Video {
 
             let (sender, receiver) = flume::unbounded::<()>();
 
-            glib::idle_add_local(clone!(
+            spawn_local!(clone!(
                 #[weak]
                 object,
-                #[upgrade_or]
-                ControlFlow::Break,
-                move || {
-                    if let Ok(()) = receiver.try_recv() {
+                async move {
+                    while receiver.recv_async().await.is_ok() {
+                        while receiver.try_recv().is_ok() {}
+
                         object.queue_render();
                     }
-
-                    ControlFlow::Continue
                 }
             ));
 
