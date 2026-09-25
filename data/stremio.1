@@ -7,11 +7,14 @@ stremio \- GTK4/WebKitGTK6 desktop shell for Stremio
 .SH DESCRIPTION
 .B stremio
 is a native GTK4 desktop application that embeds the Stremio web client
-(via WebKitGTK6) alongside a bundled local streaming server, providing a
-standalone media center experience for movies, series and add-ons.
+(via WebKitGTK6) alongside a local streaming server, providing a standalone
+media center experience for movies, series and add-ons.
 .PP
-It expects a running instance of the Stremio streaming server and points
-its embedded browser view at it on startup.
+On startup it launches the streaming server itself, by running
+.B node
+on the script named by the
+.B SERVER_PATH
+environment variable, and points its embedded browser view at it.
 .SH OPTIONS
 .TP
 .BR \-d ", " \-\-dev
@@ -37,7 +40,23 @@ underlying GTK application for handling, the same way a file manager or
 browser would hand off a link to a registered application.
 .SH FILES
 .TP
-.I ~/.local/share/com.stremio.Stremio/
-Per-user application data directory.
+.I $XDG_DATA_HOME/stremio/
+Per-user application data directory, or
+.I ~/.local/share/stremio/
+when
+.B XDG_DATA_HOME
+is unset.
+.SH ENVIRONMENT
+.TP
+.B SERVER_PATH
+Path to the streaming server script that is run with
+.BR node .
+Required: the application exits if it is unset.
+.TP
+.B XDG_DATA_HOME
+Base directory for the per-user data directory described under
+.BR FILES .
 .SH AUTHOR
-Smart Code OOD (Stremio) <support@stremio.com>
+Smart Code OOD (Stremio).
+.SH REPORTING BUGS
+https://github.com/Stremio/stremio-linux-shell/issues
