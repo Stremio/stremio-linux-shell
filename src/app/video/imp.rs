@@ -33,6 +33,12 @@ impl Default for Video {
             _ => "all=no",
         };
 
+        // libmpv requires LC_NUMERIC to be "C", and fails to initialise
+        // otherwise. Set it here rather than in main(), because GTK's own
+        // startup calls setlocale(LC_ALL, "") and would undo an earlier call.
+        gettextrs::setlocale(gettextrs::LocaleCategory::LcNumeric, "C")
+            .expect("Failed to set LC_NUMERIC to C");
+
         let mpv = Mpv::with_initializer(|init| {
             init.set_property("vo", "libmpv")?;
             init.set_property("video-timing-offset", "0")?;
