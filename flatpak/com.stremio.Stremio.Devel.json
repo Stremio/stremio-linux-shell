@@ -76,6 +76,7 @@
                 "glib-compile-schemas /app/share/glib-2.0/schemas",
                 "install -Dm644 po/es/LC_MESSAGES/stremio.mo -t /app/share/locale/es/LC_MESSAGES/",
                 "install -Dm644 po/fr/LC_MESSAGES/stremio.mo -t /app/share/locale/fr/LC_MESSAGES/",
+                "install -Dm644 data/stremio.1 -t /app/share/man/man1/",
                 "install -Dm644 ./LICENSE -t /app/share/licenses/stremio/",
                 "mkdir -p /app/lib/codecs-extra",
                 "mkdir -p /app/lib/intel-vaapi-driver"
