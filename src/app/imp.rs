@@ -18,6 +18,7 @@ use crate::{
         webview::WebView,
         window::Window,
     },
+    server::Server,
     spawn_local, utils,
 };
 
@@ -37,6 +38,7 @@ pub struct Application {
     window: RefCell<Option<Window>>,
     webview: RefCell<Option<WebView>>,
     deeplink: RefCell<Option<String>>,
+    server: RefCell<Option<Server>>,
 }
 
 #[glib::object_subclass]
@@ -51,6 +53,12 @@ impl ObjectImpl for Application {}
 
 impl ApplicationImpl for Application {
     fn startup(&self) {
+        let mut server = Server::new();
+        server
+            .start(self.dev_mode.get())
+            .expect("Failed to start server");
+        *self.server.borrow_mut() = Some(server);
+
         self.parent_startup();
 
         let app = self.obj();
@@ -301,6 +309,8 @@ impl ApplicationImpl for Application {
         if let Some(window) = self.window.take() {
             window.destroy();
         }
+
+        self.server.take();
 
         self.parent_shutdown();
     }
