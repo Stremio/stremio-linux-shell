@@ -22,6 +22,7 @@ fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
 #[properties(wrapper_type = super::Video)]
 pub struct Video {
     mpv: RefCell<Mpv>,
+    observed: RefCell<Vec<String>>,
     render_context: RefCell<Option<RenderContext>>,
 }
 
@@ -47,6 +48,7 @@ impl Default for Video {
 
         Self {
             mpv: RefCell::new(mpv),
+            observed: Default::default(),
             render_context: Default::default(),
         }
     }
@@ -69,7 +71,24 @@ impl Video {
     }
 
     pub fn observe_property(&self, name: &str, format: Format) {
-        if let Err(e) = self.mpv.borrow().observe_property(name, format, 0) {
+        let mut observed = self.observed.borrow_mut();
+        let mpv = self.mpv.borrow();
+
+        let id = match observed.iter().position(|observed| observed == name) {
+            Some(index) => {
+                let id = index as u64 + 1;
+                if let Err(e) = mpv.unobserve_property(id) {
+                    error!("Failed to unobserve property {name}: {e}");
+                }
+                id
+            }
+            None => {
+                observed.push(name.to_owned());
+                observed.len() as u64
+            }
+        };
+
+        if let Err(e) = mpv.observe_property(name, format, id) {
             error!("Failed to observe property {name}: {e}");
         }
     }
