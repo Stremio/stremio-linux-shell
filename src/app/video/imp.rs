@@ -1,7 +1,7 @@
 use gdk_wayland::{WaylandDisplay, wayland_client::Proxy};
 use gtk::{
     gdk::GLContext,
-    glib::{self, ControlFlow, Propagation, Properties, Variant, clone, subclass::Signal},
+    glib::{self, Propagation, Properties, Variant, subclass::Signal},
     prelude::*,
     subclass::prelude::*,
 };
@@ -11,8 +11,15 @@ use libmpv2::{
     mpv_end_file_reason,
     render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType},
 };
-use std::{cell::RefCell, env, os::raw::c_void, sync::OnceLock};
+use std::{
+    cell::{Cell, RefCell},
+    env,
+    os::raw::c_void,
+    sync::OnceLock,
+};
 use tracing::error;
+
+use crate::spawn_local;
 
 fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
     epoxy::get_proc_addr(name) as _
@@ -22,6 +29,7 @@ fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
 #[properties(wrapper_type = super::Video)]
 pub struct Video {
     mpv: RefCell<Mpv>,
+    observed: Cell<usize>,
     render_context: RefCell<Option<RenderContext>>,
 }
 
@@ -47,6 +55,7 @@ impl Default for Video {
 
         Self {
             mpv: RefCell::new(mpv),
+            observed: Default::default(),
             render_context: Default::default(),
         }
     }
@@ -54,12 +63,23 @@ impl Default for Video {
 
 impl Video {
     fn on_event<T: Fn(Event)>(&self, callback: T) {
-        if let Some(result) = self.mpv.borrow_mut().wait_event(0.0) {
-            match result {
-                Ok(event) => callback(event),
-                Err(e) => error!("Failed to wait for event: {e}"),
+        let max_skipped = self.observed.get();
+        let mut skipped = 0;
+
+        loop {
+            match self.mpv.borrow_mut().wait_event(0.0) {
+                Some(Ok(event)) => {
+                    skipped = 0;
+                    callback(event);
+                }
+                Some(Err(e)) => {
+                    skipped = 0;
+                    error!("Failed to wait for event: {e}");
+                }
+                None if skipped < max_skipped => skipped += 1,
+                None => break,
             }
-        };
+        }
     }
 
     pub fn send_command(&self, name: &str, args: &[&str]) {
@@ -69,8 +89,9 @@ impl Video {
     }
 
     pub fn observe_property(&self, name: &str, format: Format) {
-        if let Err(e) = self.mpv.borrow().observe_property(name, format, 0) {
-            error!("Failed to observe property {name}: {e}");
+        match self.mpv.borrow().observe_property(name, format, 0) {
+            Ok(()) => self.observed.set(self.observed.get() + 1),
+            Err(e) => error!("Failed to observe property {name}: {e}"),
         }
     }
 
@@ -107,15 +128,19 @@ impl ObjectImpl for Video {
     fn constructed(&self) {
         self.parent_constructed();
 
-        glib::idle_add_local(clone!(
-            #[weak(rename_to = video)]
-            self,
-            #[weak(rename_to = object)]
-            self.obj(),
-            #[upgrade_or]
-            ControlFlow::Break,
-            move || {
-                video.on_event(|event| match event {
+        let (sender, receiver) = flume::bounded::<()>(1);
+        self.mpv.borrow_mut().set_wakeup_callback(move || {
+            sender.try_send(()).ok();
+        });
+
+        let weak = self.obj().downgrade();
+        spawn_local!(async move {
+            while receiver.recv_async().await.is_ok() {
+                let Some(object) = weak.upgrade() else {
+                    break;
+                };
+
+                object.imp().on_event(|event| match event {
                     Event::PropertyChange { name, change, .. } => {
                         let value = match change {
                             PropertyData::Str(v) => Some(v.to_variant()),
@@ -142,10 +167,8 @@ impl ObjectImpl for Video {
                     }
                     _ => {}
                 });
-
-                ControlFlow::Continue
             }
-        ));
+        });
     }
 }
 
@@ -184,24 +207,21 @@ impl WidgetImpl for Video {
             let mut render_context = RenderContext::new(mpv_handle, render_params)
                 .expect("Failed to create render context");
 
-            let (sender, receiver) = flume::unbounded::<()>();
+            let (sender, receiver) = flume::bounded::<()>(1);
 
-            glib::idle_add_local(clone!(
-                #[weak]
-                object,
-                #[upgrade_or]
-                ControlFlow::Break,
-                move || {
-                    if let Ok(()) = receiver.try_recv() {
-                        object.queue_render();
-                    }
+            let weak = object.downgrade();
+            spawn_local!(async move {
+                while receiver.recv_async().await.is_ok() {
+                    let Some(object) = weak.upgrade() else {
+                        break;
+                    };
 
-                    ControlFlow::Continue
+                    object.queue_render();
                 }
-            ));
+            });
 
             render_context.set_update_callback(move || {
-                sender.send(()).ok();
+                sender.try_send(()).ok();
             });
 
             *self.render_context.borrow_mut() = Some(render_context);
