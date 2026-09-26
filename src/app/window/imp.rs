@@ -185,6 +185,17 @@ impl ObjectImpl for Window {
         if cfg!(debug_assertions) {
             self.obj().add_css_class("devel");
         }
+
+        // The header must follow the window's actual fullscreen state, not
+        // only our own `set_fullscreen`: a compositor can fullscreen the
+        // window by itself (Hyprland's `fullscreen` dispatcher and window
+        // rules, GNOME's Super+Up, KDE shortcuts), which reaches us as a
+        // toplevel configure and flips `fullscreened` without going through
+        // `Window::set_fullscreen`. Until now the bar stayed on screen above
+        // the player in that case.
+        self.obj().connect_fullscreened_notify(|window| {
+            window.imp().show_header(!window.is_fullscreen());
+        });
     }
 }
 
