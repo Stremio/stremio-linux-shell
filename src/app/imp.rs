@@ -78,6 +78,7 @@ impl ApplicationImpl for Application {
         let dev_mode = self.dev_mode.get();
 
         let webview = WebView::default();
+        webview.retry_failed_loads();
         webview.load_uri(&startup_url);
         webview.inject_script(PRELOAD_SCRIPT);
         webview.dev_mode(dev_mode);

@@ -1,17 +1,20 @@
 mod imp;
 
-use std::rc::Rc;
+use std::{cell::Cell, rc::Rc, time::Duration};
 
 use adw::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{
-    gio::Cancellable,
+    gio::{Cancellable, IOErrorEnum},
     glib::{self, clone, object::Cast},
 };
-use tracing::error;
+use tracing::{error, warn};
 use webkit::{
     NavigationPolicyDecision, PolicyDecisionType, UserContentInjectedFrames, UserScript,
     UserScriptInjectionTime, prelude::WebViewExt,
 };
+
+const LOAD_RETRY_INTERVAL: Duration = Duration::from_millis(500);
+const LOAD_RETRY_ATTEMPTS: u32 = 60;
 
 glib::wrapper! {
     pub struct WebView(ObjectSubclass<imp::WebView>)
@@ -33,6 +36,36 @@ impl WebView {
         let widget = self.imp();
 
         widget.webview.load_uri(uri);
+    }
+
+    pub fn retry_failed_loads(&self) {
+        let widget = self.imp();
+        let attempts = Cell::new(0);
+
+        widget
+            .webview
+            .connect_load_failed(move |webview, _, uri, e| {
+                if !e.matches(IOErrorEnum::ConnectionRefused)
+                    || attempts.get() >= LOAD_RETRY_ATTEMPTS
+                {
+                    return false;
+                }
+
+                attempts.set(attempts.get() + 1);
+                warn!("Failed to load {uri}, retrying: {e}");
+
+                let uri = uri.to_owned();
+                glib::timeout_add_local_once(
+                    LOAD_RETRY_INTERVAL,
+                    clone!(
+                        #[weak]
+                        webview,
+                        move || webview.load_uri(&uri)
+                    ),
+                );
+
+                true
+            });
     }
 
     pub fn inject_script(&self, script: &'static str) {
