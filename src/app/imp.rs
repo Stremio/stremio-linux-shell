@@ -1,4 +1,7 @@
-use std::cell::{Cell, RefCell};
+use std::{
+    cell::{Cell, RefCell},
+    panic, process,
+};
 
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib::{self, Properties, clone};
@@ -53,10 +56,13 @@ impl ObjectImpl for Application {}
 
 impl ApplicationImpl for Application {
     fn startup(&self) {
-        let mut server = Server::new();
-        server
-            .start(self.dev_mode.get())
-            .expect("Failed to start server");
+        let dev_mode = self.dev_mode.get();
+        let server = panic::catch_unwind(|| {
+            let mut server = Server::new();
+            server.start(dev_mode).expect("Failed to start server");
+            server
+        })
+        .unwrap_or_else(|_| process::exit(101));
         *self.server.borrow_mut() = Some(server);
 
         self.parent_startup();
