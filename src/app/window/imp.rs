@@ -185,6 +185,10 @@ impl ObjectImpl for Window {
         if cfg!(debug_assertions) {
             self.obj().add_css_class("devel");
         }
+
+        self.obj().connect_fullscreened_notify(|window| {
+            window.imp().show_header(!window.is_fullscreen());
+        });
     }
 }
 
