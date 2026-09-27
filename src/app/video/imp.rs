@@ -1,7 +1,7 @@
 use gdk_wayland::{WaylandDisplay, wayland_client::Proxy};
 use gtk::{
     gdk::GLContext,
-    glib::{self, ControlFlow, Propagation, Properties, Variant, clone, subclass::Signal},
+    glib::{self, Propagation, Properties, Variant, clone, subclass::Signal},
     prelude::*,
     subclass::prelude::*,
 };
@@ -14,8 +14,15 @@ use libmpv2::{
 use std::{cell::RefCell, env, os::raw::c_void, sync::OnceLock};
 use tracing::error;
 
+use crate::spawn_local;
+
 fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
     epoxy::get_proc_addr(name) as _
+}
+
+enum EventCallback {
+    Render,
+    Events,
 }
 
 #[derive(Properties)]
@@ -54,12 +61,12 @@ impl Default for Video {
 
 impl Video {
     fn on_event<T: Fn(Event)>(&self, callback: T) {
-        if let Some(result) = self.mpv.borrow_mut().wait_event(0.0) {
+        while let Some(result) = self.mpv.borrow_mut().wait_event(0.0) {
             match result {
                 Ok(event) => callback(event),
                 Err(e) => error!("Failed to wait for event: {e}"),
             }
-        };
+        }
     }
 
     pub fn send_command(&self, name: &str, args: &[&str]) {
@@ -103,50 +110,6 @@ impl ObjectImpl for Video {
             ]
         })
     }
-
-    fn constructed(&self) {
-        self.parent_constructed();
-
-        glib::idle_add_local(clone!(
-            #[weak(rename_to = video)]
-            self,
-            #[weak(rename_to = object)]
-            self.obj(),
-            #[upgrade_or]
-            ControlFlow::Break,
-            move || {
-                video.on_event(|event| match event {
-                    Event::PropertyChange { name, change, .. } => {
-                        let value = match change {
-                            PropertyData::Str(v) => Some(v.to_variant()),
-                            PropertyData::Flag(v) => Some(v.to_variant()),
-                            PropertyData::Double(v) => Some(v.to_variant()),
-                            _ => None,
-                        };
-
-                        if let Some(value) = value {
-                            object.emit_by_name::<()>("property-changed", &[&name, &value]);
-                        }
-                    }
-                    Event::EndFile(reason) => {
-                        let reason = match reason {
-                            mpv_end_file_reason::Eof => "eof".to_string(),
-                            mpv_end_file_reason::Stop => "stop".to_string(),
-                            mpv_end_file_reason::Redirect => "redirect".to_string(),
-                            mpv_end_file_reason::Error => "error".to_string(),
-                            mpv_end_file_reason::Quit => "quit".to_string(),
-                            _ => "other".to_string(),
-                        };
-
-                        object.emit_by_name::<()>("playback-ended", &[&reason]);
-                    }
-                    _ => {}
-                });
-
-                ControlFlow::Continue
-            }
-        ));
-    }
 }
 
 impl WidgetImpl for Video {
@@ -162,7 +125,60 @@ impl WidgetImpl for Video {
 
         if let Some(context) = object.context() {
             let mut mpv = self.mpv.borrow_mut();
-            let mpv_handle = unsafe { mpv.ctx.as_mut() };
+            let (sender, receiver) = flume::unbounded::<EventCallback>();
+
+            spawn_local!(clone!(
+                #[weak(rename_to = video)]
+                self,
+                #[weak]
+                object,
+                async move {
+                    while let Ok(event) = receiver.recv_async().await {
+                        match event {
+                            EventCallback::Render => {
+                                object.queue_render();
+                            }
+                            EventCallback::Events => {
+                                video.on_event(|event| match event {
+                                    Event::PropertyChange { name, change, .. } => {
+                                        let value = match change {
+                                            PropertyData::Str(v) => Some(v.to_variant()),
+                                            PropertyData::Flag(v) => Some(v.to_variant()),
+                                            PropertyData::Double(v) => Some(v.to_variant()),
+                                            _ => None,
+                                        };
+
+                                        if let Some(value) = value {
+                                            object.emit_by_name::<()>(
+                                                "property-changed",
+                                                &[&name, &value],
+                                            );
+                                        }
+                                    }
+                                    Event::EndFile(reason) => {
+                                        let reason = match reason {
+                                            mpv_end_file_reason::Eof => "eof".to_string(),
+                                            mpv_end_file_reason::Stop => "stop".to_string(),
+                                            mpv_end_file_reason::Redirect => "redirect".to_string(),
+                                            mpv_end_file_reason::Error => "error".to_string(),
+                                            mpv_end_file_reason::Quit => "quit".to_string(),
+                                            _ => "other".to_string(),
+                                        };
+
+                                        object.emit_by_name::<()>("playback-ended", &[&reason]);
+                                    }
+                                    _ => {}
+                                });
+                            }
+                        }
+                    }
+                }
+            ));
+
+            let wakeup_sender = sender.clone();
+            mpv.set_wakeup_callback(move || {
+                wakeup_sender.send(EventCallback::Events).ok();
+            });
 
             let mut render_params = vec![
                 RenderParam::ApiType(RenderParamApiType::OpenGl),
@@ -181,27 +197,13 @@ impl WidgetImpl for Video {
                 ));
             }
 
+            let mpv_handle = unsafe { mpv.ctx.as_mut() };
             let mut render_context = RenderContext::new(mpv_handle, render_params)
                 .expect("Failed to create render context");
 
-            let (sender, receiver) = flume::unbounded::<()>();
-
-            glib::idle_add_local(clone!(
-                #[weak]
-                object,
-                #[upgrade_or]
-                ControlFlow::Break,
-                move || {
-                    if let Ok(()) = receiver.try_recv() {
-                        object.queue_render();
-                    }
-
-                    ControlFlow::Continue
-                }
-            ));
-
+            let render_sender = sender.clone();
             render_context.set_update_callback(move || {
-                sender.send(()).ok();
+                render_sender.send(EventCallback::Render).ok();
             });
 
             *self.render_context.borrow_mut() = Some(render_context);

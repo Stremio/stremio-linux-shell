@@ -1696,8 +1696,7 @@ dependencies = [
 [[package]]
 name = "libmpv2"
 version = "5.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88dc8432d3de09ed6e343488d6b208467db6801fb41971a1f726fa2248302fe5"
+source = "git+https://github.com/Stremio/libmpv2-rs#0898eda488629620acf2b31730e1d18151c4dad2"
 dependencies = [
  "libmpv2-sys",
 ]
@@ -1705,8 +1704,7 @@ dependencies = [
 [[package]]
 name = "libmpv2-sys"
 version = "4.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edb32cabe7176b7d270b0dca6ff418b75187ae8d3854423e3d06fbff376841e4"
+source = "git+https://github.com/Stremio/libmpv2-rs#0898eda488629620acf2b31730e1d18151c4dad2"
 
 [[package]]
 name = "libredox"
