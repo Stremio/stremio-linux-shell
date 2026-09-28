@@ -91,7 +91,10 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                     "mpv-event-ended",
                     {
                         "reason": reason,
-                        "error": error,
+                        "error": error.map(|message| json!({
+                            "message": message,
+                            "critical": true,
+                        })),
                     }
                 ])),
             }),

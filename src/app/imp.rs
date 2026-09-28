@@ -95,9 +95,10 @@ impl ApplicationImpl for Application {
             move |reason| {
                 window.enable_idling();
 
+                let error = (reason == "error").then(|| "Stream failed to load".to_string());
                 let message = ipc::create_response(IpcEvent::Mpv(IpcEventMpv::Ended((
                     reason.to_string(),
-                    None,
+                    error,
                 ))));
                 webview.send(&message);
             }
