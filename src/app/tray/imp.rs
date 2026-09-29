@@ -106,6 +106,10 @@ pub struct TrayIcon {
 }
 
 impl ksni::Tray for TrayIcon {
+    fn activate(&mut self, _x: i32, _y: i32) {
+        self.sender.send(TrayEvent::Show).ok();
+    }
+
     fn id(&self) -> String {
         APP_ID.into()
     }
