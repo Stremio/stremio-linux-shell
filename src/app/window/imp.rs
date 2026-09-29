@@ -1,4 +1,4 @@
-use std::{cell::Cell, fs::File, os::fd::AsFd, sync::Arc};
+use std::{cell::Cell, fs::File, os::fd::AsFd};
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
@@ -17,7 +17,7 @@ use gtk::{
     glib::{self, clone, subclass::InitializingObject},
     prelude::WidgetExt,
 };
-use tokio::sync::Mutex;
+use tokio::sync::watch;
 use tracing::error;
 
 use crate::{app::config::APP_ID, spawn_local, utils::IS_DESKTOP_KDE};
@@ -32,7 +32,36 @@ pub struct Window {
     header: TemplateChild<adw::HeaderBar>,
     #[template_child]
     pub overlay: TemplateChild<gtk::Overlay>,
-    pub inhibit_request: Arc<Mutex<Option<Request<()>>>>,
+    inhibit_tx: watch::Sender<bool>,
+}
+
+async fn run_inhibit_worker(mut inhibit_rx: watch::Receiver<bool>) {
+    let mut active: Option<Request<()>> = None;
+
+    while inhibit_rx.changed().await.is_ok() {
+        let inhibit = *inhibit_rx.borrow_and_update();
+        if inhibit && active.is_none() {
+            if let Ok(proxy) = InhibitProxy::new().await {
+                let mut flags = BitFlags::empty();
+                flags.insert(InhibitFlags::Idle);
+
+                let options = InhibitOptions::default()
+                    .set_reason("Prevent screen from going blank during media playback");
+
+                active = proxy
+                    .inhibit(None, flags, options)
+                    .await
+                    .map_err(|e| error!("Failed to prevent idling: {e}"))
+                    .ok();
+            }
+        } else if !inhibit && let Some(request) = active.take() {
+            request
+                .close()
+                .await
+                .map_err(|e| error!("Failed to allow idling: {e}"))
+                .ok();
+        }
+    }
 }
 
 impl Window {
@@ -56,53 +85,11 @@ impl Window {
     }
 
     pub fn disable_idling(&self) {
-        let object = self.obj();
-        let inhibit_request = self.inhibit_request.clone();
-
-        spawn_local!(clone!(
-            #[weak]
-            object,
-            async move {
-                if let Some(request) = inhibit_request.lock().await.take()
-                    && let Err(e) = request.close().await
-                {
-                    error!("Failed to close the inhibit request: {e}");
-                }
-
-                if let Ok(proxy) = InhibitProxy::new().await {
-                    let identifier = WindowIdentifier::from_native(&object).await;
-
-                    tokio::spawn(async move {
-                        let mut flags = BitFlags::empty();
-                        flags.insert(InhibitFlags::Idle);
-
-                        let options = InhibitOptions::default()
-                            .set_reason("Prevent screen from going blank during media playback");
-
-                        *inhibit_request.lock().await = proxy
-                            .inhibit(identifier.as_ref(), flags, options)
-                            .await
-                            .map_err(|e| error!("Failed to prevent idling: {e}"))
-                            .ok();
-                    });
-                }
-            }
-        ));
+        self.inhibit_tx.send_replace(true);
     }
 
     pub fn enable_idling(&self) {
-        let inhibit_request = self.inhibit_request.clone();
-
-        spawn_local!(async move {
-            let mut inhibit_request = inhibit_request.lock().await;
-            if let Some(request) = inhibit_request.take() {
-                request
-                    .close()
-                    .await
-                    .map_err(|e| error!("Failed to allow idling: {e}"))
-                    .ok();
-            }
-        });
+        self.inhibit_tx.send_replace(false);
     }
 
     pub fn open_uri(&self, uri: String) {
@@ -173,6 +160,8 @@ impl ObjectSubclass for Window {
 impl ObjectImpl for Window {
     fn constructed(&self) {
         self.parent_constructed();
+
+        tokio::spawn(run_inhibit_worker(self.inhibit_tx.subscribe()));
 
         let settings = Settings::new(APP_ID);
 
