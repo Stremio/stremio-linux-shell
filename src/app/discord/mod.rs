@@ -6,7 +6,7 @@ use discord_rich_presence::{
     DiscordIpc, DiscordIpcClient,
     activity::{Activity, ActivityType, Assets},
 };
-use tracing::error;
+use tracing::{error, warn};
 
 use config::CLIENT_ID;
 
@@ -23,7 +23,7 @@ impl Discord {
 
     pub fn connect(&self) -> bool {
         if let Err(e) = self.client.borrow_mut().connect() {
-            error!("Failed to connect: {e}");
+            warn!("Failed to connect: {e}");
             return false;
         }
 
