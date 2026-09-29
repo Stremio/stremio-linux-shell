@@ -11,7 +11,13 @@ use libmpv2::{
     mpv_end_file_reason,
     render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType},
 };
-use std::{cell::RefCell, env, os::raw::c_void, sync::OnceLock};
+use std::{
+    cell::{Cell, RefCell},
+    collections::VecDeque,
+    env,
+    os::raw::c_void,
+    sync::OnceLock,
+};
 use tracing::error;
 
 use crate::spawn_local;
@@ -25,11 +31,28 @@ enum EventCallback {
     Events,
 }
 
+type Submit = Box<dyn FnOnce(&Mpv, u64) -> libmpv2::Result<()>>;
+
+struct Control {
+    name: String,
+    submit: Submit,
+}
+
+impl Control {
+    fn is_subtitle(&self) -> bool {
+        matches!(self.name.as_str(), "sub-add" | "sub-remove" | "sid")
+    }
+}
+
 #[derive(Properties)]
 #[properties(wrapper_type = super::Video)]
 pub struct Video {
     mpv: RefCell<Mpv>,
     render_context: RefCell<Option<RenderContext>>,
+    controls: RefCell<VecDeque<Control>>,
+    pending_control: RefCell<Option<(u64, String)>>,
+    pending_subtitle: Cell<Option<u64>>,
+    next_request: Cell<u64>,
 }
 
 impl Default for Video {
@@ -62,6 +85,10 @@ impl Default for Video {
         Self {
             mpv: RefCell::new(mpv),
             render_context: Default::default(),
+            controls: Default::default(),
+            pending_control: Default::default(),
+            pending_subtitle: Default::default(),
+            next_request: Default::default(),
         }
     }
 }
@@ -82,10 +109,72 @@ impl Video {
         }
     }
 
-    pub fn send_command(&self, name: &str, args: &[&str]) {
-        if let Err(e) = self.mpv.borrow().command(name, args) {
-            error!("Failed to send command {name}: {e}");
+    fn dispatch(&self) {
+        while self.pending_control.borrow().is_none() {
+            let control = {
+                let mut controls = self.controls.borrow_mut();
+                let subtitle_pending = self.pending_subtitle.get().is_some();
+                controls
+                    .iter()
+                    .position(|control| !subtitle_pending || !control.is_subtitle())
+                    .and_then(|index| controls.remove(index))
+            };
+            let Some(control) = control else {
+                break;
+            };
+
+            let id = self.next_request.get();
+            self.next_request.set(id + 1);
+
+            match (control.submit)(&self.mpv.borrow(), id) {
+                Ok(()) if control.name == "sub-add" => self.pending_subtitle.set(Some(id)),
+                Ok(()) => *self.pending_control.borrow_mut() = Some((id, control.name)),
+                Err(e) => error!("Failed to send {}: {e}", control.name),
+            }
         }
+    }
+
+    fn enqueue(&self, control: Control) {
+        self.controls.borrow_mut().push_back(control);
+        self.dispatch();
+    }
+
+    fn on_reply(&self, id: u64, result: libmpv2::Result<()>) {
+        let name = if self.pending_subtitle.get() == Some(id) {
+            self.pending_subtitle.set(None);
+            Some("sub-add".to_owned())
+        } else {
+            self.pending_control
+                .borrow_mut()
+                .take_if(|(pending, _)| *pending == id)
+                .map(|(_, name)| name)
+        };
+
+        if let (Some(name), Err(e)) = (name, result) {
+            error!("Failed to send {name}: {e}");
+        }
+
+        self.dispatch();
+    }
+
+    pub fn send_command(&self, name: String, args: Vec<String>) {
+        if matches!(name.as_str(), "loadfile" | "stop") {
+            self.controls
+                .borrow_mut()
+                .retain(|control| !control.is_subtitle());
+            if let Some(id) = self.pending_subtitle.get() {
+                self.mpv.borrow().abort_async_command(id);
+            }
+        }
+
+        let command = name.clone();
+        self.enqueue(Control {
+            name,
+            submit: Box::new(move |mpv, id| {
+                let args: Vec<_> = args.iter().map(String::as_str).collect();
+                mpv.command_async(&command, &args, id)
+            }),
+        });
     }
 
     pub fn observe_property(&self, name: &str, format: Format) {
@@ -94,10 +183,12 @@ impl Video {
         }
     }
 
-    pub fn set_property<T: SetData>(&self, name: &str, value: T) {
-        if let Err(e) = self.mpv.borrow().set_property(name, value) {
-            error!("Failed to set property {name}: {e}");
-        }
+    pub fn set_property<T: SetData + 'static>(&self, name: &str, value: T) {
+        let property = name.to_owned();
+        self.enqueue(Control {
+            name: name.to_owned(),
+            submit: Box::new(move |mpv, id| mpv.set_property_async(&property, value, id)),
+        });
     }
 }
 
@@ -181,6 +272,14 @@ impl WidgetImpl for Video {
                                         object.emit_by_name::<()>("playback-ended", &[&reason]);
                                         video.unobserve_properties();
                                     }
+                                    Event::CommandReply {
+                                        reply_userdata,
+                                        result,
+                                    }
+                                    | Event::SetPropertyReply {
+                                        reply_userdata,
+                                        result,
+                                    } => video.on_reply(reply_userdata, result),
                                     _ => {}
                                 });
                             }

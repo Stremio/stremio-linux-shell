@@ -3,7 +3,6 @@ mod imp;
 
 use adw::subclass::prelude::ObjectSubclassIsExt;
 use gtk::glib::{self, Variant, closure_local, object::ObjectExt};
-use itertools::Itertools;
 use libmpv2::Format;
 use serde_json::{Number, Value};
 use tracing::warn;
@@ -68,10 +67,7 @@ impl Video {
     }
 
     pub fn send_mpv_command(&self, name: String, args: Vec<String>) {
-        let widget = self.imp();
-
-        let args = args.iter().map(String::as_ref).collect_vec();
-        widget.send_command(&name, &args);
+        self.imp().send_command(name, args);
     }
 
     pub fn observe_mpv_property(&self, name: String) {
@@ -107,7 +103,7 @@ impl Video {
             }
             name if STRING_PROPERTIES.contains(&name) => {
                 if let Some(value) = value.as_str() {
-                    widget.set_property(name, value);
+                    widget.set_property(name, value.to_owned());
                 }
             }
             name => warn!("Failed to set property {name}: Unsupported"),
