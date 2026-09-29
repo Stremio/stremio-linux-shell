@@ -79,7 +79,7 @@ impl ApplicationImpl for Application {
 
         let webview = WebView::default();
         webview.load_uri(&startup_url);
-        webview.inject_script(PRELOAD_SCRIPT);
+        webview.inject_script(PRELOAD_SCRIPT, &startup_url);
         webview.dev_mode(dev_mode);
 
         let window = Window::new(&app);
