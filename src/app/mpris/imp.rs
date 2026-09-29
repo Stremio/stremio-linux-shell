@@ -46,10 +46,21 @@ impl Mpris {
                 .expect("Failed to start MPRIS server");
 
             if let Some(callback) = status_callback.borrow_mut().take() {
+                let callback = Rc::new(callback);
+
+                let play_pause_callback = callback.clone();
                 player.connect_play_pause(move |player| {
                     let paused = matches!(player.playback_status(), PlaybackStatus::Playing);
-                    callback(paused);
+                    play_pause_callback(paused);
                 });
+
+                let play_callback = callback.clone();
+                player.connect_play(move |_| play_callback(false));
+
+                let pause_callback = callback.clone();
+                player.connect_pause(move |_| pause_callback(true));
+
+                player.connect_stop(move |_| callback(true));
             }
 
             if let Some(callback) = raise_callback.borrow_mut().take() {
