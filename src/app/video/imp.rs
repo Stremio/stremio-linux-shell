@@ -65,11 +65,17 @@ impl Default for Video {
 
 impl Video {
     fn on_event<T: Fn(Event)>(&self, callback: T) {
-        while let Some(result) = self.mpv.borrow_mut().wait_event(0.0) {
+        while let Some(result) = self.mpv.borrow().wait_event(0.0) {
             match result {
                 Ok(event) => callback(event),
                 Err(e) => error!("Failed to wait for event: {e}"),
             }
+        }
+    }
+
+    fn unobserve_properties(&self) {
+        if let Err(e) = self.mpv.borrow().unobserve_property(0) {
+            error!("Failed to unobserve properties: {e}");
         }
     }
 
@@ -170,6 +176,7 @@ impl WidgetImpl for Video {
                                         };
 
                                         object.emit_by_name::<()>("playback-ended", &[&reason]);
+                                        video.unobserve_properties();
                                     }
                                     _ => {}
                                 });
