@@ -30,7 +30,7 @@ tracing-subscriber = "0.3.23"
 serde = "1.0.229"
 serde_json = "1.0.151"
 itertools = "0.15.0"
-libmpv2 = { version = "5.0.3", git = "https://github.com/Stremio/libmpv2-rs" }
+libmpv2 = "6.0.0"
 image = "0.25.10"
 chrono = "0.4.45"
 anyhow = "1.0.104"
