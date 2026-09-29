@@ -50,6 +50,13 @@
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
     <releases>
+        <release version="1.2.1" date="2026-09-29">
+            <description>
+                <p>Reduce cpu work when idle</p>
+                <p>Fix window header not always hiding when fullscreened</p>
+                <p>Fix media controls not supported in some cases</p>
+            </description>
+        </release>
         <release version="1.2.0" date="2026-08-03">
             <description>
                 <p>Add discord rich presence support</p>
