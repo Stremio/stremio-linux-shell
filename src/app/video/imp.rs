@@ -34,9 +34,12 @@ pub struct Video {
 
 impl Default for Video {
     fn default() -> Self {
-        let log = env::var("RUST_LOG");
-        let msg_level = match log {
-            Ok(scope) => &format!("all={}", scope.as_str()),
+        let msg_level = match env::var("RUST_LOG").as_deref() {
+            Ok("error") => "all=error",
+            Ok("warn") => "all=warn",
+            Ok("info") => "all=info",
+            Ok("debug") => "all=debug",
+            Ok("trace") => "all=trace",
             _ => "all=no",
         };
 
