@@ -11169,7 +11169,7 @@
     };
     module.exports = Duplex;
     var util = Object.create(__webpack_require__(24));
-    util.inherits = __webpack_require__(108);
+    util.inherits = __webpack_require__(6);
     var Readable = __webpack_require__(432), Writable = __webpack_require__(435);
     util.inherits(Duplex, Readable);
     for (var keys = objectKeys(Writable.prototype), v = 0; v < keys.length; v++) {
@@ -11366,7 +11366,7 @@
     };
     module.exports = Duplex;
     var util = Object.create(__webpack_require__(24));
-    util.inherits = __webpack_require__(6);
+    util.inherits = __webpack_require__(108);
     var Readable = __webpack_require__(445), Writable = __webpack_require__(448);
     util.inherits(Duplex, Readable);
     for (var keys = objectKeys(Writable.prototype), v = 0; v < keys.length; v++) {
@@ -13045,7 +13045,7 @@
         if ("function" != typeof util.inherits) throw "";
         module.exports = util.inherits;
     } catch (e) {
-        module.exports = __webpack_require__(860);
+        module.exports = __webpack_require__(871);
     }
 }, function(module, exports, __webpack_require__) {
     const miniget = __webpack_require__(161);
@@ -36048,7 +36048,7 @@
 }, function(module) {
     module.exports = {
         name: "stremio-server",
-        version: "4.21.2",
+        version: "4.22.0",
         stremioRuntimeVersion: "4.0",
         description: "Stremio HTTP server",
         main: "init.js",
@@ -37167,10 +37167,10 @@
     var EElistenerCount = function(emitter, type) {
         return emitter.listeners(type).length;
     }, Stream = __webpack_require__(433), Buffer = __webpack_require__(21).Buffer, OurUint8Array = global.Uint8Array || function() {}, util = Object.create(__webpack_require__(24));
-    util.inherits = __webpack_require__(108);
+    util.inherits = __webpack_require__(6);
     var debugUtil = __webpack_require__(0), debug = void 0;
     debug = debugUtil && debugUtil.debuglog ? debugUtil.debuglog("stream") : function() {};
-    var StringDecoder, BufferList = __webpack_require__(861), destroyImpl = __webpack_require__(434);
+    var StringDecoder, BufferList = __webpack_require__(860), destroyImpl = __webpack_require__(434);
     util.inherits(Readable, Stream);
     var kProxyEvents = [ "error", "close", "destroy", "pause", "resume" ];
     function ReadableState(options, stream) {
@@ -37496,7 +37496,7 @@
     var Duplex, asyncWrite = !process.browser && [ "v0.10", "v0.9." ].indexOf(process.version.slice(0, 5)) > -1 ? setImmediate : pna.nextTick;
     Writable.WritableState = WritableState;
     var util = Object.create(__webpack_require__(24));
-    util.inherits = __webpack_require__(108);
+    util.inherits = __webpack_require__(6);
     var realHasInstance, internalUtil = {
         deprecate: __webpack_require__(148)
     }, Stream = __webpack_require__(433), Buffer = __webpack_require__(21).Buffer, OurUint8Array = global.Uint8Array || function() {}, destroyImpl = __webpack_require__(434);
@@ -37714,7 +37714,7 @@
         if (stream._transformState.transforming) throw new Error("Calling transform done when still transforming");
         return stream.push(null);
     }
-    util.inherits = __webpack_require__(108), util.inherits(Transform, Duplex), Transform.prototype.push = function(chunk, encoding) {
+    util.inherits = __webpack_require__(6), util.inherits(Transform, Duplex), Transform.prototype.push = function(chunk, encoding) {
         return this._transformState.needTransform = !1, Duplex.prototype.push.call(this, chunk, encoding);
     }, Transform.prototype._transform = function(chunk, encoding, cb) {
         throw new Error("_transform() is not implemented");
@@ -37737,12 +37737,12 @@
 }, function(module, exports, __webpack_require__) {
     "use strict";
     module.exports = {
-        Decoder: __webpack_require__(866),
+        Decoder: __webpack_require__(865),
         Document: __webpack_require__(438),
         Schema: __webpack_require__(13),
         FileSource: __webpack_require__(441),
         HttpSource: __webpack_require__(442),
-        StreamFactorySource: __webpack_require__(871)
+        StreamFactorySource: __webpack_require__(870)
     };
 }, function(module, exports, __webpack_require__) {
     "use strict";
@@ -37776,7 +37776,7 @@
     tagClasses[schema.byName.CueTrackPositions] = "cueTrackPositions", util.inherits(Document, Element), 
     module.exports = Document, Document.prototype.createElement = function(ebmlID, start, length) {
         var element, tagClass = tagClasses[ebmlID];
-        return tagClass ? ("string" == typeof tagClass && (tagClass = __webpack_require__(869)("./" + tagClass), 
+        return tagClass ? ("string" == typeof tagClass && (tagClass = __webpack_require__(868)("./" + tagClass), 
         tagClasses[ebmlID] = tagClass), element = new tagClass(this, this._nextTagId++, start, length)) : element = new Element(this, this._nextTagId++, ebmlID, start, length), 
         element;
     }, Document.prototype._registerPosition = function(tag) {
@@ -38392,7 +38392,7 @@
         return "[HttpSource url=" + this.url + "]";
     };
 }, function(module, exports, __webpack_require__) {
-    var url = __webpack_require__(7), URL = url.URL, http = __webpack_require__(10), https = __webpack_require__(20), Writable = __webpack_require__(3).Writable, assert = __webpack_require__(27), debug = __webpack_require__(870), useNativeURL = !1;
+    var url = __webpack_require__(7), URL = url.URL, http = __webpack_require__(10), https = __webpack_require__(20), Writable = __webpack_require__(3).Writable, assert = __webpack_require__(27), debug = __webpack_require__(869), useNativeURL = !1;
     try {
         assert(new URL);
     } catch (error) {
@@ -38656,7 +38656,7 @@
     var EElistenerCount = function(emitter, type) {
         return emitter.listeners(type).length;
     }, Stream = __webpack_require__(446), Buffer = __webpack_require__(21).Buffer, OurUint8Array = ("undefined" != typeof global ? global : "undefined" != typeof window ? window : "undefined" != typeof self ? self : {}).Uint8Array || function() {}, util = Object.create(__webpack_require__(24));
-    util.inherits = __webpack_require__(6);
+    util.inherits = __webpack_require__(108);
     var debugUtil = __webpack_require__(0), debug = void 0;
     debug = debugUtil && debugUtil.debuglog ? debugUtil.debuglog("stream") : function() {};
     var StringDecoder, BufferList = __webpack_require__(872), destroyImpl = __webpack_require__(447);
@@ -38988,7 +38988,7 @@
     var Duplex, asyncWrite = !process.browser && [ "v0.10", "v0.9." ].indexOf(process.version.slice(0, 5)) > -1 ? setImmediate : pna.nextTick;
     Writable.WritableState = WritableState;
     var util = Object.create(__webpack_require__(24));
-    util.inherits = __webpack_require__(6);
+    util.inherits = __webpack_require__(108);
     var realHasInstance, internalUtil = {
         deprecate: __webpack_require__(148)
     }, Stream = __webpack_require__(446), Buffer = __webpack_require__(21).Buffer, OurUint8Array = ("undefined" != typeof global ? global : "undefined" != typeof window ? window : "undefined" != typeof self ? self : {}).Uint8Array || function() {}, destroyImpl = __webpack_require__(447);
@@ -39206,7 +39206,7 @@
         if (stream._transformState.transforming) throw new Error("Calling transform done when still transforming");
         return stream.push(null);
     }
-    util.inherits = __webpack_require__(6), util.inherits(Transform, Duplex), Transform.prototype.push = function(chunk, encoding) {
+    util.inherits = __webpack_require__(108), util.inherits(Transform, Duplex), Transform.prototype.push = function(chunk, encoding) {
         return this._transformState.needTransform = !1, Duplex.prototype.push.call(this, chunk, encoding);
     }, Transform.prototype._transform = function(chunk, encoding, cb) {
         throw new Error("_transform() is not implemented");
@@ -47764,7 +47764,7 @@
             process.env.NO_CORS || !req.headers.origin || req.headers.origin.match(".strem.io(:80)?$") || req.headers.origin.match(".stremio.net(:80)?$") || req.headers.origin.match(".stremio.com(:80)?$") || req.headers.origin.match("stremio-development.netlify.app(:80)?$") || req.headers.origin.match("stremio.github.io(:80)?$") || req.headers.origin.match("gstatic.com") || "https://stremio.github.io" === req.headers.origin || req.headers.origin.match("(127.0.0.1|localhost):11470$") || req.headers.origin.match("peario.xyz") ? enginefs.sendCORSHeaders(req, res, next) : next();
         }));
         var settings = __webpack_require__(107);
-        if (enginefs.router.use("/embedded-ass", __webpack_require__(864)()), !process.env.HLS_V2_DISABLED) {
+        if (enginefs.router.use("/embedded-ass", __webpack_require__(863)()), !process.env.HLS_V2_DISABLED) {
             const hlsV2Router = new (__webpack_require__(875))(executables);
             enginefs.router.use("/hlsv2", hlsV2Router);
             const regexParam = (param, expression) => {
@@ -72306,7 +72306,7 @@
         }
     };
 }, function(module, exports) {
-    module.exports = [ "udp://tracker.opentrackr.org:1337/announce", "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce", "udp://open.demonii.com:1337/announce", "udp://tracker.qu.ax:6969/announce", "udp://exodus.desync.com:6969/announce", "udp://tracker.tryhackx.org:6969/announce", "udp://tracker.theoks.net:6969/announce", "udp://tracker.nyaa.vc:6969/announce", "udp://explodie.org:6969/announce", "udp://retracker01-msk-virt.corbina.net:80/announce", "udp://tracker.bittor.pw:1337/announce", "udp://tracker.gmi.gd:6969/announce", "udp://tracker.corpscorp.online:80/announce", "udp://tracker.ducks.party:1984/announce", "udp://tracker-udp.gbitt.info:80/announce", "udp://tracker.0x7c0.com:6969/announce", "udp://tracker.dler.org:6969/announce", "http://tracker2.dler.org:80/announce", "http://tracker.dler.com:6969/announce" ];
+    module.exports = [ "udp://tracker.opentrackr.org:1337/announce", "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce", "udp://open.demonii.com:1337/announce", "udp://tracker.skynetcloud.site:6969/announce", "udp://tracker.qu.ax:6969/announce", "udp://tracker.gmi.gd:6969/announce", "udp://tracker.theoks.net:6969/announce", "udp://tracker.corpscorp.online:80/announce", "udp://tracker.bittor.pw:1337/announce", "udp://explodie.org:6969/announce", "udp://tracker.tryhackx.org:6969/announce", "udp://tracker-udp.gbitt.info:80/announce", "udp://retracker01-msk-virt.corbina.net:80/announce", "udp://tracker.nyaa.vc:6969/announce", "http://tracker.dler.com:6969/announce", "udp://tracker2.dler.org:80/announce", "udp://tracker.dler.org:6969/announce", "udp://tracker.ducks.party:1984/announce", "http://tracker.renfei.net:8080/announce" ];
 }, function(module, exports, __webpack_require__) {
     const profiles = __webpack_require__(197), userSettings = __webpack_require__(107), cache = __webpack_require__(421), fetch = __webpack_require__(34), saveSettings = settings => {
         userSettings.extend(settings), cache.setOptionValues(userSettings), userSettings.save((function() {}));
@@ -73656,7 +73656,7 @@
     };
 }, function(module, exports, __webpack_require__) {
     var magnet = __webpack_require__(827), hat = __webpack_require__(103), pws = __webpack_require__(830), bncode = __webpack_require__(199), bitfield = __webpack_require__(842), parseTorrent = __webpack_require__(309), mkdirp = __webpack_require__(147), rimraf = __webpack_require__(843), events = __webpack_require__(4), path = __webpack_require__(5), fs = __webpack_require__(1), os = __webpack_require__(23), eos = __webpack_require__(184), _ = (__webpack_require__(850), 
-    __webpack_require__(203)), bagpipe = __webpack_require__(204), blocklist = __webpack_require__(853), encode = __webpack_require__(854), exchangeMetadata = __webpack_require__(855), storage = __webpack_require__(856), storageCircular = __webpack_require__(857), fileStream = __webpack_require__(858), piece = __webpack_require__(863), SPEED_THRESHOLD = 3 * piece.BLOCK_SIZE, TMP = fs.existsSync("/tmp") ? "/tmp" : os.tmpdir(), noop = function() {}, thruthy = function() {
+    __webpack_require__(203)), bagpipe = __webpack_require__(204), blocklist = __webpack_require__(853), encode = __webpack_require__(854), exchangeMetadata = __webpack_require__(855), storage = __webpack_require__(856), storageCircular = __webpack_require__(857), fileStream = __webpack_require__(858), piece = __webpack_require__(862), SPEED_THRESHOLD = 3 * piece.BLOCK_SIZE, TMP = fs.existsSync("/tmp") ? "/tmp" : os.tmpdir(), noop = function() {}, thruthy = function() {
         return !0;
     }, falsy = function() {
         return !1;
@@ -75994,24 +75994,7 @@
     exports.Duplex = Stream.Duplex, exports.Transform = Stream.Transform, exports.PassThrough = Stream.PassThrough, 
     exports.Stream = Stream) : ((exports = module.exports = __webpack_require__(432)).Stream = Stream || exports, 
     exports.Readable = exports, exports.Writable = __webpack_require__(435), exports.Duplex = __webpack_require__(87), 
-    exports.Transform = __webpack_require__(436), exports.PassThrough = __webpack_require__(862));
-}, function(module, exports) {
-    "function" == typeof Object.create ? module.exports = function(ctor, superCtor) {
-        superCtor && (ctor.super_ = superCtor, ctor.prototype = Object.create(superCtor.prototype, {
-            constructor: {
-                value: ctor,
-                enumerable: !1,
-                writable: !0,
-                configurable: !0
-            }
-        }));
-    } : module.exports = function(ctor, superCtor) {
-        if (superCtor) {
-            ctor.super_ = superCtor;
-            var TempCtor = function() {};
-            TempCtor.prototype = superCtor.prototype, ctor.prototype = new TempCtor, ctor.prototype.constructor = ctor;
-        }
-    };
+    exports.Transform = __webpack_require__(436), exports.PassThrough = __webpack_require__(861));
 }, function(module, exports, __webpack_require__) {
     "use strict";
     var Buffer = __webpack_require__(21).Buffer, util = __webpack_require__(0);
@@ -76067,8 +76050,7 @@
         if (!(this instanceof PassThrough)) return new PassThrough(options);
         Transform.call(this, options);
     }
-    util.inherits = __webpack_require__(108), util.inherits(PassThrough, Transform), 
-    PassThrough.prototype._transform = function(chunk, encoding, cb) {
+    util.inherits = __webpack_require__(6), util.inherits(PassThrough, Transform), PassThrough.prototype._transform = function(chunk, encoding, cb) {
         cb(null, chunk);
     };
 }, function(module, exports) {
@@ -76100,7 +76082,7 @@
         !0);
     }, module.exports = PieceBuffer;
 }, function(module, exports, __webpack_require__) {
-    const Router = __webpack_require__(80), {parse: parse} = __webpack_require__(7), Reader = __webpack_require__(865);
+    const Router = __webpack_require__(80), {parse: parse} = __webpack_require__(7), Reader = __webpack_require__(864);
     module.exports = function() {
         const router = new Router, cache = new Map;
         function handle(type) {
@@ -76358,7 +76340,7 @@
 }, function(module, exports, __webpack_require__) {
     "use strict";
     var debug = __webpack_require__(41)("matroska:decoder"), debugTag = __webpack_require__(41)("matroska:decoder:tag"), url = (__webpack_require__(1), 
-    __webpack_require__(7)), util = (__webpack_require__(11).SlowBuffer, __webpack_require__(0)), Writable = __webpack_require__(3).Writable, Document2 = __webpack_require__(867), Source = __webpack_require__(440), FileSource = __webpack_require__(441), HttpSource = __webpack_require__(442), tools = __webpack_require__(75), schema = __webpack_require__(13);
+    __webpack_require__(7)), util = (__webpack_require__(11).SlowBuffer, __webpack_require__(0)), Writable = __webpack_require__(3).Writable, Document2 = __webpack_require__(866), Source = __webpack_require__(440), FileSource = __webpack_require__(441), HttpSource = __webpack_require__(442), tools = __webpack_require__(75), schema = __webpack_require__(13);
     function Decoder(options) {
         Writable.call(this, options), options = options || {}, this.options = options, this.skipTags = options.skipTags, 
         void 0 === this.skipTags && (this.skipTags = {
@@ -76594,7 +76576,7 @@
     };
 }, function(module, exports, __webpack_require__) {
     "use strict";
-    var async = __webpack_require__(40), util = __webpack_require__(0), Document1 = __webpack_require__(868);
+    var async = __webpack_require__(40), util = __webpack_require__(0), Document1 = __webpack_require__(867);
     function Document2() {
         Document1.call(this);
     }
@@ -76722,7 +76704,7 @@
     webpackContext.keys = function() {
         return Object.keys(map);
     }, webpackContext.resolve = webpackContextResolve, module.exports = webpackContext, 
-    webpackContext.id = 869;
+    webpackContext.id = 868;
 }, function(module, exports, __webpack_require__) {
     var debug;
     module.exports = function() {
@@ -76760,6 +76742,23 @@
         this.streamFactory.end(session, callback);
     }, StreamFactorySource.prototype.toString = function() {
         return "[StreamFactorySource factory=" + this.streamFactory + "]";
+    };
+}, function(module, exports) {
+    "function" == typeof Object.create ? module.exports = function(ctor, superCtor) {
+        superCtor && (ctor.super_ = superCtor, ctor.prototype = Object.create(superCtor.prototype, {
+            constructor: {
+                value: ctor,
+                enumerable: !1,
+                writable: !0,
+                configurable: !0
+            }
+        }));
+    } : module.exports = function(ctor, superCtor) {
+        if (superCtor) {
+            ctor.super_ = superCtor;
+            var TempCtor = function() {};
+            TempCtor.prototype = superCtor.prototype, ctor.prototype = new TempCtor, ctor.prototype.constructor = ctor;
+        }
     };
 }, function(module, exports, __webpack_require__) {
     "use strict";
@@ -76815,7 +76814,8 @@
         if (!(this instanceof PassThrough)) return new PassThrough(options);
         Transform.call(this, options);
     }
-    util.inherits = __webpack_require__(6), util.inherits(PassThrough, Transform), PassThrough.prototype._transform = function(chunk, encoding, cb) {
+    util.inherits = __webpack_require__(108), util.inherits(PassThrough, Transform), 
+    PassThrough.prototype._transform = function(chunk, encoding, cb) {
         cb(null, chunk);
     };
 }, function(module, exports, __webpack_require__) {
@@ -84448,6 +84448,7 @@
     }, module.exports = ExternalDiscovery;
 }, function(module, exports, __webpack_require__) {
     var child = __webpack_require__(31), fs = __webpack_require__(1), stremioCast = __webpack_require__(961), enginefs = __webpack_require__(177), http = __webpack_require__(10), os = __webpack_require__(23), path = __webpack_require__(5);
+    const HOME_DIR = os.homedir(), IS_FLATPAK = !!process.env.FLATPAK_ID, FLATPAK_APP_PATH_REGEX = /\/flatpak\/app\/([^/]+)/, FLATPAK_APP_DIRS = [ "/var/lib/flatpak/app", path.join(HOME_DIR, ".local/var/flatpak/app") ], asLinuxPaths = (flatpakId, binaries) => [ ...FLATPAK_APP_DIRS.map((dir => path.join(dir, flatpakId))), ...binaries.map((binary => IS_FLATPAK ? path.join("/run/host", binary) : binary)) ], isFlatpakAppPath = location => FLATPAK_APP_PATH_REGEX.test(location), isFlatpakHostAppPath = location => location.startsWith("/run/host");
     module.exports = function(devices) {
         var players = {
             vlc: {
@@ -84460,7 +84461,7 @@
                     path: [ "/Applications/VLC.app/Contents/MacOS/VLC" ]
                 },
                 linux: {
-                    path: [ "/usr/bin/vlc", "/usr/local/bin/vlc" ]
+                    path: asLinuxPaths("org.videolan.vlc", [ "/usr/bin/vlc", "/usr/local/bin/vlc" ])
                 },
                 win32: {
                     path: [ '"C:\\Program Files (x86)\\VideoLAN\\VLC\\vlc.exe"', '"C:\\Program Files\\VideoLAN\\VLC\\vlc.exe"' ]
@@ -84508,7 +84509,7 @@
                     path: [ "/usr/local/bin/mpv", "/opt/local/bin/mpv", "/sw/bin/mpv" ]
                 },
                 linux: {
-                    path: [ "/usr/bin/mpv" ]
+                    path: asLinuxPaths("io.mpv.Mpv", [ "/usr/bin/mpv" ])
                 },
                 win32: {
                     path: []
@@ -84545,6 +84546,22 @@
                 win32: {
                     path: [ '"C:\\Program Files (x86)\\MPC-BE x64\\mpc-be4.exe"', '"C:\\Program Files\\MPC-BE x64\\mpc-be64.exe"' ]
                 }
+            },
+            celluloid: {
+                title: "Celluloid",
+                args: [],
+                subArg: "--mpv-sub-file=",
+                timeArg: "--mpv-start=",
+                playArg: "",
+                darwin: {
+                    path: []
+                },
+                linux: {
+                    path: asLinuxPaths("io.github.celluloid_player.Celluloid", [ "/usr/bin/celluloid" ])
+                },
+                win32: {
+                    path: []
+                }
             }
         };
         devices.groups.external = [], Object.keys(players).forEach((function(el) {
@@ -84566,11 +84583,15 @@
                             var self = this;
                             setTimeout((function() {
                                 var port = enginefs.baseUrl.match(".*?:([0-9]+)")[1], host = enginefs.baseUrl.match("^http://(.*):[0-9]+$")[1], subsPath = self.subtitlesSrc, time = self.time, subsFile = "", playExternal = function() {
-                                    var playerPaths = platformObj.path.filter((function(path) {
+                                    var location, playerPaths = platformObj.path.filter((function(path) {
                                         return fs.existsSync(path.replace(/"/gi, ""));
                                     }));
                                     if (playerPaths.length > 0) {
-                                        var wrappedSrc = '"' + src + '"', subsCmd = subsFile && players[player].subArg && players[player].subArg.length > 0 ? players[player].subArg + subsFile : "", argsCmd = players[player].args && players[player].args.length > 0 ? players[player].args.join(" ") : "", timeCmd = players[player].timeArg && players[player].timeArg.length > 0 ? players[player].timeArg + parseInt(time / 1e3) : "", playCmd = players[player].playArg && players[player].playArg.length > 0 ? players[player].playArg + wrappedSrc : wrappedSrc, fullCmd = playerPaths[0] + " " + timeCmd + " " + argsCmd + " " + subsCmd + " " + playCmd;
+                                        var wrappedSrc = '"' + src + '"', subsCmd = subsFile && players[player].subArg && players[player].subArg.length > 0 ? players[player].subArg + subsFile : "", argsCmd = players[player].args && players[player].args.length > 0 ? players[player].args.join(" ") : "", timeCmd = players[player].timeArg && players[player].timeArg.length > 0 ? players[player].timeArg + parseInt(time / 1e3) : "", playCmd = players[player].playArg && players[player].playArg.length > 0 ? players[player].playArg + wrappedSrc : wrappedSrc, playerInstallPath = playerPaths[0], fullCmd = (isFlatpakAppPath(location = playerInstallPath) || isFlatpakHostAppPath(location) ? (location => {
+                                            let command;
+                                            return isFlatpakHostAppPath(location) && (command = path.basename(location)), isFlatpakAppPath(location) && (command = `flatpak run ${location.match(FLATPAK_APP_PATH_REGEX)[1]}`), 
+                                            IS_FLATPAK ? `flatpak-spawn --host ${command}` : command;
+                                        })(playerInstallPath) : playerInstallPath) + " " + timeCmd + " " + argsCmd + " " + subsCmd + " " + playCmd;
                                         child.exec(fullCmd, (function(error) {
                                             console.error("Failed executing external player command:", error);
                                         })).on("exit", (function() {
