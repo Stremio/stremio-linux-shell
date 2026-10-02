@@ -63,12 +63,13 @@ fn main() -> ExitCode {
     let args = Args::parse();
 
     let mut server = Server::new();
-    server.start(args.dev).expect("Failed to start server");
+    let server_ready = server.start(args.dev).expect("Failed to start server");
 
     let app = Application::new();
     app.set_property("dev-mode", args.dev);
     app.set_property("startup-url", args.url);
     app.set_property("decorations", !args.no_window_decorations);
+    app.set_server_ready(server_ready);
 
     let runtime = Runtime::new().expect("Failed to create Tokio runtime");
     let _guard = runtime.enter();
