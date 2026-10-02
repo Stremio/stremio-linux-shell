@@ -12,7 +12,6 @@ use tokio::runtime::Runtime;
 use crate::{
     app::Application,
     config::{DATA_DIR, GETTEXT_DIR_DEV, GETTEXT_DIR_FLATPAK, GETTEXT_DOMAIN, STARTUP_URL},
-    server::Server,
 };
 
 #[derive(Parser, Debug)]
@@ -61,9 +60,6 @@ fn main() -> ExitCode {
     });
 
     let args = Args::parse();
-
-    let mut server = Server::new();
-    server.start(args.dev).expect("Failed to start server");
 
     let app = Application::new();
     app.set_property("dev-mode", args.dev);

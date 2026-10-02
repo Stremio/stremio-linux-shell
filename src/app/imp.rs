@@ -1,4 +1,7 @@
-use std::cell::{Cell, RefCell};
+use std::{
+    cell::{Cell, RefCell},
+    panic, process,
+};
 
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib::{self, Properties, clone};
@@ -18,6 +21,7 @@ use crate::{
         webview::WebView,
         window::Window,
     },
+    server::Server,
     spawn_local, utils,
 };
 
@@ -37,6 +41,7 @@ pub struct Application {
     window: RefCell<Option<Window>>,
     webview: RefCell<Option<WebView>>,
     deeplink: RefCell<Option<String>>,
+    server: RefCell<Option<Server>>,
 }
 
 #[glib::object_subclass]
@@ -51,6 +56,15 @@ impl ObjectImpl for Application {}
 
 impl ApplicationImpl for Application {
     fn startup(&self) {
+        let dev_mode = self.dev_mode.get();
+        let server = panic::catch_unwind(|| {
+            let mut server = Server::new();
+            server.start(dev_mode).expect("Failed to start server");
+            server
+        })
+        .unwrap_or_else(|_| process::exit(101));
+        *self.server.borrow_mut() = Some(server);
+
         self.parent_startup();
 
         let app = self.obj();
@@ -301,6 +315,8 @@ impl ApplicationImpl for Application {
         if let Some(window) = self.window.take() {
             window.destroy();
         }
+
+        self.server.take();
 
         self.parent_shutdown();
     }
