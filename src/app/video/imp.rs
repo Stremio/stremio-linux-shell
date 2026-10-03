@@ -14,6 +14,7 @@ use libmpv2::{
 use std::{cell::RefCell, env, os::raw::c_void, sync::OnceLock};
 use tracing::error;
 
+use super::ready::VideoReadyState;
 use crate::spawn_local;
 
 fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
@@ -30,6 +31,7 @@ enum EventCallback {
 pub struct Video {
     mpv: RefCell<Mpv>,
     render_context: RefCell<Option<RenderContext>>,
+    video_ready: RefCell<VideoReadyState>,
 }
 
 impl Default for Video {
@@ -59,6 +61,7 @@ impl Default for Video {
         Self {
             mpv: RefCell::new(mpv),
             render_context: Default::default(),
+            video_ready: Default::default(),
         }
     }
 }
@@ -80,6 +83,18 @@ impl Video {
     }
 
     pub fn send_command(&self, name: &str, args: &[&str]) {
+        let loads_file = match name {
+            "loadfile" => Some(true),
+            "stop" => Some(false),
+            _ => None,
+        };
+
+        if let Some(loads_file) = loads_file {
+            let load_id = self.video_ready.borrow_mut().begin_transition(loads_file);
+            self.obj()
+                .emit_by_name::<()>("video-ready", &[&load_id, &false]);
+        }
+
         if let Err(e) = self.mpv.borrow().command(name, args) {
             error!("Failed to send command {name}: {e}");
         }
@@ -116,6 +131,9 @@ impl ObjectImpl for Video {
                     .build(),
                 Signal::builder("playback-ended")
                     .param_types([str::static_type()])
+                    .build(),
+                Signal::builder("video-ready")
+                    .param_types([u64::static_type(), bool::static_type()])
                     .build(),
             ]
         })
@@ -177,6 +195,20 @@ impl WidgetImpl for Video {
 
                                         object.emit_by_name::<()>("playback-ended", &[&reason]);
                                         video.unobserve_properties();
+                                    }
+                                    Event::StartFile => video.video_ready.borrow_mut().start_file(),
+                                    Event::FileLoaded => {
+                                        video.video_ready.borrow_mut().file_loaded()
+                                    }
+                                    Event::PlaybackRestart => {
+                                        let load_id =
+                                            video.video_ready.borrow_mut().playback_restarted();
+                                        if let Some(load_id) = load_id {
+                                            object.emit_by_name::<()>(
+                                                "video-ready",
+                                                &[&load_id, &true],
+                                            );
+                                        }
                                     }
                                     _ => {}
                                 });
