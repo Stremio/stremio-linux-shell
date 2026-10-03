@@ -10,6 +10,7 @@ pub enum IpcEventMpv {
     Set((String, Value)),
     Change((String, Value)),
     Ended((String, Option<String>)),
+    VideoReady((u64, bool)),
 }
 
 #[derive(Deserialize, Debug)]

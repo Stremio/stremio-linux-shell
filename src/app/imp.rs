@@ -103,6 +103,16 @@ impl ApplicationImpl for Application {
             }
         ));
 
+        video.connect_video_ready(clone!(
+            #[weak]
+            webview,
+            move |load_id, ready| {
+                let message =
+                    ipc::create_response(IpcEvent::Mpv(IpcEventMpv::VideoReady((load_id, ready))));
+                webview.send(&message);
+            }
+        ));
+
         video.connect_mpv_property_change(clone!(
             #[weak]
             webview,
