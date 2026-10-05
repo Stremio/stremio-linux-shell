@@ -6,7 +6,7 @@ use gtk::{
     subclass::prelude::*,
 };
 use libmpv2::{
-    Format, Mpv, SetData,
+    Error, Format, Mpv, SetData,
     events::{Event, PropertyData},
     mpv_end_file_reason,
     render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType},
@@ -68,6 +68,11 @@ impl Video {
         while let Some(result) = self.mpv.borrow().wait_event(0.0) {
             match result {
                 Ok(event) => callback(event),
+                Err(Error::Raw(e)) => {
+                    error!("MPV errored with: {e}");
+                    self.obj()
+                        .emit_by_name::<()>("playback-ended", &[&"error".to_string()]);
+                }
                 Err(e) => error!("Failed to wait for event: {e}"),
             }
         }
