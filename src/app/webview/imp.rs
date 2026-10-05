@@ -35,6 +35,7 @@ impl ObjectImpl for WebView {
             settings.set_enable_media_capabilities(false);
             settings.set_enable_media_stream(false);
             settings.set_enable_webaudio(false);
+            settings.set_javascript_can_access_clipboard(true);
         }
 
         let gesture = GestureClick::new();
