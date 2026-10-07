@@ -7,6 +7,8 @@ use gtk::{
 };
 use webkit::{WebView as WebKitWebView, prelude::*};
 
+use super::ext::SettingsExt;
+
 #[derive(Default)]
 pub struct WebView {
     pub webview: WebKitWebView,
@@ -36,6 +38,21 @@ impl ObjectImpl for WebView {
             settings.set_enable_media_stream(false);
             settings.set_enable_webaudio(false);
             settings.set_javascript_can_access_clipboard(true);
+
+            // https://github.com/Stremio/stremio-linux-shell/issues/170
+            if webkit::functions::major_version() == 2 && webkit::functions::minor_version() == 54 {
+                // Use TextureMapper instead of Skia for layer composition
+                if let Some(compositor) = settings.find_feature("UseSkiaForComposition") {
+                    settings.set_feature_enabled(&compositor, false);
+                }
+
+                // Disable damage tracking for compositing to repaint the entire view.
+                if let Some(damage_tracking) =
+                    settings.find_feature("UseDamagingInformationForCompositing")
+                {
+                    settings.set_feature_enabled(&damage_tracking, false);
+                }
+            }
         }
 
         let gesture = GestureClick::new();
