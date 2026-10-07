@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - '**'
-    tags-ignore:
-      - '**'
+  pull_request:
 
 jobs:
   build:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     container:
       image: ubuntu:resolute
