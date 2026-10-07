@@ -50,6 +50,14 @@
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
     <releases>
+        <release version="1.2.2" date="2026-10-07">
+            <description>
+                <p>Fix rendering issues related to WebKit update</p>
+                <p>Fix player loading indefinitely when stream fails to load</p>
+                <p>Fix external player options missing from player</p>
+                <p>Fix app unable to write urls to clipboard</p>
+            </description>
+        </release>
         <release version="1.2.1" date="2026-09-29">
             <description>
                 <p>Reduce cpu work when idle</p>
