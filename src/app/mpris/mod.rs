@@ -1,6 +1,6 @@
 mod imp;
 
-use gtk::glib::{self, subclass::prelude::*};
+use gtk::glib::{self, closure_local, prelude::*, subclass::prelude::*};
 
 glib::wrapper! {
     pub struct Mpris(ObjectSubclass<imp::Mpris>);
@@ -25,11 +25,23 @@ impl Mpris {
         self.imp().set_metadata(title, artist, art_url);
     }
 
-    pub fn connect_status<F: Fn(bool) + 'static>(&self, callback: F) {
-        self.imp().set_status_callback(callback);
+    pub fn connect_paused<T: Fn(bool) + 'static>(&self, callback: T) {
+        self.connect_closure(
+            "paused",
+            false,
+            closure_local!(move |_: Mpris, status: bool| {
+                callback(status);
+            }),
+        );
     }
 
-    pub fn connect_raise<F: Fn() + 'static>(&self, callback: F) {
-        self.imp().set_raise_callback(callback);
+    pub fn connect_raise<T: Fn() + 'static>(&self, callback: T) {
+        self.connect_closure(
+            "raise",
+            false,
+            closure_local!(move |_: Mpris| {
+                callback();
+            }),
+        );
     }
 }

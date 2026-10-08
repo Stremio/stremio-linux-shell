@@ -252,7 +252,7 @@ impl ApplicationImpl for Application {
             }
         ));
 
-        mpris.connect_status(clone!(
+        mpris.connect_paused(clone!(
             #[weak]
             webview,
             move |paused| {

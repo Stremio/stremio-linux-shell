@@ -1,22 +1,15 @@
-use std::{
-    cell::{OnceCell, RefCell},
-    rc::Rc,
-};
+use std::{cell::OnceCell, rc::Rc, sync::OnceLock};
 
-use gtk::glib::{self, subclass::prelude::*};
+use gtk::glib::{self, subclass::Signal};
+use gtk::{glib::clone, prelude::*, subclass::prelude::*};
 use mpris_server::{Metadata, PlaybackStatus, Player};
 use tracing::error;
 
 use crate::spawn_local;
 
-type StatusCallback = Box<dyn Fn(bool)>;
-type RaiseCallback = Box<dyn Fn()>;
-
 #[derive(Default)]
 pub struct Mpris {
     mpris: Rc<OnceCell<Player>>,
-    status_callback: Rc<RefCell<Option<StatusCallback>>>,
-    raise_callback: Rc<RefCell<Option<RaiseCallback>>>,
 }
 
 #[glib::object_subclass]
@@ -26,11 +19,40 @@ impl ObjectSubclass for Mpris {
     type ParentType = glib::Object;
 }
 
+impl ObjectImpl for Mpris {
+    fn signals() -> &'static [Signal] {
+        static SIGNALS: OnceLock<Vec<Signal>> = OnceLock::new();
+        SIGNALS.get_or_init(|| {
+            vec![
+                Signal::builder("paused")
+                    .param_types([bool::static_type()])
+                    .build(),
+                Signal::builder("raise").build(),
+            ]
+        })
+    }
+}
+
 impl Mpris {
     pub fn start(&self, id: &'static str, name: &'static str) {
         let mpris = self.mpris.clone();
-        let status_callback = self.status_callback.clone();
-        let raise_callback = self.raise_callback.clone();
+        let object = self.obj();
+
+        let emit_paused = clone!(
+            #[weak]
+            object,
+            move |paused: bool| {
+                object.emit_by_name::<()>("paused", &[&paused]);
+            }
+        );
+
+        let emit_raise = clone!(
+            #[weak]
+            object,
+            move || {
+                object.emit_by_name::<()>("raise", &[]);
+            }
+        );
 
         spawn_local!(async move {
             let player = Player::builder(name)
@@ -45,27 +67,22 @@ impl Mpris {
                 .await
                 .expect("Failed to start MPRIS server");
 
-            if let Some(callback) = status_callback.borrow_mut().take() {
-                let callback = Rc::new(callback);
+            let emit = emit_paused.clone();
+            player.connect_play_pause(move |player| {
+                let paused = matches!(player.playback_status(), PlaybackStatus::Playing);
+                emit(paused);
+            });
 
-                let play_pause_callback = callback.clone();
-                player.connect_play_pause(move |player| {
-                    let paused = matches!(player.playback_status(), PlaybackStatus::Playing);
-                    play_pause_callback(paused);
-                });
+            let emit = emit_paused.clone();
+            player.connect_play(move |_| emit(false));
 
-                let play_callback = callback.clone();
-                player.connect_play(move |_| play_callback(false));
+            let emit = emit_paused.clone();
+            player.connect_pause(move |_| emit(true));
 
-                let pause_callback = callback.clone();
-                player.connect_pause(move |_| pause_callback(true));
+            let emit = emit_paused.clone();
+            player.connect_stop(move |_| emit(true));
 
-                player.connect_stop(move |_| callback(true));
-            }
-
-            if let Some(callback) = raise_callback.borrow_mut().take() {
-                player.connect_raise(move |_| callback());
-            }
+            player.connect_raise(move |_| emit_raise());
 
             let player = mpris.get_or_init(|| player);
             player.run().await;
@@ -105,16 +122,4 @@ impl Mpris {
             }
         });
     }
-
-    pub fn set_status_callback<F: Fn(bool) + 'static>(&self, callback: F) {
-        self.status_callback
-            .borrow_mut()
-            .replace(Box::new(callback));
-    }
-
-    pub fn set_raise_callback<F: Fn() + 'static>(&self, callback: F) {
-        self.raise_callback.borrow_mut().replace(Box::new(callback));
-    }
 }
-
-impl ObjectImpl for Mpris {}
