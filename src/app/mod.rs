@@ -9,6 +9,7 @@ mod video;
 mod webview;
 mod window;
 
+use adw::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{
     CssProvider,
     gdk::Display,
@@ -43,6 +44,10 @@ impl Application {
             .property("application-id", APP_ID)
             .property("flags", ApplicationFlags::HANDLES_OPEN)
             .build()
+    }
+
+    pub fn set_server_ready(&self, ready: flume::Receiver<()>) {
+        *self.imp().server_ready.borrow_mut() = Some(ready);
     }
 
     pub fn run(&self, args: Vec<String>) -> ExitCode {
