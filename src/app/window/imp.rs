@@ -202,6 +202,7 @@ impl WidgetImpl for Window {
         if !self.decorations.get() {
             self.show_header(false);
             widget.remove_css_class("csd");
+            widget.set_decorated(false);
         }
 
         let remember_window_state = settings.boolean("remember-window-state");
