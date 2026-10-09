@@ -30,6 +30,10 @@ impl Default for WebView {
 }
 
 impl WebView {
+    pub fn set_interface_scale(&self, scale: u16) {
+        self.imp().webview.set_zoom_level(f64::from(scale) / 100.0);
+    }
+
     pub fn load_uri(&self, uri: &str) {
         let widget = self.imp();
 

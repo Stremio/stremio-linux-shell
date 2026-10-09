@@ -27,6 +27,7 @@ pub enum IpcEvent {
     Ready,
     Quit,
     Fullscreen(bool),
+    InterfaceScale(u16),
     Visibility(bool),
     OpenMedia(String),
     Mpv(IpcEventMpv),

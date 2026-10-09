@@ -18,6 +18,11 @@ pub struct IpcMessageRequestWinSetVisilibty {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct IpcMessageRequestWinSetInterfaceScale {
+    scale: u16,
+}
+
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct IpcMessageRequestMediaMetadata {
     title: String,
@@ -59,6 +64,12 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                                         .map_err(|_| "Invalid win-set-visibility object")?;
 
                                 Ok(IpcEvent::Fullscreen(data.fullscreen))
+                            }
+                            "win-set-interface-scale" => {
+                                let data: IpcMessageRequestWinSetInterfaceScale =
+                                    serde_json::from_value(data)
+                                        .map_err(|_| "Invalid win-set-interface-scale object")?;
+                                Ok(IpcEvent::InterfaceScale(data.scale))
                             }
                             "mpv-command" => {
                                 let data: Vec<String> = serde_json::from_value(data)
