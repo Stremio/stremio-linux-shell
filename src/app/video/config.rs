@@ -12,6 +12,7 @@ pub const FLOAT_PROPERTIES: &[&str] = &[
 ];
 
 pub const BOOL_PROPERTIES: &[&str] = &[
+    "sub-ass-force-margins",
     "pause",
     "buffering",
     "seeking",
