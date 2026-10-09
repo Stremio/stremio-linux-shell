@@ -235,7 +235,7 @@ impl ApplicationImpl for Application {
             #[weak]
             window,
             move || {
-                window.set_visible(true);
+                window.present();
             }
         ));
 
