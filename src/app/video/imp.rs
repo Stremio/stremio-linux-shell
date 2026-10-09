@@ -119,6 +119,7 @@ impl ObjectImpl for Video {
                 Signal::builder("property-changed")
                     .param_types([str::static_type(), Variant::static_type()])
                     .build(),
+                Signal::builder("playback-started").build(),
                 Signal::builder("playback-ended")
                     .param_types([str::static_type()])
                     .build(),
@@ -155,6 +156,9 @@ impl WidgetImpl for Video {
                             }
                             EventCallback::Events => {
                                 video.on_event(|event| match event {
+                                    Event::StartFile => {
+                                        object.emit_by_name::<()>("playback-started", &[]);
+                                    }
                                     Event::PropertyChange { name, change, .. } => {
                                         let value = match change {
                                             PropertyData::Str(v) => Some(v.to_variant()),

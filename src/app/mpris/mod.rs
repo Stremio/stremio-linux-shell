@@ -13,8 +13,12 @@ impl Default for Mpris {
 }
 
 impl Mpris {
-    pub fn start(&self, id: &'static str, name: &'static str) {
-        self.imp().start(id, name);
+    pub fn start(&self) {
+        self.imp().start();
+    }
+
+    pub fn stop(&self) {
+        self.imp().stop();
     }
 
     pub fn set_status(&self, paused: bool) {
