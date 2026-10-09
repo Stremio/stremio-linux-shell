@@ -40,6 +40,11 @@ impl Default for Video {
             _ => "all=no",
         };
 
+        // Enable zero-copy hardware decoding by default (see `super::default_hwdec`).
+        // mpv otherwise defaults to software decoding, and the web UI only asks for
+        // copy-back (`hwdec=auto-copy`, remapped in mod.rs).
+        let hwdec = super::default_hwdec();
+
         // Required for libmpv to work alongside GTK
         gettextrs::setlocale(gettextrs::LocaleCategory::LcNumeric, "C")
             .expect("Failed to set LC_NUMERIC to C");
@@ -48,6 +53,7 @@ impl Default for Video {
             init.set_property("vo", "libmpv")?;
             init.set_property("video-timing-offset", "0")?;
             init.set_property("video-sync", "audio")?;
+            init.set_property("hwdec", hwdec.as_str())?;
             init.set_property("terminal", "yes")?;
             init.set_property("msg-level", msg_level)?;
             Ok(())
