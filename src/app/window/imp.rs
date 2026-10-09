@@ -194,6 +194,7 @@ impl ObjectImpl for Window {
 
 impl WidgetImpl for Window {
     fn realize(&self) {
+        self.obj().set_decorated(self.decorations.get());
         self.parent_realize();
 
         let widget = self.obj();
