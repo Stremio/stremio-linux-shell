@@ -1,4 +1,4 @@
-use std::{fs, path::Path, process::Command};
+use std::{env, fs, path::Path, process::Command};
 
 use anyhow::Result;
 
@@ -8,7 +8,14 @@ pub const DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data");
 
 fn main() -> Result<()> {
     setup_po()?;
-    setup_schemas("com.stremio.Stremio.gschema.xml")?;
+
+    // For `cargo run`: the GSettings schema goes to the building user's data dir. Distribution
+    // and Flatpak builds install it themselves (e.g. to /usr/share/glib-2.0/schemas) and set
+    // STREMIO_SKIP_USER_SCHEMA=1, so the build doesn't write into the builder's home.
+    println!("cargo:rerun-if-env-changed=STREMIO_SKIP_USER_SCHEMA");
+    if env::var_os("STREMIO_SKIP_USER_SCHEMA").is_none_or(|v| v.is_empty() || v == "0") {
+        setup_schemas("com.stremio.Stremio.gschema.xml")?;
+    }
 
     Ok(())
 }
