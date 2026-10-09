@@ -3,7 +3,7 @@ use std::{cell::Cell, fs::File, os::fd::AsFd, sync::Arc};
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use ashpd::{
-    Uri, WindowIdentifier,
+    Uri,
     desktop::{
         Request,
         background::Background,
@@ -14,12 +14,13 @@ use ashpd::{
 };
 use gtk::{
     gio::Settings,
-    glib::{self, clone, subclass::InitializingObject},
+    glib::{self, subclass::InitializingObject},
     prelude::WidgetExt,
 };
 use tokio::sync::Mutex;
 use tracing::error;
 
+use super::ext::ASHPDExt;
 use crate::{app::config::APP_ID, spawn_local, utils::IS_DESKTOP_KDE};
 
 #[derive(Default, glib::Properties, gtk::CompositeTemplate)]
@@ -37,57 +38,47 @@ pub struct Window {
 
 impl Window {
     pub fn request_backgound(&self) {
-        let object = self.obj();
+        let identifier = self.window_identifier();
 
-        spawn_local!(clone!(
-            #[weak]
-            object,
-            async move {
-                if let Some(identifier) = WindowIdentifier::from_native(&object).await {
-                    let request = Background::request().identifier(identifier);
-                    request
-                        .send()
-                        .await
-                        .map_err(|e| error!("Failed to set background mode: {e}"))
-                        .ok();
-                }
-            }
-        ));
+        spawn_local!(async move {
+            Background::request()
+                .identifier(identifier.await)
+                .send()
+                .await
+                .map_err(|e| error!("Failed to set background mode: {e}"))
+                .ok();
+        });
     }
 
     pub fn disable_idling(&self) {
-        let object = self.obj();
         let inhibit_request = self.inhibit_request.clone();
+        let identifier = self.window_identifier();
 
-        spawn_local!(clone!(
-            #[weak]
-            object,
-            async move {
-                if let Some(request) = inhibit_request.lock().await.take()
-                    && let Err(e) = request.close().await
-                {
-                    error!("Failed to close the inhibit request: {e}");
-                }
-
-                if let Ok(proxy) = InhibitProxy::new().await {
-                    let identifier = WindowIdentifier::from_native(&object).await;
-
-                    tokio::spawn(async move {
-                        let mut flags = BitFlags::empty();
-                        flags.insert(InhibitFlags::Idle);
-
-                        let options = InhibitOptions::default()
-                            .set_reason("Prevent screen from going blank during media playback");
-
-                        *inhibit_request.lock().await = proxy
-                            .inhibit(identifier.as_ref(), flags, options)
-                            .await
-                            .map_err(|e| error!("Failed to prevent idling: {e}"))
-                            .ok();
-                    });
-                }
+        spawn_local!(async move {
+            if let Some(request) = inhibit_request.lock().await.take()
+                && let Err(e) = request.close().await
+            {
+                error!("Failed to close the inhibit request: {e}");
             }
-        ));
+
+            if let Ok(proxy) = InhibitProxy::new().await {
+                let identifier = identifier.await;
+
+                tokio::spawn(async move {
+                    let mut flags = BitFlags::empty();
+                    flags.insert(InhibitFlags::Idle);
+
+                    let options = InhibitOptions::default()
+                        .set_reason("Prevent screen from going blank during media playback");
+
+                    *inhibit_request.lock().await = proxy
+                        .inhibit(identifier.as_ref(), flags, options)
+                        .await
+                        .map_err(|e| error!("Failed to prevent idling: {e}"))
+                        .ok();
+                });
+            }
+        });
     }
 
     pub fn enable_idling(&self) {
@@ -106,47 +97,33 @@ impl Window {
     }
 
     pub fn open_uri(&self, uri: String) {
-        let object = self.obj();
+        if let Ok(uri) = Uri::parse(&uri) {
+            let identifier = self.window_identifier();
 
-        spawn_local!(clone!(
-            #[weak]
-            object,
-            async move {
-                if let Some(identifier) = WindowIdentifier::from_native(&object).await
-                    && let Ok(uri) = Uri::parse(&uri)
-                {
-                    let request = OpenFileRequest::default().identifier(identifier);
-
-                    request
-                        .send_uri(&uri)
-                        .await
-                        .map_err(|e| error!("Failed to open uri: {e}"))
-                        .ok();
-                }
-            }
-        ));
+            spawn_local!(async move {
+                OpenFileRequest::default()
+                    .identifier(identifier.await)
+                    .send_uri(&uri)
+                    .await
+                    .map_err(|e| error!("Failed to open uri: {e}"))
+                    .ok();
+            });
+        }
     }
 
     pub fn open_file(&self, file_path: String) {
-        let object = self.obj();
+        if let Ok(file) = File::open(&file_path) {
+            let identifier = self.window_identifier();
 
-        spawn_local!(clone!(
-            #[weak]
-            object,
-            async move {
-                if let Some(identifier) = WindowIdentifier::from_native(&object).await {
-                    let request = OpenFileRequest::default().identifier(identifier);
-
-                    if let Ok(file) = File::open(&file_path) {
-                        request
-                            .send_file(&file.as_fd())
-                            .await
-                            .map_err(|e| error!("Failed to open file: {e}"))
-                            .ok();
-                    }
-                }
-            }
-        ));
+            spawn_local!(async move {
+                OpenFileRequest::default()
+                    .identifier(identifier.await)
+                    .send_file(&file.as_fd())
+                    .await
+                    .map_err(|e| error!("Failed to open file: {e}"))
+                    .ok();
+            });
+        }
     }
 
     pub fn show_header(&self, state: bool) {
