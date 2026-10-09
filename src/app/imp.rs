@@ -6,7 +6,7 @@ use tracing::error;
 
 use crate::{
     app::{
-        config::{APP_ID, APP_NAME, URI_SCHEME},
+        config::URI_SCHEME,
         discord::Discord,
         ipc::{
             self,
@@ -87,12 +87,23 @@ impl ApplicationImpl for Application {
         window.set_underlay(&video);
         window.set_overlay(&webview);
 
+        video.connect_playback_started(clone!(
+            #[weak]
+            mpris,
+            move || {
+                mpris.start();
+            }
+        ));
+
         video.connect_playback_ended(clone!(
             #[weak]
             window,
             #[weak]
             webview,
+            #[weak]
+            mpris,
             move |reason| {
+                mpris.stop();
                 window.enable_idling();
 
                 let error = (reason == "error").then(|| "Stream failed to load".to_string());
@@ -268,8 +279,6 @@ impl ApplicationImpl for Application {
                 window.activate();
             }
         ));
-
-        mpris.start(APP_ID, APP_NAME);
 
         window.present();
 
