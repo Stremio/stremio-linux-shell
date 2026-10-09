@@ -33,6 +33,11 @@ struct Args {
 }
 
 fn main() -> ExitCode {
+    // GTK and libmpv share OpenGL textures. Preserve an explicit user override.
+    // Set this before GTK or the Tokio runtime creates any threads.
+    if env::var_os("GSK_RENDERER").is_none() {
+        unsafe { env::set_var("GSK_RENDERER", "gl") };
+    }
     tracing_subscriber::fmt::init();
 
     let data_dir = dirs::data_dir()
