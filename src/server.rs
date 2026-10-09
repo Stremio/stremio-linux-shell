@@ -31,11 +31,13 @@ impl Server {
     pub fn start(&mut self, dev: bool) -> anyhow::Result<()> {
         let mut command = Command::new("node");
         command
-            .env("NO_CORS", (dev as i32).to_string())
             .env("SERVER_IPC_KEY", IPC_KEY)
             .arg(self.file.as_os_str())
             .stdout(process::Stdio::piped())
             .process_group(0);
+        if dev {
+            command.env("NO_CORS", "1");
+        }
 
         unsafe {
             command.pre_exec(move || {
