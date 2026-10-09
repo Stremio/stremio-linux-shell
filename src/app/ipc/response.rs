@@ -98,6 +98,19 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                     }
                 ])),
             }),
+            IpcEvent::Mpv(IpcEventMpv::VideoReady((load_id, ready))) => Ok(IpcMessageResponse {
+                id: 1,
+                r#type: 1,
+                object: TRANSPORT_NAME.to_owned(),
+                data: None,
+                args: Some(json!([
+                    "mpv-event-video-ready",
+                    {
+                        "loadId": load_id,
+                        "ready": ready,
+                    }
+                ])),
+            }),
             IpcEvent::MediaStatus(paused) => Ok(IpcMessageResponse {
                 id: 1,
                 r#type: 1,

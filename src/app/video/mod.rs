@@ -1,5 +1,6 @@
 mod config;
 mod imp;
+mod ready;
 
 use adw::subclass::prelude::ObjectSubclassIsExt;
 use gtk::glib::{self, Variant, closure_local, object::ObjectExt};
@@ -73,6 +74,16 @@ impl Video {
             false,
             closure_local!(move |_: Video, reason: &str| {
                 callback(reason);
+            }),
+        );
+    }
+
+    pub fn connect_video_ready<T: Fn(u64, bool) + 'static>(&self, callback: T) {
+        self.connect_closure(
+            "video-ready",
+            false,
+            closure_local!(move |_: Video, load_id: u64, ready: bool| {
+                callback(load_id, ready);
             }),
         );
     }
