@@ -20,6 +20,7 @@
             "enable-if": "have-intel-gpu"
         }
     },
+    "separate-locales": false,
     "command": "stremio",
     "finish-args": [
         "--socket=wayland",
