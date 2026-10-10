@@ -17,6 +17,7 @@ fn setup_po() -> Result<()> {
     println!("cargo:rerun-if-changed={GETTEXT_DIR}");
 
     let po_dir = Path::new(GETTEXT_DIR);
+    let mo_dir = Path::new(env!("GETTEXT_DIR"));
 
     for entry in fs::read_dir(po_dir)? {
         let entry = entry?;
@@ -26,7 +27,7 @@ fn setup_po() -> Result<()> {
             && extension == "po"
             && let Some(po_lang) = path.file_stem()
         {
-            let mo_dir = po_dir.join(po_lang).join("LC_MESSAGES");
+            let mo_dir = mo_dir.join(po_lang).join("LC_MESSAGES");
 
             fs::create_dir_all(&mo_dir)?;
 

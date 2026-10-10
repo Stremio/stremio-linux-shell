@@ -11,7 +11,7 @@ use tokio::runtime::Runtime;
 
 use crate::{
     app::Application,
-    config::{DATA_DIR, GETTEXT_DIR_DEV, GETTEXT_DIR_FLATPAK, GETTEXT_DOMAIN, STARTUP_URL},
+    config::{DATA_DIR, GETTEXT_DIR_FLATPAK, GETTEXT_DOMAIN, STARTUP_URL},
     server::Server,
 };
 
@@ -43,7 +43,7 @@ fn main() -> ExitCode {
 
     let gettext_dir = match env::var("FLATPAK_ID") {
         Ok(_) => GETTEXT_DIR_FLATPAK,
-        Err(_) => GETTEXT_DIR_DEV,
+        Err(_) => env!("GETTEXT_DIR"),
     };
 
     gettextrs::bindtextdomain(GETTEXT_DOMAIN, gettext_dir).expect("Failed to bind text domain");
