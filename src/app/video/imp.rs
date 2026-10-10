@@ -1,6 +1,7 @@
 use gdk_wayland::{WaylandDisplay, wayland_client::Proxy};
 use gtk::{
     gdk::GLContext,
+    gio::Settings,
     glib::{self, Propagation, Properties, Variant, clone, subclass::Signal},
     prelude::*,
     subclass::prelude::*,
@@ -11,10 +12,11 @@ use libmpv2::{
     mpv_end_file_reason,
     render::{OpenGLInitParams, RenderContext, RenderParam, RenderParamApiType},
 };
+use shellexpand::tilde;
 use std::{cell::RefCell, env, os::raw::c_void, sync::OnceLock};
-use tracing::error;
+use tracing::{error, warn};
 
-use crate::spawn_local;
+use crate::{app::config::APP_ID, spawn_local};
 
 fn get_proc_address(_context: &GLContext, name: &str) -> *mut c_void {
     epoxy::get_proc_addr(name) as _
@@ -44,7 +46,15 @@ impl Default for Video {
         gettextrs::setlocale(gettextrs::LocaleCategory::LcNumeric, "C")
             .expect("Failed to set LC_NUMERIC to C");
 
+        let settings = Settings::new(APP_ID);
+        let mpv_config_location = settings.string("mpv-config-location");
+        let config_path = tilde(&mpv_config_location).to_string();
+
         let mpv = Mpv::with_initializer(|init| {
+            if let Err(e) = init.set_property("include", config_path) {
+                warn!("Failed to load config file: {e}");
+            }
+
             init.set_property("vo", "libmpv")?;
             init.set_property("video-timing-offset", "0")?;
             init.set_property("video-sync", "audio")?;

@@ -1,6 +1,7 @@
 mod config;
 mod dialogs;
 mod discord;
+mod ext;
 mod imp;
 mod ipc;
 mod mpris;

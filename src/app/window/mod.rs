@@ -1,4 +1,3 @@
-mod ext;
 mod imp;
 
 use adw::subclass::prelude::*;

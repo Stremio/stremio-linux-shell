@@ -21,8 +21,14 @@ msgstr "Ocultar"
 msgid "Quit"
 msgstr "Salir"
 
+msgid "Interface"
+msgstr "Interfaz"
+
 msgid "KDE Theme"
 msgstr "Tema de KDE"
 
 msgid "Requires restarting the application for changes to take effect"
 msgstr "Es necesario reiniciar la aplicación para que los cambios surtan efecto"
+
+msgid "Configuration file location"
+msgstr "Ubicación del archivo de configuración"

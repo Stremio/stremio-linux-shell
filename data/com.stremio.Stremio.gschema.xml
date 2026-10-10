@@ -25,5 +25,9 @@
             <default>true</default>
             <summary>KDE Theme</summary>
         </key>
+        <key name="mpv-config-location" type="s">
+            <default>"~/.config/mpv/mpv.conf"</default>
+            <summary>Location of the MPV configuration file</summary>
+        </key>
     </schema>
 </schemalist>

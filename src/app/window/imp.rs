@@ -20,8 +20,11 @@ use gtk::{
 use tokio::sync::Mutex;
 use tracing::error;
 
-use super::ext::ASHPDExt;
-use crate::{app::config::APP_ID, spawn_local, utils::IS_DESKTOP_KDE};
+use crate::{
+    app::{config::APP_ID, ext::ASHPDExt},
+    spawn_local,
+    utils::IS_DESKTOP_KDE,
+};
 
 #[derive(Default, glib::Properties, gtk::CompositeTemplate)]
 #[properties(wrapper_type = super::Window)]
