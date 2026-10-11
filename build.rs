@@ -48,14 +48,12 @@ fn setup_schemas(filename: &str) -> Result<()> {
     println!("cargo:rerun-if-changed={DATA_DIR}");
 
     let out_dir = Path::new(env!("GSETTINGS_SCHEMA_DIR"));
-    fs::create_dir_all(&out_dir)?;
+    fs::create_dir_all(out_dir)?;
 
     let source_file = Path::new(DATA_DIR).join(filename);
     fs::copy(source_file, out_dir.join(filename))?;
 
-    let output = Command::new("glib-compile-schemas")
-        .arg(&out_dir)
-        .output()?;
+    let output = Command::new("glib-compile-schemas").arg(out_dir).output()?;
 
     assert!(
         output.status.success(),
