@@ -2,13 +2,14 @@ use std::{fs, path::Path, process::Command};
 
 use anyhow::Result;
 
-pub const GETTEXT_DOMAIN: &str = "stremio";
-pub const GETTEXT_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/po");
-pub const DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data");
+const APP_ID: &str = "com.stremio.Stremio";
+const GETTEXT_DOMAIN: &str = "stremio";
+const GETTEXT_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/po");
+const DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data");
 
 fn main() -> Result<()> {
     setup_po()?;
-    setup_schemas("com.stremio.Stremio.gschema.xml")?;
+    setup_schemas()?;
 
     Ok(())
 }
@@ -44,14 +45,31 @@ fn setup_po() -> Result<()> {
     Ok(())
 }
 
-fn setup_schemas(filename: &str) -> Result<()> {
+fn setup_schemas() -> Result<()> {
     println!("cargo:rerun-if-changed={DATA_DIR}");
 
     let out_dir = Path::new(env!("GSETTINGS_SCHEMA_DIR"));
     fs::create_dir_all(out_dir)?;
 
-    let source_file = Path::new(DATA_DIR).join(filename);
-    fs::copy(source_file, out_dir.join(filename))?;
+    let source_filename = &format!("{APP_ID}.gschema.xml");
+    let source_file = Path::new(DATA_DIR).join(source_filename);
+
+    let output_app_id = match cfg!(debug_assertions) {
+        true => &format!("{APP_ID}.Devel"),
+        false => APP_ID,
+    };
+
+    let output_filename = &format!("{output_app_id}.gschema.xml");
+    let output_file = out_dir.join(output_filename);
+
+    fs::copy(source_file, &output_file)?;
+
+    if cfg!(debug_assertions) {
+        let content = fs::read_to_string(&output_file)?;
+        let new_content = content.replace(APP_ID, output_app_id);
+
+        fs::write(output_file, new_content)?;
+    }
 
     let output = Command::new("glib-compile-schemas").arg(out_dir).output()?;
 
