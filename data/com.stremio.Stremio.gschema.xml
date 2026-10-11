@@ -21,6 +21,10 @@
             <default>1050</default>
             <summary>Hright of the window</summary>
         </key>
+        <key name="no-window-decorations" type="b">
+            <default>false</default>
+            <summary>Removes window decorations</summary>
+        </key>
         <key name="kde-theme" type="b">
             <default>true</default>
             <summary>KDE Theme</summary>

@@ -20,6 +20,8 @@ pub struct PreferencesDialog {
     #[template_child]
     kde_theme: TemplateChild<adw::SwitchRow>,
     #[template_child]
+    no_window_decorations: TemplateChild<adw::SwitchRow>,
+    #[template_child]
     mpv_config_location: TemplateChild<adw::EntryRow>,
 }
 
@@ -37,6 +39,17 @@ impl PreferencesDialog {
         let settings = Settings::new(APP_ID);
         settings
             .set_boolean("kde-theme", self.kde_theme.is_active())
+            .ok();
+    }
+
+    #[template_callback]
+    fn on_no_window_decorations_changed(&self) {
+        let settings = Settings::new(APP_ID);
+        settings
+            .set_boolean(
+                "no-window-decorations",
+                self.no_window_decorations.is_active(),
+            )
             .ok();
     }
 
@@ -102,6 +115,9 @@ impl ObjectImpl for PreferencesDialog {
 
         let remember_window_state = settings.boolean("remember-window-state");
         self.remember_window_state.set_active(remember_window_state);
+
+        let no_window_decorations = settings.boolean("no-window-decorations");
+        self.no_window_decorations.set_active(no_window_decorations);
 
         let mpv_config_location = settings.string("mpv-config-location");
         self.mpv_config_location.set_text(&mpv_config_location);

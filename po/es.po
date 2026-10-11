@@ -24,6 +24,12 @@ msgstr "Salir"
 msgid "Interface"
 msgstr "Interfaz"
 
+msgid "Remove window decorations"
+msgstr "Quitar los adornos de la ventana"
+
+msgid "Removes title bar, rounded corners and drop shadow"
+msgstr "Elimina la barra de título, las esquinas redondeadas y la sombra proyectada"
+
 msgid "KDE Theme"
 msgstr "Tema de KDE"
 

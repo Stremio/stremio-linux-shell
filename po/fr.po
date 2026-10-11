@@ -24,6 +24,12 @@ msgstr "Quitter"
 msgid "Interface"
 msgstr "Interface"
 
+msgid "Remove window decorations"
+msgstr "Retirer les décorations de la fenêtre"
+
+msgid "Removes title bar, rounded corners and drop shadow"
+msgstr "Supprime la barre de titre, les coins arrondis et l'ombre portée"
+
 msgid "KDE Theme"
 msgstr "Thème KDE"
 
@@ -32,3 +38,4 @@ msgstr "Nécessite de redémarrer l'application pour que les modifications prenn
 
 msgid "Configuration file location"
 msgstr "Emplacement du fichier de configuration"
+

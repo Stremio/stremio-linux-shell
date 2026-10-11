@@ -1,3 +1,5 @@
 [env]
 SERVER_PATH = "data/server.js"
 ANV_DEBUG = "video-decode,video-encode" # Video acceleration with Vulkan for Intel
+GSETTINGS_SCHEMA_DIR = "target/schemas"
+GETTEXT_DIR = "target/locale"

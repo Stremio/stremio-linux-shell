@@ -17,6 +17,7 @@ fn setup_po() -> Result<()> {
     println!("cargo:rerun-if-changed={GETTEXT_DIR}");
 
     let po_dir = Path::new(GETTEXT_DIR);
+    let mo_dir = Path::new(env!("GETTEXT_DIR"));
 
     for entry in fs::read_dir(po_dir)? {
         let entry = entry?;
@@ -26,7 +27,7 @@ fn setup_po() -> Result<()> {
             && extension == "po"
             && let Some(po_lang) = path.file_stem()
         {
-            let mo_dir = po_dir.join(po_lang).join("LC_MESSAGES");
+            let mo_dir = mo_dir.join(po_lang).join("LC_MESSAGES");
 
             fs::create_dir_all(&mo_dir)?;
 
@@ -46,21 +47,17 @@ fn setup_po() -> Result<()> {
 fn setup_schemas(filename: &str) -> Result<()> {
     println!("cargo:rerun-if-changed={DATA_DIR}");
 
-    let out_dir = dirs::data_dir().expect("Failed to get data dir");
-    let out_dir = out_dir.join("glib-2.0/schemas");
+    let out_dir = Path::new(env!("GSETTINGS_SCHEMA_DIR"));
+    fs::create_dir_all(out_dir)?;
 
-    fs::create_dir_all(&out_dir)?;
+    let source_file = Path::new(DATA_DIR).join(filename);
+    fs::copy(source_file, out_dir.join(filename))?;
 
-    let target = Path::new(DATA_DIR).join(filename);
-    fs::copy(target, out_dir.join(filename))?;
-
-    let mut command = Command::new("glib-compile-schemas");
-
-    let output = command.arg(out_dir).output()?;
+    let output = Command::new("glib-compile-schemas").arg(out_dir).output()?;
 
     assert!(
         output.status.success(),
-        "glib-compile-schemas failed with exit status {} and stderr:\n{}",
+        "Failed to compile schemas: {}\n{}",
         output.status,
         String::from_utf8_lossy(&output.stderr)
     );
