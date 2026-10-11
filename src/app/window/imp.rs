@@ -176,6 +176,11 @@ impl WidgetImpl for Window {
         let widget = self.obj();
         let settings = Settings::new(APP_ID);
 
+        let no_window_decorations = settings.boolean("no-window-decorations");
+        if no_window_decorations {
+            self.decorations.set(false);
+        }
+
         if !self.decorations.get() {
             self.show_header(false);
             widget.remove_css_class("csd");

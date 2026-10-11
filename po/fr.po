@@ -26,3 +26,9 @@ msgstr "Thème KDE"
 
 msgid "Requires restarting the application for changes to take effect"
 msgstr "Nécessite de redémarrer l'application pour que les modifications prennent effet"
+
+msgid "Remove window decorations"
+msgstr "Retirer les décorations de la fenêtre"
+
+msgid "Removes title bar, rounded corners and drop shadow"
+msgstr "Supprime la barre de titre, les coins arrondis et l'ombre portée"
