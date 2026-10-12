@@ -108,7 +108,9 @@
                         "-Degl=enabled",
                         "-Degl-wayland=enabled",
                         "-Degl-x11=enabled",
+                        "-Ddrm=enabled",
                         "-Dvaapi=enabled",
+                        "-Dvaapi-drm=enabled",
                         "-Dvaapi-wayland=enabled",
                         "-Dvaapi-x11=enabled",
                         "-Dcuda-hwaccel=enabled",
@@ -128,6 +130,42 @@
                         }
                     ],
                     "modules": [
+                        {
+                            "name": "libdisplay-info",
+                            "buildsystem": "meson",
+                            "cleanup": [
+                                "/bin",
+                                "/include",
+                                "/lib/pkgconfig"
+                            ],
+                            "sources": [
+                                {
+                                    "type": "archive",
+                                    "url": "https://gitlab.freedesktop.org/emersion/libdisplay-info/-/releases/0.3.0/downloads/libdisplay-info-0.3.0.tar.xz",
+                                    "sha256": "6ae77cd937f9cf7d1321d35c116062c4911e8447010a6a713ac4286f7a9d5987"
+                                }
+                            ],
+                            "modules": [
+                                {
+                                    "name": "hwdata",
+                                    "buildsystem": "autotools",
+                                    "no-autogen": true,
+                                    "config-opts": [
+                                        "--disable-blacklist"
+                                    ],
+                                    "cleanup": [
+                                        "*"
+                                    ],
+                                    "sources": [
+                                        {
+                                            "type": "archive",
+                                            "url": "https://github.com/vcrhonek/hwdata/archive/refs/tags/v0.411.tar.gz",
+                                            "sha256": "d75462181fbd307228e0a48b8d1449f1773ea4b1f17e8a1d56346907f999ce33"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
                         {
                             "name": "libXpresent",
                             "buildsystem": "autotools",
