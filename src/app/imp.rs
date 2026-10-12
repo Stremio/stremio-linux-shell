@@ -158,6 +158,9 @@ impl ApplicationImpl for Application {
                             let message = ipc::create_response(IpcEvent::Fullscreen(state));
                             webview.send(&message);
                         }
+                        IpcEvent::InterfaceScale(scale) => {
+                            webview.set_interface_scale(scale);
+                        }
                         IpcEvent::MediaStatus(status) => {
                             mpris.set_status(status);
 
