@@ -1,11 +1,16 @@
 use adw::subclass::prelude::*;
+use ashpd::desktop::file_chooser::FileFilter;
 use gtk::{
     gio::{Settings, prelude::SettingsExt},
-    glib::{self, subclass::InitializingObject},
-    prelude::WidgetExt,
+    glib::{self, clone, subclass::InitializingObject},
+    prelude::{EditableExt, WidgetExt},
 };
 
-use crate::{app::config::APP_ID, utils::IS_DESKTOP_KDE};
+use crate::{
+    app::{config::APP_ID, ext::ASHPDExt},
+    spawn_local,
+    utils::IS_DESKTOP_KDE,
+};
 
 #[derive(Default, gtk::CompositeTemplate)]
 #[template(file = "preferences.xml")]
@@ -16,6 +21,8 @@ pub struct PreferencesDialog {
     kde_theme: TemplateChild<adw::SwitchRow>,
     #[template_child]
     no_window_decorations: TemplateChild<adw::SwitchRow>,
+    #[template_child]
+    mpv_config_location: TemplateChild<adw::EntryRow>,
 }
 
 #[gtk::template_callbacks]
@@ -44,6 +51,36 @@ impl PreferencesDialog {
                 self.no_window_decorations.is_active(),
             )
             .ok();
+    }
+
+    #[template_callback]
+    fn on_mpv_config_location_changed(&self) {
+        let settings = Settings::new(APP_ID);
+        let value = self.mpv_config_location.text();
+        settings.set_string("mpv-config-location", &value).ok();
+    }
+
+    #[template_callback]
+    fn browse_mpv_config_file(&self, _: &gtk::Button) {
+        let filter = FileFilter::new("MPV Config")
+            .mimetype("text/plain")
+            .glob("*.conf");
+
+        let choose_file = self.choose_file(filter);
+
+        spawn_local!(clone!(
+            #[weak(rename_to = entry)]
+            self.mpv_config_location,
+            async move {
+                if let Some(path) = choose_file.await {
+                    let value = path.to_string_lossy();
+                    entry.set_text(&value);
+
+                    let settings = Settings::new(APP_ID);
+                    settings.set_string("mpv-config-location", &value).ok();
+                }
+            }
+        ));
     }
 }
 
@@ -81,6 +118,9 @@ impl ObjectImpl for PreferencesDialog {
 
         let no_window_decorations = settings.boolean("no-window-decorations");
         self.no_window_decorations.set_active(no_window_decorations);
+
+        let mpv_config_location = settings.string("mpv-config-location");
+        self.mpv_config_location.set_text(&mpv_config_location);
     }
 }
 

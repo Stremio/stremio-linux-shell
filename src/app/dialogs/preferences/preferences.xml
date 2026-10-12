@@ -7,6 +7,8 @@
             <object class="AdwPreferencesPage">
                 <child>
                     <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">Interface</property>
+
                         <child>
                             <object class="AdwSwitchRow" id="remember_window_state">
                                 <property name="title" translatable="yes">Remember window state</property>
@@ -31,6 +33,33 @@
                                 <property name="subtitle" translatable="yes">Requires restarting the application for changes to take effect</property>
 
                                 <signal name="notify::active" handler="on_kde_theme_changed" swapped="true"/>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+
+                <child>
+                    <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">MPV</property>
+
+                       <child>
+                            <object class="AdwEntryRow" id="mpv_config_location">
+                                <property name="title" translatable="yes">Configuration file location</property>
+
+                                <signal name="changed" handler="on_mpv_config_location_changed" swapped="true"/>
+
+                                <child>
+                                    <object class="GtkButton">
+                                        <property name="valign">center</property>
+                                        <property name="icon_name">document-open-symbolic</property>
+
+                                        <style>
+                                            <class name="flat"/>
+                                        </style>
+
+                                        <signal name="clicked" handler="browse_mpv_config_file" swapped="true"/>
+                                    </object>
+                                </child>
                             </object>
                         </child>
                     </object>
