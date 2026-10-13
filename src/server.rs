@@ -12,6 +12,8 @@ use tracing::debug;
 
 use crate::config::IPC_KEY;
 
+const READY_PREFIX: &str = "EngineFS server started at ";
+
 pub struct Server {
     process: Option<Child>,
     file: PathBuf,
@@ -28,7 +30,7 @@ impl Server {
         }
     }
 
-    pub fn start(&mut self, dev: bool) -> anyhow::Result<()> {
+    pub fn start(&mut self, dev: bool) -> anyhow::Result<flume::Receiver<()>> {
         let mut command = Command::new("node");
         command
             .env("NO_CORS", (dev as i32).to_string())
@@ -45,6 +47,7 @@ impl Server {
         }
 
         let mut child = command.spawn()?;
+        let (ready_sender, ready_receiver) = flume::bounded(1);
 
         if let Some(stdout) = child.stdout.take() {
             let reader = BufReader::new(stdout);
@@ -52,6 +55,10 @@ impl Server {
 
             thread::spawn(move || {
                 while let Some(Ok(line)) = lines.next() {
+                    if line.starts_with(READY_PREFIX) {
+                        ready_sender.try_send(()).ok();
+                    }
+
                     debug!(target: "server", "{}", line);
                 }
             });
@@ -59,7 +66,7 @@ impl Server {
 
         self.process = Some(child);
 
-        Ok(())
+        Ok(ready_receiver)
     }
 
     pub fn stop(&mut self) -> anyhow::Result<()> {
