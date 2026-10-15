@@ -10,6 +10,35 @@ use tracing::warn;
 
 use crate::app::video::config::{BOOL_PROPERTIES, FLOAT_PROPERTIES, STRING_PROPERTIES};
 
+/// The `hwdec` mode to request. Zero-copy keeps decoded frames on the GPU — a
+/// large CPU/bandwidth win (measured ~100% -> ~23% of a core on 4K HDR); copy-back
+/// (`*-copy`) round-trips every frame through system RAM.
+///
+/// - **Mesa (AMD/Intel):** `auto-safe` selects VAAPI dmabuf zero-copy.
+/// - **Nvidia proprietary:** `auto-safe` only offers copy-back (`vulkan-copy`),
+///   so request `nvdec` explicitly for CUDA-interop zero-copy. Verified clean and
+///   ~4x cheaper than copy-back on 4K HDR. (Earlier reports of `nvdec` artifacts
+///   were a host-only libmpv build issue; see BENCHMARKS.md / DEVLOG.)
+///
+/// REQUIRES libmpv built with the CUDA interop, else `nvdec` falls back to
+/// copy-back/software: mpv `--enable-cuda-hwaccel --enable-cuda-interop`, ffmpeg
+/// with `--enable-ffnvcodec` (nvdec), and `libplacebo`. Verified with libmpv
+/// 0.41 / ffmpeg 7.1 (org.gnome.Platform 50 runtime). Distro `libmpv` packages
+/// (e.g. for the .deb) must ship these features for the Nvidia win to apply.
+///
+/// `STREMIO_HWDEC` overrides everything (e.g. `nvdec`, `auto-safe`, `auto-copy`,
+/// `no`) for testing decode modes without a rebuild.
+fn default_hwdec() -> String {
+    std::env::var("STREMIO_HWDEC").unwrap_or_else(|_| {
+        if std::path::Path::new("/dev/nvidia0").exists() {
+            "nvdec"
+        } else {
+            "auto-safe"
+        }
+        .to_string()
+    })
+}
+
 glib::wrapper! {
     pub struct Video(ObjectSubclass<imp::Video>)
         @extends gtk::GLArea, gtk::Widget,
@@ -117,6 +146,14 @@ impl Video {
             }
             name if STRING_PROPERTIES.contains(&name) => {
                 if let Some(value) = value.as_str() {
+                    // The web UI enables hardware decoding by sending
+                    // `hwdec=auto-copy` (copy-back: decode on the GPU, copy every
+                    // frame back to system RAM and re-upload it — CPU/bandwidth
+                    // heavy, ~30x costlier than zero-copy on 4K HDR). Remap it to
+                    // the platform's zero-copy mode (`super::default_hwdec`).
+                    let hwdec = (name == "hwdec" && value == "auto-copy").then(default_hwdec);
+                    let value = hwdec.as_deref().unwrap_or(value);
+
                     widget.set_property(name, value);
                 }
             }
