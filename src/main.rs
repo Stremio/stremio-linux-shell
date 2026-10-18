@@ -61,7 +61,9 @@ fn main() -> ExitCode {
 
     let gettext_dir = match env::var("FLATPAK_ID") {
         Ok(_) => GETTEXT_DIR_FLATPAK,
-        Err(_) => env!("GETTEXT_DIR"),
+        // GETTEXT_DIR is where build.rs writes the catalogs. A system package installs them
+        // elsewhere and sets STREMIO_LOCALEDIR (e.g. /usr/share/locale) at build time.
+        Err(_) => option_env!("STREMIO_LOCALEDIR").unwrap_or(env!("GETTEXT_DIR")),
     };
 
     gettextrs::bindtextdomain(GETTEXT_DOMAIN, gettext_dir).expect("Failed to bind text domain");
