@@ -31,7 +31,7 @@ impl TryFrom<IpcEvent> for IpcMessageResponse {
                 args: None,
                 data: Some(json!({
                     "transport": {
-                        "properties": [[], ["", "shellVersion", "", VERSION]],
+                        "properties": [[], ["", "shellVersion", "", VERSION], ["", "nativeInterfaceScale", "", "true"]],
                         "signals": [],
                         "methods": [["onEvent"]]
                     }
