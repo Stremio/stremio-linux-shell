@@ -36048,7 +36048,7 @@
 }, function(module) {
     module.exports = {
         name: "stremio-server",
-        version: "4.22.0",
+        version: "4.22.3",
         stremioRuntimeVersion: "4.0",
         description: "Stremio HTTP server",
         main: "init.js",
@@ -36099,7 +36099,7 @@
             "stremio-cast": "git+ssh://git@github.com/Stremio/stremio-cast",
             "stremio-hls-middleware": "git+ssh://git@github.com/Stremio/stremio-hls-middleware.git#c84254f4e19e7a35017132385702e81b5e6fc674",
             "stremio-local-addon": "https://github.com/Stremio/stremio-local-addon#be2e9c25f4d4bda4e76cdeccc523ee374e1f4b47",
-            "subtitles-grouping": "1.5.4",
+            "subtitles-grouping": "1.5.5",
             tmp: "^0.0.31",
             "torrent-stream": "git+ssh://git@github.com/Stremio/torrent-stream.git#4d9eaff84e3b7a1008314daa007d5feb6fa26388",
             "tree-kill": "^1.2.2",
@@ -48077,13 +48077,17 @@
         })), enginefs.router.use("/proxy", proxy.getRouter());
         var app = enginefs.app(), server = (http = __webpack_require__(10), enginefs._server = http.createServer(app)), port = 11470;
         server.listen(port), server.on("error", (function(err) {
-            port++ < 11474 ? (console.warn(err), server.listen(port)) : console.error(err);
+            if (0 === port) return console.error(err);
+            console.warn(err), port = port < 11474 ? port + 1 : 0, server.listen(port);
         })), http.globalAgent.maxSockets = 40;
         const nzbHttp = __webpack_require__(1099);
         server.on("listening", (function() {
             enginefs.baseUrlLocal = "http://127.0.0.1:" + server.address().port, enginefs.baseUrl = "http://" + ip.address() + ":" + server.address().port, 
-            localAddon.setEngineUrl(enginefs.baseUrlLocal), console.log("EngineFS server started at " + enginefs.baseUrlLocal), 
-            hwAccelProfiler(server.address().port), bridge.dispatch("status", "ready");
+            localAddon.setEngineUrl(enginefs.baseUrlLocal), nzbHttp.setPort(server.address().port), 
+            casting && casting.setPort(server.address().port), console.log("EngineFS server started at " + enginefs.baseUrlLocal), 
+            hwAccelProfiler(server.address().port), bridge.dispatch("listening", {
+                url: enginefs.baseUrlLocal
+            }), bridge.dispatch("status", "ready");
         })), server.on("error", (function(err) {
             console.warn(err), bridge.dispatch("status", "error");
         })), https.setOptions({
@@ -69332,7 +69336,8 @@
     function streamFromPath(path, agent) {
         return path instanceof stream.Readable ? path : path.match("^http") ? needle.get(path, {
             agent: agent,
-            follow_max: 12
+            follow_max: 12,
+            parse_response: !1
         }) : fs.createReadStream(path);
     }
     module.exports = {
@@ -72248,10 +72253,12 @@
                     headers.set.apply(headers, parseHeaderString(headerString));
                 })), handleFetchWithRedirects(dest, req, headers, httpsAgent, opts, cfgOpts).then((function(result) {
                     var responseHeaders = makeHeaders(result.headers, proxyResHeaders);
+                    (responseHeaders["content-type"] || "").toLowerCase().includes("text/html") && (responseHeaders["cache-control"] = "no-cache"), 
                     opts[cfgOpts.ResponseHeader].forEach((function(headerString) {
                         var parsedHeader = parseHeaderString(headerString);
                         responseHeaders[parsedHeader[0]] = parsedHeader[1];
-                    }));
+                    })), responseHeaders["x-content-type-options"] = "nosniff", responseHeaders["content-security-policy"] = "sandbox", 
+                    (responseHeaders["content-type"] || "").toLowerCase().includes("text/html") && (responseHeaders["content-disposition"] = "attachment");
                     var isPlaylist = supportedPlaylists.includes(path.extname(dest.pathname)) || (responseHeaders["content-type"] || "").toLowerCase().includes("mpegurl");
                     if (isPlaylist && (delete responseHeaders["content-length"], responseHeaders["accept-ranges"] = "none", 
                     responseHeaders["transfer-encoding"] ? responseHeaders["transfer-encoding"].toLowerCase().includes("chunked") || (responseHeaders["transfer-encoding"] += ", chunked") : responseHeaders["transfer-encoding"] = "chunked"), 
@@ -72306,7 +72313,7 @@
         }
     };
 }, function(module, exports) {
-    module.exports = [ "udp://tracker.opentrackr.org:1337/announce", "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce", "udp://open.demonii.com:1337/announce", "udp://tracker.skynetcloud.site:6969/announce", "udp://tracker.qu.ax:6969/announce", "udp://tracker.gmi.gd:6969/announce", "udp://tracker.theoks.net:6969/announce", "udp://tracker.corpscorp.online:80/announce", "udp://tracker.bittor.pw:1337/announce", "udp://explodie.org:6969/announce", "udp://tracker.tryhackx.org:6969/announce", "udp://tracker-udp.gbitt.info:80/announce", "udp://retracker01-msk-virt.corbina.net:80/announce", "udp://tracker.nyaa.vc:6969/announce", "http://tracker.dler.com:6969/announce", "udp://tracker2.dler.org:80/announce", "udp://tracker.dler.org:6969/announce", "udp://tracker.ducks.party:1984/announce", "http://tracker.renfei.net:8080/announce" ];
+    module.exports = [ "udp://tracker.opentrackr.org:1337/announce", "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce", "udp://open.demonii.com:1337/announce", "udp://exodus.desync.com:6969/announce", "udp://tracker.skynetcloud.site:6969/announce", "udp://tracker.qu.ax:6969/announce", "udp://tracker.ducks.party:1984/announce", "udp://tracker.tryhackx.org:6969/announce", "udp://tracker.nyaa.vc:6969/announce", "udp://retracker01-msk-virt.corbina.net:80/announce", "udp://explodie.org:6969/announce", "udp://tracker.corpscorp.online:80/announce", "udp://tracker.bittor.pw:1337/announce", "udp://tracker-udp.gbitt.info:80/announce", "udp://tracker.dler.org:6969/announce", "http://tracker2.dler.org:80/announce", "http://tracker.dler.com:6969/announce", "http://tracker.renfei.net:8080/announce", "udp://tracker.peerfect.org:6969/announce" ];
 }, function(module, exports, __webpack_require__) {
     const profiles = __webpack_require__(197), userSettings = __webpack_require__(107), cache = __webpack_require__(421), fetch = __webpack_require__(34), saveSettings = settings => {
         userSettings.extend(settings), cache.setOptionValues(userSettings), userSettings.save((function() {}));
@@ -76085,39 +76092,62 @@
     const Router = __webpack_require__(80), {parse: parse} = __webpack_require__(7), Reader = __webpack_require__(864);
     module.exports = function() {
         const router = new Router, cache = new Map;
+        function close(mediaURL, item) {
+            clearTimeout(item.timer), item.reader.destroy(), cache.get(mediaURL) === item && cache.delete(mediaURL);
+        }
         function handle(type) {
             return async (req, res) => {
-                let reader;
+                let closed = !1;
+                res.once("close", (() => {
+                    closed = !0;
+                }));
                 try {
                     const query = parse(req.url, !0).query;
                     if ("string" != typeof query.mediaURL) throw new Error("Media URL required");
-                    reader = new Reader(query.mediaURL), res.once("close", (() => reader.destroy()));
-                    for (const [key, item] of cache) item.expires < Date.now() && cache.delete(key);
-                    let metadata = cache.has(query.mediaURL) ? cache.get(query.mediaURL).value : null;
-                    if (metadata || (metadata = await reader.metadata(), cache.set(query.mediaURL, {
-                        value: metadata,
-                        expires: Date.now() + 3e5
-                    }), cache.size > 4 && cache.delete(cache.keys().next().value)), "metadata" === type) res.setHeader("Content-Type", "application/json"), 
-                    res.end(JSON.stringify({
-                        tracks: metadata.tracks.filter((track => track.header && !track.encoded && track.cues.length)).map((track => ({
-                            number: track.number,
-                            codec: track.codec,
-                            lang: track.lang,
-                            label: track.label
-                        }))),
-                        fonts: metadata.fonts.map((font => ({
+                    const item = (function(mediaURL) {
+                        let item = cache.get(mediaURL);
+                        if (!item) {
+                            const reader = new Reader(mediaURL);
+                            item = {
+                                reader: reader,
+                                metadata: null,
+                                timer: null
+                            }, item.metadata = reader.metadata().catch((error => {
+                                throw close(mediaURL, item), error;
+                            })), cache.set(mediaURL, item), cache.size > 2 && close(...cache.entries().next().value);
+                        }
+                        return clearTimeout(item.timer), item.timer = setTimeout(close, 3e5, mediaURL, item), 
+                        item;
+                    })(query.mediaURL), metadata = await item.metadata;
+                    if ("metadata" === type) {
+                        const fonts = "1" === query.deferFonts ? null : await metadata.fonts;
+                        res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify({
+                            tracks: metadata.tracks.filter((track => track.header && !track.encoded && track.cues.length)).map((track => ({
+                                number: track.number,
+                                codec: track.codec,
+                                lang: track.lang,
+                                label: track.label
+                            }))),
+                            fonts: fonts && fonts.map((font => ({
+                                id: font.id,
+                                name: font.name
+                            })))
+                        }));
+                    } else if ("fonts" === type) {
+                        const fonts = await metadata.fonts;
+                        res.setHeader("Content-Type", "application/json"), res.end(JSON.stringify(fonts.map((font => ({
                             id: font.id,
                             name: font.name
-                        })))
-                    })); else if ("font" === type) {
-                        const font = metadata.fonts.find((font => String(font.id) === req.params.font));
+                        })))));
+                    } else if ("font" === type) {
+                        const font = (await metadata.fonts).find((font => String(font.id) === req.params.font));
                         if (!font) throw new Error("Font attachment missing");
-                        const data = await reader.read(font.start, font.size);
+                        const data = await item.reader.read(font.start, font.size);
                         res.setHeader("Content-Type", "application/octet-stream"), res.end(data);
                     } else {
                         const track = metadata.tracks.find((track => String(track.number) === req.params.track)), from = Number(query.from), to = Number(query.to);
                         if (!track || !Number.isFinite(from) || !Number.isFinite(to) || from < 0 || to <= from || to - from > 6e4) throw new Error("Invalid subtitle window");
-                        const text = await reader.subtitles(metadata, track, from, to);
+                        const text = await item.reader.subtitles(metadata, track, from, to, (() => closed));
                         res.setHeader("Content-Type", "text/plain; charset=utf-8"), res.end(text);
                     }
                 } catch (error) {
@@ -76125,25 +76155,54 @@
                     res.end(JSON.stringify({
                         error: error.message
                     })));
-                } finally {
-                    reader && reader.destroy();
                 }
             };
         }
         return router.get("/:track.ass", handle("subtitles")), router.get("/font/:font", handle("font")), 
-        router.get("/", handle("metadata")), router;
+        router.get("/fonts", handle("fonts")), router.get("/", handle("metadata")), router;
     };
 }, function(module, exports, __webpack_require__) {
-    const {Decoder: Decoder, Schema: Schema, StreamFactorySource: StreamFactorySource} = __webpack_require__(437), {readVInt: readVInt} = __webpack_require__(75), {Transform: Transform} = __webpack_require__(444), {parse: parse} = __webpack_require__(7), transports = __webpack_require__(450);
-    function child(element, name) {
-        return element && (element.children || []).find((item => item._name === name));
+    const {Schema: Schema} = __webpack_require__(437), {readVInt: readVInt} = __webpack_require__(75), {Transform: Transform} = __webpack_require__(444), http = __webpack_require__(10), https = __webpack_require__(20), {parse: parse} = __webpack_require__(7), transports = __webpack_require__(450);
+    function vint(buffer, offset, marker) {
+        const first = buffer[offset];
+        if (!first) throw new Error("Invalid Matroska element");
+        let length = 1;
+        for (;!(first & 256 >> length); ) length += 1;
+        if (offset + length > buffer.length) return null;
+        let value = marker ? first : first & 255 >> length, unknown = !marker && value === 255 >> length;
+        for (let index = 1; index < length; index += 1) value = 256 * value + buffer[offset + index], 
+        unknown = unknown && 255 === buffer[offset + index];
+        return {
+            value: value,
+            length: length,
+            unknown: unknown
+        };
     }
-    function children(element, name) {
-        return element ? (element.children || []).filter((item => item._name === name)) : [];
+    function header(buffer, offset) {
+        const id = vint(buffer, offset, !0), size = id && vint(buffer, offset + id.length, !1);
+        if (!size) return null;
+        const start = offset + id.length + size.length;
+        return {
+            id: id.value,
+            start: start,
+            end: size.unknown ? 1 / 0 : start + size.value,
+            size: size.unknown ? 1 / 0 : size.value
+        };
     }
-    function value(element, name, fallback) {
-        const entry = child(element, name);
-        return entry ? entry.getValue() : fallback;
+    function children(buffer, start, end, callback) {
+        for (let offset = start; offset < end; ) {
+            const element = header(buffer, offset);
+            if (!element || element.end > end) throw new Error("Truncated Matroska element");
+            callback(element), offset = element.end;
+        }
+    }
+    function uint(buffer, element) {
+        let value = 0;
+        for (let index = element.start; index < element.end; index += 1) value = 256 * value + buffer[index];
+        return value;
+    }
+    function text(buffer, element) {
+        return buffer.toString("utf8", element.start, element.end).replace(/\0+$/, "");
     }
     function elementHeader(buffer, offset = 0) {
         const id = readVInt(buffer, offset, null, !0), size = id && readVInt(buffer, offset + id.length);
@@ -76156,6 +76215,47 @@
             size: size.value
         };
     }
+    function attachedFile(buffer, element, offset) {
+        const file = {
+            name: null,
+            mime: "",
+            data: null
+        };
+        for (let position = element.start; position < element.end; ) {
+            const field = header(buffer, position);
+            if (!field) break;
+            field.id === Schema.byName.FileName && field.end <= buffer.length && (file.name = text(buffer, field)), 
+            field.id === Schema.byName.FileMimeType && field.end <= buffer.length && (file.mime = text(buffer, field).toLowerCase().split(";")[0].trim()), 
+            field.id === Schema.byName.FileData && (file.data = {
+                start: offset + field.start,
+                size: field.size
+            }), position = field.end;
+        }
+        return file;
+    }
+    function parseBlock(header, data, timestamp) {
+        if (header.id === Schema.byName.SimpleBlock) return {
+            data: data,
+            timestamp: timestamp,
+            duration: null
+        };
+        if (header.id !== Schema.byName.BlockGroup) throw new Error("Invalid subtitle block");
+        let block = null, duration = null;
+        for (let position = 0; position < data.length; ) {
+            const field = elementHeader(data, position);
+            if (field.end > data.length) throw new Error("Truncated subtitle block");
+            if (field.id === Schema.byName.Block && (block = data.slice(field.start, field.end)), 
+            field.id === Schema.byName.BlockDuration && (duration = data.readUIntBE(field.start, field.size)), 
+            field.id === Schema.byName.CodecState) throw new Error("Subtitle codec changes are unsupported");
+            position = field.end;
+        }
+        if (!block) throw new Error("Subtitle data missing");
+        return {
+            data: block,
+            timestamp: timestamp,
+            duration: duration
+        };
+    }
     function assTime(milliseconds) {
         const value = Math.max(0, Math.floor(milliseconds / 10)), pad = n => ("0" + n).slice(-2);
         return Math.floor(value / 36e4) + ":" + pad(Math.floor(value / 6e3) % 60) + ":" + pad(Math.floor(value / 100) % 60) + "." + pad(value % 100);
@@ -76163,19 +76263,27 @@
     module.exports = class {
         constructor(mediaURL) {
             if (this.url = parse(mediaURL), ![ "http:", "https:" ].includes(this.url.protocol)) throw new Error("HTTP media URL required");
-            this.pending = new Set, this.bytes = 0, this.requests = 0, this.cache = [], this.cancelled = !1, 
-            this.timer = setTimeout((() => this.destroy()), 15e3);
+            this.agents = {
+                http: new http.Agent({
+                    keepAlive: !0,
+                    maxSockets: 16
+                }),
+                https: new https.Agent({
+                    keepAlive: !0,
+                    maxSockets: 16
+                })
+            }, this.pending = new Set, this.cache = [], this.reads = new Map, this.cancelled = !1;
         }
         destroy() {
             if (!this.cancelled) {
-                this.cancelled = !0, clearTimeout(this.timer);
+                this.cancelled = !0;
                 for (const cancel of this.pending) cancel();
-                this.pending.clear(), this.cache = [];
+                this.pending.clear(), this.cache = [], this.reads.clear(), this.attachmentData = null, 
+                this.agents.http.destroy(), this.agents.https.destroy();
             }
         }
         open(start, end, callback) {
             if (this.cancelled) return callback(new Error("Subtitle request cancelled"));
-            if (++this.requests > 512) return callback(new Error("Subtitle request limit exceeded"));
             let stream, response, delivered = !1;
             const finish = error => {
                 delivered ? stream && error && !stream.destroyed && stream.destroy(error) : (delivered = !0, 
@@ -76186,20 +76294,21 @@
                 headers: {
                     Range: "bytes=" + start + "-" + (void 0 === end ? "" : end),
                     "Accept-Encoding": "identity"
-                }
+                },
+                agents: this.agents
             }), (res => {
                 response = res;
                 const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(res.headers["content-range"] || ""), rangeStart = range && Number(range[1]), rangeEnd = range && Number(range[2]), total = range && Number(range[3]), expected = rangeEnd - rangeStart + 1;
                 if (206 !== res.statusCode || ![ rangeStart, rangeEnd, total ].every(Number.isSafeInteger) || rangeStart !== start || rangeEnd < start || rangeEnd >= total || void 0 !== end && rangeEnd > end || void 0 !== this.total && this.total !== total || res.headers["content-encoding"] && "identity" !== res.headers["content-encoding"] || void 0 !== res.headers["content-length"] && Number(res.headers["content-length"]) !== expected) return finish(new Error("Media server must support byte ranges")), 
                 res.destroy(), void this.pending.delete(cancel);
-                this.total = total;
+                this.total = total, res.responseUrl && res.responseUrl !== this.url.href && (this.url = parse(res.responseUrl));
                 let received = 0;
                 stream = new Transform({
                     destroy(error, done) {
                         done(error), this.emit("close");
                     },
                     transform: (chunk, encoding, done) => {
-                        this.bytes += chunk.length, received += chunk.length, done(this.bytes > 8388608 || received > expected ? new Error("Subtitle byte limit exceeded") : null, chunk);
+                        received += chunk.length, done(received > expected ? new Error("Subtitle byte limit exceeded") : null, chunk);
                     },
                     flush: done => done(received === expected ? null : new Error("Truncated media response"))
                 }), stream.once("end", (() => stream.destroy())), stream.on("error", (() => stream.destroy())), 
@@ -76208,74 +76317,212 @@
                 })), res.once("error", finish), res.once("aborted", (() => finish(new Error("Media response aborted")))), 
                 delivered = !0, callback(null, stream), res.pipe(stream);
             }));
-            this.pending.add(cancel), request.once("error", (error => {
+            this.pending.add(cancel), request.setTimeout(15e3, (() => request.abort())), request.once("error", (error => {
                 finish(error), this.pending.delete(cancel);
             }));
         }
-        async read(start, length) {
-            if (!Number.isSafeInteger(start) || !Number.isSafeInteger(length) || start < 0 || length < 1 || length > 8388608 || !Number.isSafeInteger(start + Math.max(length, 65536))) throw new Error("Invalid subtitle byte range");
-            const cached = this.cache.find((item => start >= item.start && start + length <= item.start + item.buffer.length));
+        async read(start, length, chunkSize = 65536) {
+            if (!Number.isSafeInteger(start) || !Number.isSafeInteger(length) || start < 0 || length < 1 || length > 8388608 || !Number.isSafeInteger(start + Math.max(length, chunkSize))) throw new Error("Invalid subtitle byte range");
+            const cached = this.cache.find((item => start >= item.start && start + length <= item.start + item.buffer.length)) || (this.attachmentData && start >= this.attachmentData.start && start + length <= this.attachmentData.start + this.attachmentData.buffer.length ? this.attachmentData : null);
             if (cached) return cached.buffer.slice(start - cached.start, start - cached.start + length);
-            const size = Math.max(length, 65536), buffer = await new Promise(((resolve, reject) => this.open(start, start + size - 1, ((error, stream) => {
-                if (error) return reject(error);
-                const chunks = [];
-                stream.on("data", (chunk => chunks.push(chunk))), stream.once("error", reject), 
-                stream.once("end", (() => resolve(Buffer.concat(chunks))));
-            }))));
+            const buffer = await this.fetch(start, void 0 === this.total ? Math.max(length, chunkSize) : Math.max(length, Math.min(chunkSize, this.total - start)));
             if (buffer.length < length) throw new Error("Truncated Matroska file");
-            return this.cache.push({
-                start: start,
-                buffer: buffer
-            }), this.cache.length > 4 && this.cache.shift(), buffer.slice(0, length);
+            return buffer.slice(0, length);
         }
-        async metadata() {
-            const source = new StreamFactorySource({
-                getStream: (session, options, callback) => this.open(options.start || 0, void 0, callback),
-                end: (session, callback) => {
-                    for (const cancel of this.pending) cancel();
-                    this.pending.clear(), callback();
-                }
-            }), decoder = new Decoder, segment = child(await new Promise(((resolve, reject) => decoder.parseEbmlIDs(source, [ "Info", "Tracks", "Attachments", "Cues" ].map((name => Schema.byName[name])), ((error, document) => error ? reject(error) : resolve(document))))), "Segment");
-            if (!segment) throw new Error("Matroska segment missing");
-            const scale = value(child(segment, "Info"), "TimecodeScale", 1e6) / 1e6, cues = [];
-            for (const point of children(child(segment, "Cues"), "CuePoint")) for (const position of children(point, "CueTrackPositions")) cues.push({
-                track: value(position, "CueTrack"),
-                time: value(point, "CueTime") * scale,
-                duration: value(position, "CueDuration", 1 / 0) * scale,
-                cluster: segment.getContentPosition() + value(position, "CueClusterPosition"),
-                relative: value(position, "CueRelativePosition", null),
-                blockNumber: value(position, "CueBlockNumber", 1),
-                codecState: value(position, "CueCodecState", 0)
-            });
-            const tracks = children(child(segment, "Tracks"), "TrackEntry").filter((track => [ "S_TEXT/ASS", "S_TEXT/SSA" ].includes(track.codecID))).map((track => ({
-                number: track.trackNumber,
-                codec: "S_TEXT/SSA" === track.codecID ? "ssa" : "ass",
-                lang: value(track, "Language", "eng"),
-                label: value(track, "Name", null),
-                header: track.codecPrivate ? track.codecPrivate.toString("utf8") : "",
-                delay: (track.codecDelay || 0) / 1e6,
-                scale: value(track, "TrackTimecodeScale", 1),
-                defaultDuration: (track.defaultDuration || 0) / 1e6,
-                encoded: !!child(track, "ContentEncodings"),
-                cues: cues.filter((cue => cue.track === track.trackNumber))
-            })));
-            let fontBytes = 0;
+        fetch(start, size) {
+            const key = start + ":" + size;
+            if (!this.reads.has(key)) {
+                const fetchRange = () => new Promise(((resolve, reject) => this.open(start, start + size - 1, ((error, stream) => {
+                    if (error) return reject(error);
+                    const chunks = [];
+                    stream.on("data", (chunk => chunks.push(chunk))), stream.once("error", reject), 
+                    stream.once("end", (() => resolve(Buffer.concat(chunks))));
+                }))));
+                this.reads.set(key, fetchRange().catch((error => {
+                    if (this.cancelled || ![ "ECONNRESET", "EPIPE" ].includes(error.code)) throw error;
+                    return fetchRange();
+                })).then((buffer => (this.reads.delete(key), buffer.length <= 65536 && (this.cache.push({
+                    start: start,
+                    buffer: buffer
+                }), this.cache.length > 64 && this.cache.shift()), buffer)), (error => {
+                    throw this.reads.delete(key), error;
+                })));
+            }
+            return this.reads.get(key);
+        }
+        async element(position, id) {
+            const element = header(await this.read(position, Math.min(16, this.total - position)), 0);
+            if (!element || element.id !== id) throw new Error("Matroska element missing");
+            if (element.size > 8388608) throw new Error("Matroska element too large");
             return {
-                scale: scale,
-                tracks: tracks,
-                fonts: children(child(segment, "Attachments"), "AttachedFile").map(((font, index) => {
-                    const data = child(font, "FileData"), mime = (font.fileMimeType || "").toLowerCase().split(";")[0].trim(), isFont = /\.(?:ttf|otf|ttc|otc|woff2?)$/i.test(font.fileName || "") || /^font\//.test(mime) || [ "application/font-sfnt", "application/font-woff", "application/vnd.ms-opentype", "application/x-font-opentype", "application/x-font-ttf", "application/x-truetype-font" ].includes(mime);
-                    return !data || !isFont || !Number.isSafeInteger(data.dataSize) || data.dataSize < 1 ? null : (fontBytes += data.dataSize, 
-                    data.dataSize > 8388608 || fontBytes > 33554432 || index >= 32 ? null : {
-                        id: index,
-                        name: font.fileName,
-                        size: data.dataSize,
-                        start: data.end - data.dataSize
-                    });
-                })).filter(Boolean)
+                start: position + element.start,
+                buffer: element.size ? await this.read(position + element.start, element.size) : Buffer.alloc(0)
             };
         }
+        async attachments(position) {
+            const fonts = [];
+            if (void 0 === position) return fonts;
+            const element = header(await this.read(position, Math.min(16, this.total - position)), 0);
+            if (!element || element.id !== Schema.byName.Attachments) throw new Error("Matroska attachments missing");
+            const files = [];
+            if (element.size <= 8388608) {
+                const content = await this.read(position + element.start, element.size, element.size);
+                this.attachmentData = {
+                    start: position + element.start,
+                    buffer: content
+                }, children(content, 0, content.length, (file => {
+                    file.id === Schema.byName.AttachedFile && files.push(attachedFile(content, file, position + element.start));
+                }));
+            } else for (let offset = position + element.start; offset < position + element.end; ) {
+                const chunk = await this.read(offset, Math.min(4096, this.total - offset), 4096), file = header(chunk, 0);
+                if (!file || file.id !== Schema.byName.AttachedFile) throw new Error("Invalid Matroska attachment");
+                files.push(attachedFile(chunk, Object.assign({}, file, {
+                    end: Math.min(file.end, chunk.length)
+                }), offset)), offset += file.end;
+            }
+            let fontBytes = 0;
+            return files.forEach(((file, index) => {
+                const isFont = /\.(?:ttf|otf|ttc|otc|woff2?)$/i.test(file.name || "") || /^font\//.test(file.mime) || [ "application/font-sfnt", "application/font-woff", "application/vnd.ms-opentype", "application/x-font-opentype", "application/x-font-ttf", "application/x-truetype-font" ].includes(file.mime);
+                file.data && isFont && Number.isSafeInteger(file.data.size) && !(file.data.size < 1) && (fontBytes += file.data.size, 
+                file.data.size > 8388608 || fontBytes > 33554432 || index >= 32 || fonts.push({
+                    id: index,
+                    name: file.name,
+                    size: file.data.size,
+                    start: file.data.start
+                }));
+            })), fonts;
+        }
+        async metadata() {
+            const head = await this.fetch(0, 65536), ebml = header(head, 0);
+            if (!ebml || ebml.id !== Schema.byName.EBML || ebml.end === 1 / 0) throw new Error("Matroska header missing");
+            const segment = header(head, ebml.end);
+            if (!segment || segment.id !== Schema.byName.Segment) throw new Error("Matroska segment missing");
+            const base = segment.start, positions = {}, inline = {}, seekHead = (buffer, element) => children(buffer, element.start, element.end, (seek => {
+                if (seek.id !== Schema.byName.Seek) return;
+                let id = null, position = null;
+                children(buffer, seek.start, seek.end, (field => {
+                    field.id === Schema.byName.SeekID && (id = uint(buffer, field)), field.id === Schema.byName.SeekPosition && (position = uint(buffer, field));
+                })), null !== id && null !== position && void 0 === positions[id] && (positions[id] = base + position);
+            }));
+            for (let offset = base; offset < head.length; ) {
+                const element = header(head, offset);
+                if (!element || element.id === Schema.byName.Cluster || element.end > head.length) break;
+                element.id === Schema.byName.SeekHead ? seekHead(head, element) : inline[element.id] = {
+                    start: element.start,
+                    buffer: head.slice(element.start, element.end)
+                }, void 0 === positions[element.id] && (positions[element.id] = offset), offset = element.end;
+            }
+            if (void 0 !== positions[Schema.byName.SeekHead] && positions[Schema.byName.SeekHead] >= head.length) {
+                const secondary = await this.element(positions[Schema.byName.SeekHead], Schema.byName.SeekHead);
+                seekHead(secondary.buffer, {
+                    start: 0,
+                    end: secondary.buffer.length
+                });
+            }
+            const load = id => inline[id] || (void 0 === positions[id] ? null : this.element(positions[id], id)), fonts = this.attachments(positions[Schema.byName.Attachments]);
+            fonts.catch((() => {}));
+            const [info, tracks, cues] = await Promise.all([ load(Schema.byName.Info), load(Schema.byName.Tracks), load(Schema.byName.Cues) ]);
+            let scale = 1;
+            info && children(info.buffer, 0, info.buffer.length, (field => {
+                field.id === Schema.byName.TimecodeScale && (scale = uint(info.buffer, field) / 1e6);
+            }));
+            const points = [];
+            cues && children(cues.buffer, 0, cues.buffer.length, (point => {
+                if (point.id !== Schema.byName.CuePoint) return;
+                let time = 0;
+                const positionsOfPoint = [];
+                children(cues.buffer, point.start, point.end, (field => {
+                    if (field.id === Schema.byName.CueTime && (time = uint(cues.buffer, field)), field.id !== Schema.byName.CueTrackPositions) return;
+                    const cue = {
+                        track: null,
+                        duration: 1 / 0,
+                        cluster: null,
+                        relative: null,
+                        blockNumber: 1,
+                        codecState: 0
+                    };
+                    children(cues.buffer, field.start, field.end, (entry => {
+                        entry.id === Schema.byName.CueTrack && (cue.track = uint(cues.buffer, entry)), entry.id === Schema.byName.CueDuration && (cue.duration = uint(cues.buffer, entry)), 
+                        entry.id === Schema.byName.CueClusterPosition && (cue.cluster = base + uint(cues.buffer, entry)), 
+                        entry.id === Schema.byName.CueRelativePosition && (cue.relative = uint(cues.buffer, entry)), 
+                        entry.id === Schema.byName.CueBlockNumber && (cue.blockNumber = uint(cues.buffer, entry)), 
+                        entry.id === Schema.byName.CueCodecState && (cue.codecState = uint(cues.buffer, entry));
+                    })), positionsOfPoint.push(cue);
+                })), positionsOfPoint.forEach((cue => points.push({
+                    track: cue.track,
+                    time: time * scale,
+                    duration: cue.duration * scale,
+                    cluster: cue.cluster,
+                    relative: cue.relative,
+                    blockNumber: cue.blockNumber,
+                    codecState: cue.codecState
+                })));
+            }));
+            const entries = [];
+            return tracks && children(tracks.buffer, 0, tracks.buffer.length, (entry => {
+                if (entry.id !== Schema.byName.TrackEntry) return;
+                const track = {
+                    number: null,
+                    codecID: "",
+                    lang: "eng",
+                    label: null,
+                    header: "",
+                    delay: 0,
+                    scale: 1,
+                    defaultDuration: 0,
+                    encoded: !1
+                };
+                children(tracks.buffer, entry.start, entry.end, (field => {
+                    var buffer, element;
+                    field.id === Schema.byName.TrackNumber && (track.number = uint(tracks.buffer, field)), 
+                    field.id === Schema.byName.CodecID && (track.codecID = text(tracks.buffer, field)), 
+                    field.id === Schema.byName.Language && (track.lang = text(tracks.buffer, field)), 
+                    field.id === Schema.byName.Name && (track.label = text(tracks.buffer, field)), field.id === Schema.byName.CodecPrivate && (track.header = text(tracks.buffer, field)), 
+                    field.id === Schema.byName.CodecDelay && (track.delay = uint(tracks.buffer, field) / 1e6), 
+                    field.id === Schema.byName.TrackTimecodeScale && (track.scale = (buffer = tracks.buffer, 
+                    4 === (element = field).size ? buffer.readFloatBE(element.start) : 8 === element.size ? buffer.readDoubleBE(element.start) : 0)), 
+                    field.id === Schema.byName.DefaultDuration && (track.defaultDuration = uint(tracks.buffer, field) / 1e6), 
+                    field.id === Schema.byName.ContentEncodings && (track.encoded = !0);
+                })), entries.push(track);
+            })), {
+                scale: scale,
+                tracks: entries.filter((track => [ "S_TEXT/ASS", "S_TEXT/SSA" ].includes(track.codecID))).map((track => ({
+                    number: track.number,
+                    codec: "S_TEXT/SSA" === track.codecID ? "ssa" : "ass",
+                    lang: track.lang,
+                    label: track.label,
+                    header: track.header,
+                    delay: track.delay,
+                    scale: track.scale,
+                    defaultDuration: track.defaultDuration,
+                    encoded: track.encoded,
+                    cues: points.filter((cue => cue.track === track.number))
+                }))),
+                fonts: fonts
+            };
+        }
+        async cluster(position) {
+            const buffer = await this.read(position, 32, 32), cluster = elementHeader(buffer);
+            if (cluster.id !== Schema.byName.Cluster) throw new Error("Invalid subtitle cluster");
+            let child = elementHeader(buffer, cluster.start);
+            for (;[ Schema.byName.CRC_32, Schema.byName.Void ].includes(child.id) && child.end < buffer.length - 2; ) child = elementHeader(buffer, child.end);
+            return {
+                contentStart: position + cluster.start,
+                timestamp: child.id === Schema.byName.Timecode && child.end <= buffer.length ? buffer.readUIntBE(child.start, child.size) : null
+            };
+        }
+        async probeBlock(cue) {
+            const probeStart = cue.cluster + 5 + cue.relative, [cluster, probe] = await Promise.all([ this.cluster(cue.cluster), this.read(probeStart, Math.min(4096, this.total - probeStart), 4096) ]);
+            if (null === cluster.timestamp) return null;
+            const header = elementHeader(probe, cluster.contentStart + cue.relative - probeStart);
+            if (header.size > 1048576) throw new Error("Subtitle block too large");
+            return parseBlock(header, header.end <= probe.length ? probe.slice(header.start, header.end) : await this.read(probeStart + header.start, header.size), cluster.timestamp);
+        }
         async block(cue) {
+            if (null !== cue.relative && void 0 !== this.total) {
+                const block = await this.probeBlock(cue).catch((() => null));
+                if (block) return block;
+            }
             const cluster = elementHeader(await this.read(cue.cluster, 32));
             if (cluster.id !== Schema.byName.Cluster) throw new Error("Invalid subtitle cluster");
             const contentStart = cue.cluster + cluster.start;
@@ -76291,49 +76538,33 @@
             }
             const header = elementHeader(await this.read(target, 32));
             if (header.size > 1048576) throw new Error("Subtitle block too large");
-            const data = await this.read(target + header.start, header.size);
-            if (header.id === Schema.byName.SimpleBlock) return {
-                data: data,
-                timestamp: timestamp,
-                duration: null
-            };
-            if (header.id !== Schema.byName.BlockGroup) throw new Error("Invalid subtitle block");
-            let block = null, duration = null;
-            for (let position = 0; position < data.length; ) {
-                const field = elementHeader(data, position);
-                if (field.end > data.length) throw new Error("Truncated subtitle block");
-                if (field.id === Schema.byName.Block && (block = data.slice(field.start, field.end)), 
-                field.id === Schema.byName.BlockDuration && (duration = data.readUIntBE(field.start, field.size)), 
-                field.id === Schema.byName.CodecState) throw new Error("Subtitle codec changes are unsupported");
-                position = field.end;
-            }
-            if (!block) throw new Error("Subtitle data missing");
-            return {
-                data: block,
-                timestamp: timestamp,
-                duration: duration
-            };
+            return parseBlock(header, await this.read(target + header.start, header.size), timestamp);
         }
-        async subtitles(metadata, track, from, to) {
+        async subtitles(metadata, track, from, to, closed = (() => !1)) {
             if (!track.header || track.encoded || !track.cues.length) throw new Error("Indexed, uncompressed ASS subtitles required");
             const cues = track.cues.filter((cue => cue.time - track.delay < to && cue.time - track.delay + cue.duration > from)), events = [], seen = new Set;
-            for (let index = 0; index < cues.length; index += 4) await Promise.all(cues.slice(index, index + 4).map((async cue => {
-                if (cue.codecState) throw new Error("Subtitle codec changes are unsupported");
-                const key = cue.cluster + ":" + cue.relative + ":" + cue.blockNumber;
-                if (seen.has(key)) return;
-                seen.add(key);
-                const block = await this.block(cue), number = readVInt(block.data);
-                if (!number || number.value !== track.number || block.data.length < number.length + 3 || 6 & block.data[number.length + 2]) throw new Error("Invalid or laced ASS subtitle block");
-                const start = (block.timestamp + block.data.readInt16BE(number.length) * track.scale) * metadata.scale - track.delay, duration = null === block.duration ? track.defaultDuration : block.duration * track.scale * metadata.scale;
-                if (!(duration > 0)) throw new Error("Subtitle duration missing");
-                if (start >= to || start + duration <= from) return;
-                const text = block.data.slice(number.length + 3).toString("utf8"), first = text.indexOf(","), second = text.indexOf(",", first + 1);
-                if (first < 1 || second < 0) throw new Error("Invalid ASS packet");
-                events.push({
-                    order: Number(text.slice(0, first)),
-                    line: "Dialogue: " + ("ssa" === track.codec ? "Marked=0" : text.slice(first + 1, second) || "0") + "," + assTime(start) + "," + assTime(start + duration) + "," + text.slice(second + 1)
-                });
-            })));
+            for (let index = 0; index < cues.length; index += 16) {
+                if (closed()) throw new Error("Subtitle request cancelled");
+                await Promise.all(cues.slice(index, index + 16).map((async cue => {
+                    if (cue.codecState) throw new Error("Subtitle codec changes are unsupported");
+                    const key = cue.cluster + ":" + cue.relative + ":" + cue.blockNumber;
+                    if (seen.has(key)) return;
+                    seen.add(key);
+                    const block = await this.block(cue), number = readVInt(block.data);
+                    if (!number || number.value !== track.number || block.data.length < number.length + 3 || 6 & block.data[number.length + 2]) throw new Error("Invalid or laced ASS subtitle block");
+                    const start = (block.timestamp + block.data.readInt16BE(number.length) * track.scale) * metadata.scale - track.delay;
+                    if (0 === block.duration) return;
+                    const duration = null === block.duration ? track.defaultDuration : block.duration * track.scale * metadata.scale;
+                    if (!(duration > 0)) throw new Error("Subtitle duration missing");
+                    if (start >= to || start + duration <= from) return;
+                    const text = block.data.slice(number.length + 3).toString("utf8"), first = text.indexOf(","), second = text.indexOf(",", first + 1);
+                    if (first < 1 || second < 0) throw new Error("Invalid ASS packet");
+                    events.push({
+                        order: Number(text.slice(0, first)),
+                        line: "Dialogue: " + ("ssa" === track.codec ? "Marked=0" : text.slice(first + 1, second) || "0") + "," + assTime(start) + "," + assTime(start + duration) + "," + text.slice(second + 1)
+                    });
+                })));
+            }
             return track.header.replace(/\[Events\][\s\S]*$/i, "").trim() + "\n\n[Events]\nFormat: " + ("ssa" === track.codec ? "Marked" : "Layer") + ", Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n" + events.sort(((a, b) => a.order - b.order)).map((event => event.line)).join("\n") + "\n";
         }
     };
@@ -83030,6 +83261,9 @@
     })(this);
 }, function(module, exports, __webpack_require__) {
     const {ffmpeg: ffmpeg} = __webpack_require__(226), bitrate = __webpack_require__(946), os = __webpack_require__(23), userSettings = __webpack_require__(107), applyProfile = __webpack_require__(419).applyProfile;
+    function escapeFiltergraphValue(value) {
+        return String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/:/g, "\\:");
+    }
     module.exports = function(options = {}) {
         !options.profile && userSettings.transcodeHardwareAccel && userSettings.transcodeProfile && (options.profile = userSettings.transcodeProfile);
         const cpuCores = (os.cpus() || []).length, audioChannels = options.audio ? options.audio.override && "number" == typeof options.audio.override.channels ? options.audio.override.channels : options.audio.channels || 2 : 2, videoBitRate = !!(options.video || {}).transcode && bitrate.video(options.video, options.video.codec, "libx264", userSettings.transcodeMaxBitRate), audioBitRate = !!(options.audio || {}).transcode && bitrate.audio(options.audio, "aac", audioChannels), encodeThreads = cpuCores ? cpuCores * userSettings.transcodeHorsepower : 0;
@@ -83057,7 +83291,7 @@
         };
         accelConfig = applyProfile(options.profile, accelConfig, options);
         const filters = () => (() => {
-            const filters = [ options.video.override ? "string" == typeof options.video.override.embeddedSubtitlesId ? `subtitles='${options.mediaURL.replace(/\:/g, "\\:")}':stream_index=${options.video.override.embeddedSubtitlesId}` : "string" == typeof options.video.override.externalSubtitlesUrl ? `subtitles='${options.video.override.externalSubtitlesUrl.replace(/\:/g, "\\:")}'` : null : null, options.blank ? "tpad=stop=-1" : null ].concat(accelConfig.extraSwFilters || []).filter((v => null !== v));
+            const filters = [ options.video.override ? "string" == typeof options.video.override.embeddedSubtitlesId ? `subtitles='${escapeFiltergraphValue(options.mediaURL)}':stream_index=${options.video.override.embeddedSubtitlesId}` : "string" == typeof options.video.override.externalSubtitlesUrl ? `subtitles='${escapeFiltergraphValue(options.video.override.externalSubtitlesUrl)}'` : null : null, options.blank ? "tpad=stop=-1" : null ].concat(accelConfig.extraSwFilters || []).filter((v => null !== v));
             return accelConfig.scale || (options.video.width > accelConfig.maxWidth && filters.push(`${accelConfig.scalePrefix}scale=${accelConfig.maxWidth}:${accelConfig.resizeHeightAuto}${accelConfig.scaleExtra}`), 
             filters.push(`format=${accelConfig.pixelFormat}`)), filters.length && accelConfig.wrapSwFilters && (accelConfig.wrapSwFilters[0] && filters.unshift(accelConfig.wrapSwFilters[0]), 
             accelConfig.wrapSwFilters[1] && filters.push(accelConfig.wrapSwFilters[1])), filters;
@@ -84324,8 +84558,10 @@
             return req.player.middleware.bind(req.player)(req, res, next);
         }));
     }
-    Casting.prototype.makeSubs = function(subsUrl, offset) {
-        return subsUrl ? fetch("http://127.0.0.1:11470/subtitles.srt?from=" + encodeURIComponent(subsUrl)).then((function(res) {
+    Casting.prototype.setPort = function(port) {
+        this.port = port;
+    }, Casting.prototype.makeSubs = function(subsUrl, offset) {
+        return subsUrl ? fetch(`http://127.0.0.1:${this.port}/subtitles.srt?from=${encodeURIComponent(subsUrl)}`).then((function(res) {
             return res.text();
         })).then((function(text) {
             if (offset) {
@@ -84448,7 +84684,15 @@
     }, module.exports = ExternalDiscovery;
 }, function(module, exports, __webpack_require__) {
     var child = __webpack_require__(31), fs = __webpack_require__(1), stremioCast = __webpack_require__(961), enginefs = __webpack_require__(177), http = __webpack_require__(10), os = __webpack_require__(23), path = __webpack_require__(5);
-    const HOME_DIR = os.homedir(), IS_FLATPAK = !!process.env.FLATPAK_ID, FLATPAK_APP_PATH_REGEX = /\/flatpak\/app\/([^/]+)/, FLATPAK_APP_DIRS = [ "/var/lib/flatpak/app", path.join(HOME_DIR, ".local/var/flatpak/app") ], asLinuxPaths = (flatpakId, binaries) => [ ...FLATPAK_APP_DIRS.map((dir => path.join(dir, flatpakId))), ...binaries.map((binary => IS_FLATPAK ? path.join("/run/host", binary) : binary)) ], isFlatpakAppPath = location => FLATPAK_APP_PATH_REGEX.test(location), isFlatpakHostAppPath = location => location.startsWith("/run/host");
+    const HOME_DIR = os.homedir(), IS_FLATPAK = !!process.env.FLATPAK_ID, FLATPAK_APP_PATH_REGEX = /\/flatpak\/app\/([^/]+)/, FLATPAK_APP_DIRS = [ "/var/lib/flatpak/app", path.join(HOME_DIR, ".local/var/flatpak/app") ], asLinuxPaths = (flatpakId, binaries) => [ ...FLATPAK_APP_DIRS.map((dir => path.join(dir, flatpakId))), ...binaries.map((binary => IS_FLATPAK ? path.join("/run/host", binary) : binary)) ], isFlatpakAppPath = location => FLATPAK_APP_PATH_REGEX.test(location), isFlatpakHostAppPath = location => location.startsWith("/run/host"), splitPlayerArg = (spec, value) => {
+        const hasValue = null != value && "" !== String(value);
+        if (!spec) return hasValue ? [ String(value) ] : [];
+        if (/\s$/.test(spec)) {
+            const flag = spec.trim();
+            return hasValue ? [ flag, String(value) ] : [ flag ];
+        }
+        return [ spec + String(value) ];
+    };
     module.exports = function(devices) {
         var players = {
             vlc: {
@@ -84583,17 +84827,38 @@
                             var self = this;
                             setTimeout((function() {
                                 var port = enginefs.baseUrl.match(".*?:([0-9]+)")[1], host = enginefs.baseUrl.match("^http://(.*):[0-9]+$")[1], subsPath = self.subtitlesSrc, time = self.time, subsFile = "", playExternal = function() {
-                                    var location, playerPaths = platformObj.path.filter((function(path) {
+                                    var playerPaths = platformObj.path.filter((function(path) {
                                         return fs.existsSync(path.replace(/"/gi, ""));
                                     }));
                                     if (playerPaths.length > 0) {
-                                        var wrappedSrc = '"' + src + '"', subsCmd = subsFile && players[player].subArg && players[player].subArg.length > 0 ? players[player].subArg + subsFile : "", argsCmd = players[player].args && players[player].args.length > 0 ? players[player].args.join(" ") : "", timeCmd = players[player].timeArg && players[player].timeArg.length > 0 ? players[player].timeArg + parseInt(time / 1e3) : "", playCmd = players[player].playArg && players[player].playArg.length > 0 ? players[player].playArg + wrappedSrc : wrappedSrc, playerInstallPath = playerPaths[0], fullCmd = (isFlatpakAppPath(location = playerInstallPath) || isFlatpakHostAppPath(location) ? (location => {
-                                            let command;
-                                            return isFlatpakHostAppPath(location) && (command = path.basename(location)), isFlatpakAppPath(location) && (command = `flatpak run ${location.match(FLATPAK_APP_PATH_REGEX)[1]}`), 
-                                            IS_FLATPAK ? `flatpak-spawn --host ${command}` : command;
-                                        })(playerInstallPath) : playerInstallPath) + " " + timeCmd + " " + argsCmd + " " + subsCmd + " " + playCmd;
-                                        child.exec(fullCmd, (function(error) {
-                                            console.error("Failed executing external player command:", error);
+                                        var p = players[player];
+                                        if ("string" != typeof src || "-" === src.charAt(0)) return void console.error("Refusing to launch external player with suspicious source:", src);
+                                        var cmdArgs = [], startSeconds = parseInt(time / 1e3);
+                                        p.timeArg && p.timeArg.length > 0 && !isNaN(startSeconds) && (cmdArgs = cmdArgs.concat(splitPlayerArg(p.timeArg, startSeconds))), 
+                                        Array.isArray(p.args) && p.args.forEach((function(a) {
+                                            a && cmdArgs.push(a);
+                                        })), subsFile && p.subArg && p.subArg.length > 0 && (cmdArgs = cmdArgs.concat(splitPlayerArg(p.subArg, subsFile))), 
+                                        cmdArgs = cmdArgs.concat(splitPlayerArg(p.playArg || "", src));
+                                        var exe = (installPath => {
+                                            if (isFlatpakAppPath(location = installPath) || isFlatpakHostAppPath(location)) {
+                                                const parts = (location => {
+                                                    let command;
+                                                    return isFlatpakHostAppPath(location) && (command = path.basename(location)), isFlatpakAppPath(location) && (command = `flatpak run ${location.match(FLATPAK_APP_PATH_REGEX)[1]}`), 
+                                                    IS_FLATPAK ? `flatpak-spawn --host ${command}` : command;
+                                                })(installPath).split(" ").filter(Boolean);
+                                                return {
+                                                    cmd: parts[0],
+                                                    prefixArgs: parts.slice(1)
+                                                };
+                                            }
+                                            var location;
+                                            return {
+                                                cmd: installPath.replace(/^"(.*)"$/, "$1"),
+                                                prefixArgs: []
+                                            };
+                                        })(playerPaths[0]);
+                                        child.execFile(exe.cmd, exe.prefixArgs.concat(cmdArgs), (function(error) {
+                                            error && console.error("Failed executing external player command:", error);
                                         })).on("exit", (function() {
                                             if (subsFile) try {
                                                 fs.unlinkSync(subsFile);
