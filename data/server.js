@@ -36048,7 +36048,7 @@
 }, function(module) {
     module.exports = {
         name: "stremio-server",
-        version: "4.22.3",
+        version: "4.22.4",
         stremioRuntimeVersion: "4.0",
         description: "Stremio HTTP server",
         main: "init.js",
@@ -72193,7 +72193,7 @@
         Destination: "d",
         DestinationHeader: "h",
         ResponseHeader: "r"
-    }, proxyReqHeaders = [ "accept", "accept-encoding", "accept-language", "connection", "transfer-encoding", "range", "if-range", "user-agent" ], proxyResHeaders = [ "accept-ranges", "content-type", "content-length", "content-range", "connection", "transfer-encoding", "last-modified", "etag", "server", "date" ], supportedPlaylists = [ ".m3u", ".m3u8" ];
+    }, proxyReqHeaders = [ "accept", "accept-encoding", "accept-language", "connection", "transfer-encoding", "range", "if-range", "user-agent" ], proxyResHeaders = [ "accept-ranges", "content-type", "content-length", "content-range", "connection", "transfer-encoding", "last-modified", "etag", "server", "date" ], supportedPlaylists = [ ".m3u", ".m3u8" ], webUIHosts = [ "web.stremio.com", "web.strem.io", "app.strem.io", "staging.strem.io" ];
     function ensureArray(value) {
         return Array.isArray(value) ? value : value ? [ value ] : [];
     }
@@ -72257,8 +72257,10 @@
                     opts[cfgOpts.ResponseHeader].forEach((function(headerString) {
                         var parsedHeader = parseHeaderString(headerString);
                         responseHeaders[parsedHeader[0]] = parsedHeader[1];
-                    })), responseHeaders["x-content-type-options"] = "nosniff", responseHeaders["content-security-policy"] = "sandbox", 
-                    (responseHeaders["content-type"] || "").toLowerCase().includes("text/html") && (responseHeaders["content-disposition"] = "attachment");
+                    }));
+                    var source = url.parse(result.url), isWebUI = "https:" === source.protocol && webUIHosts.includes(source.host);
+                    responseHeaders["x-content-type-options"] = "nosniff", isWebUI || (responseHeaders["content-security-policy"] = "sandbox", 
+                    (responseHeaders["content-type"] || "").toLowerCase().includes("text/html") && (responseHeaders["content-disposition"] = "attachment"));
                     var isPlaylist = supportedPlaylists.includes(path.extname(dest.pathname)) || (responseHeaders["content-type"] || "").toLowerCase().includes("mpegurl");
                     if (isPlaylist && (delete responseHeaders["content-length"], responseHeaders["accept-ranges"] = "none", 
                     responseHeaders["transfer-encoding"] ? responseHeaders["transfer-encoding"].toLowerCase().includes("chunked") || (responseHeaders["transfer-encoding"] += ", chunked") : responseHeaders["transfer-encoding"] = "chunked"), 
@@ -72313,7 +72315,7 @@
         }
     };
 }, function(module, exports) {
-    module.exports = [ "udp://tracker.opentrackr.org:1337/announce", "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce", "udp://open.demonii.com:1337/announce", "udp://exodus.desync.com:6969/announce", "udp://tracker.skynetcloud.site:6969/announce", "udp://tracker.qu.ax:6969/announce", "udp://tracker.ducks.party:1984/announce", "udp://tracker.tryhackx.org:6969/announce", "udp://tracker.nyaa.vc:6969/announce", "udp://retracker01-msk-virt.corbina.net:80/announce", "udp://explodie.org:6969/announce", "udp://tracker.corpscorp.online:80/announce", "udp://tracker.bittor.pw:1337/announce", "udp://tracker-udp.gbitt.info:80/announce", "udp://tracker.dler.org:6969/announce", "http://tracker2.dler.org:80/announce", "http://tracker.dler.com:6969/announce", "http://tracker.renfei.net:8080/announce", "udp://tracker.peerfect.org:6969/announce" ];
+    module.exports = [ "udp://tracker.opentrackr.org:1337/announce", "udp://open.stealth.si:80/announce", "udp://tracker.torrent.eu.org:451/announce", "udp://open.demonii.com:1337/announce", "http://tracker.qu.ax:6969/announce", "udp://tracker.skynetcloud.site:6969/announce", "udp://tracker.ducks.party:1984/announce", "udp://tracker-udp.gbitt.info:80/announce", "udp://tracker.tryhackx.org:6969/announce", "udp://tracker.nyaa.vc:6969/announce", "udp://tracker.corpscorp.online:80/announce", "udp://explodie.org:6969/announce", "udp://tracker.bittor.pw:1337/announce", "udp://tracker.gmi.gd:6969/announce", "udp://tracker.dler.org:6969/announce", "udp://tracker2.dler.org:80/announce", "http://tracker.dler.com:6969/announce", "http://tracker.renfei.net:8080/announce", "udp://tracker.farted.net:6969/announce", "udp://tracker.peerfect.org:6969/announce" ];
 }, function(module, exports, __webpack_require__) {
     const profiles = __webpack_require__(197), userSettings = __webpack_require__(107), cache = __webpack_require__(421), fetch = __webpack_require__(34), saveSettings = settings => {
         userSettings.extend(settings), cache.setOptionValues(userSettings), userSettings.save((function() {}));
