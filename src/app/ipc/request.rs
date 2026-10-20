@@ -69,6 +69,9 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                                 let data: IpcMessageRequestWinSetInterfaceScale =
                                     serde_json::from_value(data)
                                         .map_err(|_| "Invalid win-set-interface-scale object")?;
+                                if !(75..=175).contains(&data.scale) {
+                                    return Err("Invalid interface scale".into());
+                                }
                                 Ok(IpcEvent::InterfaceScale(data.scale))
                             }
                             "mpv-command" => {
