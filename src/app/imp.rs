@@ -1,8 +1,11 @@
-use std::cell::{Cell, RefCell};
+use std::{
+    cell::{Cell, RefCell},
+    time::Duration,
+};
 
 use adw::{prelude::*, subclass::prelude::*};
 use gtk::glib::{self, Properties, clone};
-use tracing::error;
+use tracing::{error, warn};
 
 use crate::{
     app::{
@@ -22,6 +25,7 @@ use crate::{
 };
 
 const PRELOAD_SCRIPT: &str = include_str!("ipc/preload.js");
+const SERVER_READY_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Properties, Default)]
 #[properties(wrapper_type = super::Application)]
@@ -37,6 +41,7 @@ pub struct Application {
     window: RefCell<Option<Window>>,
     webview: RefCell<Option<WebView>>,
     deeplink: RefCell<Option<String>>,
+    pub(super) server_ready: RefCell<Option<flume::Receiver<()>>>,
 }
 
 #[glib::object_subclass]
@@ -78,7 +83,26 @@ impl ApplicationImpl for Application {
         let dev_mode = self.dev_mode.get();
 
         let webview = WebView::default();
-        webview.load_uri(&startup_url);
+
+        let server_ready = self.server_ready.take();
+        let startup_url = startup_url.clone();
+        let weak_webview = webview.downgrade();
+        spawn_local!(async move {
+            if let Some(server_ready) = server_ready {
+                match glib::future_with_timeout(SERVER_READY_TIMEOUT, server_ready.recv_async())
+                    .await
+                {
+                    Ok(Ok(())) => {}
+                    Ok(Err(_)) => warn!("Server stopped before it was ready"),
+                    Err(_) => warn!("Server not ready after {SERVER_READY_TIMEOUT:?}"),
+                }
+            }
+
+            if let Some(webview) = weak_webview.upgrade() {
+                webview.load_uri(&startup_url);
+            }
+        });
+
         webview.inject_script(PRELOAD_SCRIPT);
         webview.dev_mode(dev_mode);
 
