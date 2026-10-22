@@ -43,6 +43,31 @@ pub struct IpcMessageRequestDiscordSetActivity {
     image: Option<String>,
 }
 
+fn is_allowed_mpv_command(command: &[String]) -> bool {
+    match command {
+        [name] => name == "stop",
+        [name, _] if name == "loadfile" => true,
+        [name, id] if name == "sub-remove" => id.parse::<u64>().is_ok_and(|id| id > 0),
+        [name, _, mode, start] if name == "loadfile" && mode == "replace" => {
+            is_safe_start_option(start)
+        }
+        [name, _, mode, index, start]
+            if name == "loadfile" && mode == "replace" && index == "-1" =>
+        {
+            is_safe_start_option(start)
+        }
+        [name, _, flags, _, _] => name == "sub-add" && flags == "auto",
+        _ => false,
+    }
+}
+
+fn is_safe_start_option(option: &str) -> bool {
+    option
+        .strip_prefix("start=+")
+        .and_then(|start| start.parse::<f64>().ok())
+        .is_some_and(|start| start.is_finite() && start >= 0.0)
+}
+
 impl TryFrom<IpcMessageRequest> for IpcEvent {
     type Error = String;
 
@@ -74,6 +99,10 @@ impl TryFrom<IpcMessageRequest> for IpcEvent {
                             "mpv-command" => {
                                 let data: Vec<String> = serde_json::from_value(data)
                                     .map_err(|_| "Invalid mpv-command arguments")?;
+                                if !is_allowed_mpv_command(&data) {
+                                    return Err("Unsupported mpv-command".into());
+                                }
+
                                 let name = data[0].clone();
 
                                 let mut args = vec![];

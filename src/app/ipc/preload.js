@@ -8,7 +8,7 @@ const createIpc = () => {
     };
 
     const postMessage = (data) => {
-        globalThis.webkit.messageHandlers.ipc.postMessage(data);
+        window.postMessage({ stremioNative: true, message: data }, location.origin);
     };
 
     const addEventListener = (name, listener) => {
