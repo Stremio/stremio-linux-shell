@@ -1,10 +1,12 @@
 use std::{
+    ffi::{CStr, c_char},
     io::{self, Cursor},
     sync::LazyLock,
 };
 
 use anyhow::{Context, Error, Result, anyhow};
 use base64::{engine::general_purpose, read};
+use gtk::{gdk, prelude::*};
 use tokio::fs;
 
 #[macro_export]
@@ -19,6 +21,35 @@ pub static IS_DESKTOP_KDE: LazyLock<bool> = LazyLock::new(|| {
         .ok()
         .is_some_and(|value| value == "KDE")
 });
+
+/// Whether GTK renders with the NVIDIA proprietary OpenGL driver.
+///
+/// Must be called from the main thread after GTK has been initialized.
+pub fn is_nvidia_gl_driver() -> bool {
+    let Some(display) = gdk::Display::default() else {
+        return false;
+    };
+
+    let Ok(context) = display.create_gl_context() else {
+        return false;
+    };
+
+    if context.realize().is_err() {
+        return false;
+    }
+
+    context.make_current();
+
+    let vendor = unsafe { epoxy::GetString(epoxy::VENDOR) };
+    let is_nvidia = !vendor.is_null()
+        && unsafe { CStr::from_ptr(vendor as *const c_char) }
+            .to_string_lossy()
+            .contains("NVIDIA");
+
+    gdk::GLContext::clear_current();
+
+    is_nvidia
+}
 
 pub fn decode_base64(data: &str) -> Result<Vec<u8>> {
     let mut input = Cursor::new(data);
