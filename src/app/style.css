@@ -6,6 +6,11 @@ headerbar.kde {
     min-height: 0px;
 }
 
+window.undecorated {
+    padding: 0;
+    box-shadow: none;
+}
+
 headerbar.kde > windowhandle > box {
     padding: 0px;
 }
