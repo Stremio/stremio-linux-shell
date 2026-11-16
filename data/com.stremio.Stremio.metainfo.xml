@@ -50,6 +50,17 @@
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
     <releases>
+        <release version="1.2.3" date="2026-11-16">
+            <description>
+                <p>Reduce cpu usage during playback</p>
+                <p>Add support for loading mpv config file</p>
+                <p>Add native ASS subtitles support</p>
+                <p>Fix black window caused by host font caches</p>
+                <p>Fix media controls always being on</p>
+                <p>Fix window not showing when activating the tray icon</p>
+                <p>Restrict server CORS outside dev mode</p>
+            </description>
+        </release>
         <release version="1.2.2" date="2026-10-07">
             <description>
                 <p>Fix rendering issues related to WebKit update</p>
