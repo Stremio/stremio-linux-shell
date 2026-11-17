@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Use GSK OpenGL renderer for Nvidia cards
-if ls /dev/nvidia0 &>/dev/null 2>&1; then
-    export GSK_RENDERER=opengl
-fi
+# https://github.com/Stremio/stremio-linux-shell/pull/108
+export GSK_RENDERER=opengl
 
 # Ignore host font caches, which can be written in an incompatible format by other programs
 if [ -f /app/etc/fonts/stremio.conf ]; then
