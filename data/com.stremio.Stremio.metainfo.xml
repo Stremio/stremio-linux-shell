@@ -50,6 +50,16 @@
     <launchable type="desktop-id">com.stremio.Stremio.desktop</launchable>
 
     <releases>
+        <release version="1.3.0" date="2026-11-17">
+            <description>
+                <p>Add preference to set custom mpv config file</p>
+                <p>Add preference to disable window decorations</p>
+                <p>Reduce cpu usage during playback</p>
+                <p>Fix ASS subtitles styling</p>
+                <p>Fix black window caused by host font caches</p>
+                <p>Fix media controls always being on</p>
+            </description>
+        </release>
         <release version="1.2.2" date="2026-10-07">
             <description>
                 <p>Fix rendering issues related to WebKit update</p>
