@@ -5,13 +5,26 @@ use gtk::{
     glib::{self, clone},
     prelude::*,
 };
-use webkit::{WebView as WebKitWebView, prelude::*};
+use webkit::{AutoplayPolicy, WebView as WebKitWebView, WebsitePolicies, prelude::*};
 
 use super::ext::SettingsExt;
 
-#[derive(Default)]
 pub struct WebView {
     pub webview: WebKitWebView,
+}
+
+impl Default for WebView {
+    fn default() -> Self {
+        let website_policies = WebsitePolicies::builder()
+            .autoplay(AutoplayPolicy::Allow)
+            .build();
+
+        Self {
+            webview: WebKitWebView::builder()
+                .website_policies(&website_policies)
+                .build(),
+        }
+    }
 }
 
 #[glib::object_subclass]
@@ -33,7 +46,7 @@ impl ObjectImpl for WebView {
             .set_background_color(&RGBA::new(0.0, 0.0, 0.0, 0.0));
 
         if let Some(settings) = WebViewExt::settings(&self.webview) {
-            settings.set_enable_media(false);
+            settings.set_enable_media(true);
             settings.set_enable_media_capabilities(false);
             settings.set_enable_media_stream(false);
             settings.set_enable_webaudio(false);
