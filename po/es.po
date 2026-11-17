@@ -24,6 +24,12 @@ msgstr "Salir"
 msgid "Interface"
 msgstr "Interfaz"
 
+msgid "Remember window state"
+msgstr "Recordar el estado de la ventana"
+
+msgid "Save and restore window dimensions, maximized and fullscreen state"
+msgstr "Guardar y restaurar las dimensiones de la ventana, así como su estado maximizado y a pantalla completa"
+
 msgid "Remove window decorations"
 msgstr "Quitar los adornos de la ventana"
 

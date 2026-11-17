@@ -24,6 +24,12 @@ msgstr "Quitter"
 msgid "Interface"
 msgstr "Interface"
 
+msgid "Remember window state"
+msgstr "Mémoriser l'état de la fenêtre"
+
+msgid "Save and restore window dimensions, maximized and fullscreen state"
+msgstr "Enregistrer et restaurer les dimensions de la fenêtre, ainsi que son état maximisé et en plein écran"
+
 msgid "Remove window decorations"
 msgstr "Retirer les décorations de la fenêtre"
 
