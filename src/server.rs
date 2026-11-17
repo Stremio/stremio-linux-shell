@@ -32,6 +32,10 @@ impl Server {
         let mut command = Command::new("node");
         command
             .env("SERVER_IPC_KEY", IPC_KEY)
+            // The server's DHT (k-rpc) sends from a udp4 socket, but Node >= 17 resolves
+            // bootstrap hosts in DNS order; dht.transmissionbt.com comes back IPv6 first, the
+            // send fails with EINVAL and DHT never bootstraps (0 peers on every torrent).
+            .arg("--dns-result-order=ipv4first")
             .arg(self.file.as_os_str())
             .stdout(process::Stdio::piped())
             .process_group(0);
