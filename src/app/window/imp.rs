@@ -186,6 +186,7 @@ impl WidgetImpl for Window {
 
         if !self.decorations.get() {
             self.show_header(false);
+            widget.add_css_class("undecorated");
             widget.remove_css_class("csd");
             widget.set_decorated(false);
         }
