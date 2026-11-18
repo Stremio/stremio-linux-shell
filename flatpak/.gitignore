@@ -2,3 +2,4 @@
 /repo
 cargo-sources.json
 *.flatpak
+server-source.json

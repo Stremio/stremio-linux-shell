@@ -8,6 +8,9 @@ repository = "https://github.com/Stremio/stremio-linux-shell"
 license = "GPL-3.0-only"
 edition = "2024"
 
+[package.metadata.server]
+version = "v4.22.6"
+
 [features]
 offline-build = []
 
@@ -44,3 +47,4 @@ shellexpand = "3.1.2"
 [build-dependencies]
 anyhow = "1.0.104"
 dirs = "6.0.0"
+toml = "1.1.2"
