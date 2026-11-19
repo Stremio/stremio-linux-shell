@@ -1,5 +1,5 @@
 [env]
-SERVER_PATH = "data/server.js"
+SERVER_PATH = "target/server/server.js"
 ANV_DEBUG = "video-decode,video-encode" # Video acceleration with Vulkan for Intel
 GSK_RENDERER = "opengl" # https://github.com/Stremio/stremio-linux-shell/pull/108
 GSETTINGS_SCHEMA_DIR = "target/schemas"

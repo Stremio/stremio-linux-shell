@@ -2634,6 +2634,7 @@ dependencies = [
  "serde_json",
  "shellexpand",
  "tokio",
+ "toml",
  "tracing",
  "tracing-subscriber",
  "url",
