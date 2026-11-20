@@ -8,6 +8,7 @@ use gtk::{
 use webkit::{AutoplayPolicy, WebView as WebKitWebView, WebsitePolicies, prelude::*};
 
 use super::ext::SettingsExt;
+use crate::utils;
 
 pub struct WebView {
     pub webview: WebKitWebView,
@@ -53,7 +54,14 @@ impl ObjectImpl for WebView {
             settings.set_javascript_can_access_clipboard(true);
 
             // https://github.com/Stremio/stremio-linux-shell/issues/170
-            if webkit::functions::major_version() == 2 && webkit::functions::minor_version() == 54 {
+            //
+            // Not applied on the NVIDIA proprietary driver: with TextureMapper, the web process
+            // leaks one sync_file fd per composited frame until it hits RLIMIT_NOFILE (1024),
+            // at which point GPU fence creation fails and the UI freezes.
+            if webkit::functions::major_version() == 2
+                && webkit::functions::minor_version() == 54
+                && !utils::is_nvidia_gl_driver()
+            {
                 // Use TextureMapper instead of Skia for layer composition
                 if let Some(compositor) = settings.find_feature("UseSkiaForComposition") {
                     settings.set_feature_enabled(&compositor, false);
