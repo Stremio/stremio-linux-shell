@@ -14,6 +14,8 @@ use webkit::{
     UserScriptInjectionTime, prelude::WebViewExt,
 };
 
+const IPC_WORLD: &str = "stremio-ipc";
+
 glib::wrapper! {
     pub struct WebView(ObjectSubclass<imp::WebView>)
         @extends gtk::Box, gtk::Widget,
@@ -40,8 +42,32 @@ impl WebView {
         widget.webview.load_uri(uri);
     }
 
-    pub fn inject_script(&self, script: &'static str) {
+    pub fn inject_script(&self, script: &'static str, trusted_uri: &str) {
         let widget = self.imp();
+
+        let trusted_uri =
+            serde_json::to_string(trusted_uri).expect("Failed to serialize as JSON string");
+        let relay = format!(
+            r#"(() => {{
+    const trusted = new URL({trusted_uri});
+    const page = new URL(location.href);
+    trusted.hash = page.hash = '';
+    if (page.href !== trusted.href) return;
+    window.addEventListener('message', (event) => {{
+        if (event.source === window && event.data?.stremioNative === true) {{
+            window.webkit.messageHandlers.ipc.postMessage(event.data.message);
+        }}
+    }});
+}})();"#
+        );
+        let relay_script = UserScript::for_world(
+            &relay,
+            UserContentInjectedFrames::TopFrame,
+            UserScriptInjectionTime::Start,
+            IPC_WORLD,
+            &[],
+            &[],
+        );
 
         let user_script = UserScript::new(
             script,
@@ -52,6 +78,7 @@ impl WebView {
         );
 
         if let Some(user_content_manager) = widget.webview.user_content_manager() {
+            user_content_manager.add_script(&relay_script);
             user_content_manager.add_script(&user_script);
         }
     }
@@ -93,7 +120,7 @@ impl WebView {
         let webview = self;
 
         if let Some(user_content_manager) = widget.webview.user_content_manager() {
-            user_content_manager.register_script_message_handler("ipc", None);
+            user_content_manager.register_script_message_handler("ipc", Some(IPC_WORLD));
             user_content_manager.connect_script_message_received(
                 Some("ipc"),
                 clone!(
